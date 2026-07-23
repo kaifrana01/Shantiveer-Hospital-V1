@@ -1,0 +1,4 @@
+"""
+Expenses app.
+"""
+

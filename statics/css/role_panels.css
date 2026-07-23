@@ -1,0 +1,62 @@
+/* ================================================================
+   ShantiVeer HMS — Role Panel Styles
+   Each role gets its own accent colour and sidebar stripe.
+   Import AFTER main.css in base_dashboard.html
+   ================================================================ */
+
+/* ── sidebar role badge strip ── */
+.role-strip {
+  padding: .5rem 1.25rem .75rem;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.rs-badge {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .25rem .75rem; border-radius: 20px;
+  font-size: .7rem; font-weight: 700; letter-spacing: .04em;
+}
+.rs-admin  { background: rgba(59,130,246,.2);  color: #93c5fd; }
+.rs-doctor { background: rgba(16,185,129,.2);  color: #6ee7b7; }
+.rs-recept { background: rgba(139,92,246,.2);  color: #c4b5fd; }
+.rs-pharma { background: rgba(245,158,11,.2);  color: #fcd34d; }
+
+/* ── sidebar accent border per role ── */
+body.role-admin  .dash-sidebar-nav a.active { border-left-color: #3b82f6; }
+body.role-admin  .dash-sidebar-nav a:hover  { background: rgba(59,130,246,.08); }
+body.role-admin  .dash-sidebar { border-right: 2px solid rgba(59,130,246,.22); }
+
+body.role-doctor .dash-sidebar-nav a.active { border-left-color: #10b981; }
+body.role-doctor .dash-sidebar-nav a:hover  { background: rgba(16,185,129,.08); }
+body.role-doctor .dash-sidebar { border-right: 2px solid rgba(16,185,129,.22); }
+
+body.role-recept .dash-sidebar-nav a.active { border-left-color: #8b5cf6; }
+body.role-recept .dash-sidebar-nav a:hover  { background: rgba(139,92,246,.08); }
+body.role-recept .dash-sidebar { border-right: 2px solid rgba(139,92,246,.22); }
+
+body.role-pharma .dash-sidebar-nav a.active { border-left-color: #f59e0b; }
+body.role-pharma .dash-sidebar-nav a:hover  { background: rgba(245,158,11,.08); }
+body.role-pharma .dash-sidebar { border-right: 2px solid rgba(245,158,11,.22); }
+
+/* ── topbar role chip ── */
+.topbar-role-chip {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .28rem .8rem; border-radius: 20px;
+  font-size: .74rem; font-weight: 600;
+}
+.chip-admin  { background: #dbeafe; color: #1e40af; }
+.chip-doctor { background: #d1fae5; color: #065f46; }
+.chip-recept { background: #ede9fe; color: #5b21b6; }
+.chip-pharma { background: #fef3c7; color: #92400e; }
+
+/* ── pharmacist — amber highlight on pharmacy sidebar ── */
+body.role-pharma .pharmacy-sidebar a.active {
+  background: #f59e0b; color: #000;
+}
+body.role-pharma .pharmacy-sidebar a:hover {
+  background: #d97706;
+}
+
+/* ── doctor — green tint on prescription cards ── */
+body.role-doctor .form-card { border-top: 3px solid #10b981; }
+
+/* ── receptionist — purple tint ── */
+body.role-recept .form-card { border-top: 3px solid #8b5cf6; }

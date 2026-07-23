@@ -1,0 +1,71 @@
+{% extends 'base_module.html' %}
+{% block title %}OPD Patient List{% endblock %}
+{% block page_title %}OPD Patient List{% endblock %}
+{% block content %}
+<div class="page-container">
+    <h2 class="text-center text-primary mb-3"><i class="bi bi-heart-pulse"></i> OPD Patient List</h2>
+    <div class="small text-muted text-center mb-2">Total records: {{ records|length }}</div>
+    <div class="green-banner">OPD</div>
+
+    <form method="get" class="d-flex gap-2 mb-3">
+        <input type="text" name="q" class="form-control form-control-lg" placeholder="Search Name / UHID / Phone / OPD No" value="{{ q }}">
+        <button class="btn btn-success btn-lg px-4"><i class="bi bi-search"></i> Search</button>
+    </form>
+
+    <div class="form-card p-0 overflow-hidden">
+        <table class="hms-table mb-0">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>OPD No</th>
+                    <th>UHID</th>
+                    <th>Patient Name</th>
+                    <th>Gender</th>
+                    <th>Doctor</th>
+                    <th>Phone</th>
+                    <th>Date</th>
+                    <th>Total (₹)</th>
+                    <th>Due</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ r.opd_no }}</td>
+                    <td>{{ r.uhid }}</td>
+                    <td>{{ r.name }}</td>
+                    <td>{{ r.gender }}</td>
+                    <td>{{ r.doctor }}</td>
+                    <td>{{ r.phone }}</td>
+                    <td>{{ r.date }}</td>
+                    <td>{{ r.total }}</td>
+                    <td>{{ r.due }}</td>
+                    <td>
+                        <a href="{% url 'prescription:detail' r.id %}" class="btn-action btn-pres">Pres 02</a>
+
+                        <a href="{% url 'prescription:print' r.id %}" class="btn-action btn-print" target="_blank">Print</a>
+                        <a href="{% url 'prescription:print' r.id %}" class="btn-action btn-receipt" target="_blank">Receipt</a>
+
+                        <a href="{% url 'opd:registration' %}?edit={{ r.id }}" class="btn-action btn-edit">Edit</a>
+                        {% if user.is_superuser %}
+                            <form method="post" action="{% url 'opd:delete_opd_visit' r.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-action btn-delete" onclick="return confirm('Delete this record?');">Delete</button>
+                            </form>
+                        {% endif %}
+
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="11" class="text-center text-muted py-4">No records found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

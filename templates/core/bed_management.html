@@ -1,0 +1,190 @@
+{% extends 'base_dashboard.html' %}
+{% block page_title %}Bed Management{% endblock %}
+{% block extra_css %}
+<style>
+.bed-manage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+.bed-manage-card {
+  border-radius: 10px;
+  padding: 12px 10px;
+  text-align: center;
+  border: 2px solid;
+  position: relative;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.bed-manage-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.bed-manage-card.vacant   { background: #f0fdf4; border-color: #86efac; }
+.bed-manage-card.occupied { background: #fff1f2; border-color: #fca5a5; }
+.bed-manage-card.maintenance { background: #fffbeb; border-color: #fde68a; }
+.bed-manage-card .bed-icon { font-size: 1.6rem; margin-bottom: 4px; }
+.bed-manage-card .bed-label { font-weight: 700; font-size: 0.85rem; }
+.bed-manage-card .bed-room  { font-size: 0.7rem; color: #64748b; }
+.bed-manage-card .bed-patient { font-size: 0.68rem; color: #be123c; margin-top: 3px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bed-manage-card .bed-actions {
+  display: flex; gap: 4px; justify-content: center; margin-top: 8px;
+}
+.bed-manage-card .bed-actions a, .bed-manage-card .bed-actions button {
+  font-size: 0.65rem; padding: 2px 7px; border-radius: 4px;
+}
+.status-pill {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.status-pill.vacant      { background: #d1fae5; color: #065f46; }
+.status-pill.occupied    { background: #fee2e2; color: #991b1b; }
+.status-pill.maintenance { background: #fef3c7; color: #92400e; }
+
+.room-section { margin-bottom: 1.5rem; }
+.room-header {
+  font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: #64748b;
+  display: flex; align-items: center; gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+.room-header::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+
+.stat-summary {
+  display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem;
+}
+.stat-pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px;
+  font-size: 0.8rem; font-weight: 600;
+}
+.stat-pill.total    { background: #eff6ff; color: #1e40af; }
+.stat-pill.vacant   { background: #f0fdf4; color: #15803d; }
+.stat-pill.occupied { background: #fff1f2; color: #be123c; }
+.stat-pill.maint    { background: #fffbeb; color: #92400e; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <div class="stat-summary">
+      <span class="stat-pill total"><i class="bi bi-grid-3x2-gap"></i> {{ total_beds }} Total</span>
+      <span class="stat-pill vacant"><i class="bi bi-person"></i> {{ vacant_beds }} Vacant</span>
+      <span class="stat-pill occupied"><i class="bi bi-person-fill"></i> {{ occupied_beds }} Occupied</span>
+      {% if maintenance_beds %}<span class="stat-pill maint"><i class="bi bi-tools"></i> {{ maintenance_beds }} Maintenance</span>{% endif %}
+    </div>
+  </div>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBedModal">
+    <i class="bi bi-plus-circle"></i> Add Bed
+  </button>
+</div>
+
+{% if messages %}
+  {% for m in messages %}
+  <div class="alert alert-{{ m.tags }} alert-dismissible fade show py-2" role="alert">
+    {{ m }} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+{% endif %}
+
+<!-- Beds grouped by room -->
+{% for room, beds in beds_by_room.items %}
+<div class="room-section widget-card">
+  <div class="room-header"><i class="bi bi-door-open"></i> Room {{ room }}</div>
+  <div class="bed-manage-grid">
+    {% for bed in beds %}
+    <div class="bed-manage-card {{ bed.status|lower }}">
+      <div class="bed-icon">
+        {% if bed.status == 'Occupied' %}<i class="bi bi-person-fill text-danger"></i>
+        {% elif bed.status == 'Maintenance' %}<i class="bi bi-tools text-warning"></i>
+        {% else %}<i class="bi bi-person text-success"></i>{% endif %}
+      </div>
+      <div class="bed-label">Bed {{ bed.bed_no }}</div>
+      <div class="bed-room">Room {{ bed.room_no }}</div>
+      <div class="status-pill {{ bed.status|lower }}">{{ bed.status }}</div>
+      {% if bed.patient %}<div class="bed-patient">{{ bed.patient_name }}</div>{% endif %}
+      <div class="bed-actions">
+        <a href="{% url 'core:bed_edit' bed.pk %}" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-pencil"></i>
+        </a>
+        <form method="post" action="{% url 'core:bed_delete' bed.pk %}" style="display:inline"
+              onsubmit="return confirm('Delete Bed {{ bed.bed_no }} in Room {{ bed.room_no }}?')">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% empty %}
+<div class="widget-card text-center py-5 text-muted">
+  <i class="bi bi-bed" style="font-size:2.5rem;display:block;margin-bottom:0.75rem;opacity:0.3"></i>
+  No beds configured yet.
+  <div class="mt-2">
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addBedModal">
+      <i class="bi bi-plus-circle"></i> Add First Bed
+    </button>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Add Bed Modal -->
+<div class="modal fade" id="addBedModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Add New Bed</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{% url 'core:bed_add' %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Room No.</label>
+            <input type="text" name="room_no" class="form-control" placeholder="e.g. 101" required>
+            <div class="form-text">Enter the room number this bed belongs to.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Bed No.</label>
+            <input type="text" name="bed_no" class="form-control" placeholder="e.g. A, B, 1, 2" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Status</label>
+            <select name="status" class="form-select">
+              <option value="Vacant">Vacant</option>
+              <option value="Occupied">Occupied</option>
+              <option value="Maintenance">Maintenance</option>
+            </select>
+          </div>
+          <div class="alert alert-info py-2 small">
+            <i class="bi bi-info-circle"></i>
+            To add multiple beds at once, use the <strong>Bulk Add</strong> option below.
+          </div>
+          <hr>
+          <div class="fw-semibold mb-2 small text-muted text-uppercase">Bulk Add Beds</div>
+          <div class="row g-2">
+            <div class="col">
+              <label class="form-label small">Room No.</label>
+              <input type="text" name="bulk_room" class="form-control form-control-sm" placeholder="e.g. 102">
+            </div>
+            <div class="col">
+              <label class="form-label small">No. of Beds</label>
+              <input type="number" name="bulk_count" class="form-control form-control-sm" min="1" max="20" placeholder="e.g. 6">
+            </div>
+          </div>
+          <div class="form-text mt-1">Beds will be created as 1, 2, 3 … in that room. Leave room blank to skip.</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

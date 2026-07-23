@@ -1,0 +1,44 @@
+{% extends 'base_cyan.html' %}
+{% block title %}Daily Lab Income - Day Book{% endblock %}
+{% block page_title %}Daily Lab Income - Day Book{% endblock %}
+{% block content %}
+<div class="page-container">
+    <div class="search-bar-row mb-3" style="border-radius:4px">
+        <form method="get" class="d-flex align-items-center gap-2">
+            <label>Date :</label>
+            <input type="date" name="date" class="form-control form-control-sm" style="width:160px" value="{{ selected_date }}">
+            <button class="btn btn-primary btn-sm">Submit</button>
+            <a href="{% url 'income:daybook' %}" class="btn btn-primary btn-sm">Reset</a>
+        </form>
+    </div>
+    <div class="form-card">
+        <div class="d-flex justify-content-between mb-2">
+            <div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-outline-secondary" id="copyBtn">Copy</button>
+                <a class="btn btn-outline-secondary" href="{% url 'income:daybook_alt' %}?date={{ selected_date }}&export=csv">CSV</a>
+                <a class="btn btn-outline-secondary" href="{% url 'income:daybook_alt' %}?date={{ selected_date }}&export=pdf">PDF</a>
+            </div>
+            <div class="d-flex align-items-center gap-2"><label class="small mb-0">Search:</label><input class="form-control form-control-sm" style="width:150px"></div>
+        </div>
+
+        <table class="hms-table">
+            <thead><tr><th>#</th><th>Date</th><th>Category</th><th>Patient Name</th><th>Description</th><th>Payment Mode</th><th>Amount</th></tr></thead>
+            <tbody>{% for e in entries %}
+            <tr><td>{{ forloop.counter }}</td><td>{{ e.date }}</td><td>{{ e.category }}</td><td>{{ e.patient }}</td><td>{{ e.description }}</td><td>{{ e.mode }}</td><td>{{ e.amount }}</td></tr>
+            {% endfor %}</tbody>
+            <tfoot>
+                <tr class="fw-bold"><td colspan="6" class="text-end">Total Cash</td><td>{{ totals.cash }}</td></tr>
+                <tr class="fw-bold"><td colspan="6" class="text-end">Total Online</td><td>{{ totals.online }}</td></tr>
+                <tr class="fw-bold"><td colspan="6" class="text-end">Total Card Swipe</td><td>{{ totals.card }}</td></tr>
+                <tr class="fw-bold"><td colspan="6" class="text-end">Total Cheque</td><td>{{ totals.cheque }}</td></tr>
+                <tr class="fw-bold table-success"><td colspan="6" class="text-end">Total Income</td><td>{{ totals.income }}</td></tr>
+            </tfoot>
+        </table>
+        <p class="text-center text-muted my-2">-----------Expenses-----------</p>
+        <div class="d-flex justify-content-between small text-muted mt-2">
+            <span>Showing 1 to {{ entries|length }} of {{ entries|length }} entries</span>
+            <nav><ul class="pagination pagination-sm mb-0"><li class="page-item"><a class="page-link">Previous</a></li><li class="page-item active"><a class="page-link">1</a></li><li class="page-item"><a class="page-link">Next</a></li></ul></nav>
+        </div>
+    </div>
+</div>
+{% endblock %}

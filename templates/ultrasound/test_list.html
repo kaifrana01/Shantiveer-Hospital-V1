@@ -1,0 +1,67 @@
+{% extends 'ultrasound/base_ultrasound.html' %}
+{% block title %}Test Master — Ultrasound{% endblock %}
+{% block page_title %}Ultrasound Test Master{% endblock %}
+
+{% block content %}
+{% if messages %}
+  {% for msg in messages %}
+    <div class="usg-alert usg-alert-{{ msg.tags }}">{{ msg }}</div>
+  {% endfor %}
+{% endif %}
+
+<div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+  <a href="{% url 'ultrasound:test_add' %}" class="btn-usg-primary">
+    <i class="bi bi-plus-circle"></i> Add Test
+  </a>
+</div>
+
+<div class="usg-card">
+  <div class="usg-card-header">
+    <div class="usg-card-title"><i class="bi bi-list-check"></i> All Tests</div>
+    <span style="font-size:0.78rem;color:#64748b;">{{ tests.count }} total</span>
+  </div>
+  <div class="usg-card-body" style="padding:0;">
+    <div class="usg-table-wrap">
+      <table class="usg-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Test Name</th><th>Standard Rate</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in tests %}
+          <tr>
+            <td style="color:#94a3b8;">{{ forloop.counter }}</td>
+            <td style="font-weight:600;">{{ t.name }}</td>
+            <td style="font-weight:700;color:#059669;">₹{{ t.rate }}</td>
+            <td>
+              {% if t.is_active %}
+                <span class="badge-green"><i class="bi bi-check-circle"></i> Active</span>
+              {% else %}
+                <span class="badge-red"><i class="bi bi-x-circle"></i> Inactive</span>
+              {% endif %}
+            </td>
+            <td style="display:flex;gap:6px;">
+              <a href="{% url 'ultrasound:test_edit' t.pk %}" class="btn-usg-outline btn-usg-sm">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <a href="{% url 'ultrasound:test_toggle' t.pk %}" class="btn-usg-outline btn-usg-sm"
+                 style="{% if t.is_active %}color:#dc2626;border-color:#dc2626;{% else %}color:#059669;border-color:#059669;{% endif %}"
+                 onclick="return confirm('Toggle status for {{ t.name }}?')">
+                {% if t.is_active %}<i class="bi bi-toggle-on"></i>{% else %}<i class="bi bi-toggle-off"></i>{% endif %}
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" style="text-align:center;padding:30px;color:#64748b;">
+              No tests yet. <a href="{% url 'ultrasound:test_add' %}">Add the first one</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

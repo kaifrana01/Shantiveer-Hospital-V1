@@ -1,0 +1,15 @@
+{% extends 'base_cyan.html' %}
+{% block title %}Doctor List{% endblock %}
+{% block page_title %}Doctor List{% endblock %}
+{% block content %}
+<div class="d-flex gap-3 p-3">
+    <div class="master-sidebar" style="width:150px">
+        <a href="{% url 'masterdata:doctors' %}">add-doctor</a>
+        <a href="{% url 'masterdata:doctor_list' %}" class="active">list-doctor</a>
+    </div>
+    <div class="flex-grow-1">
+        <table class="hms-table green-head"><thead><tr><th>#</th><th>Name</th><th>Department</th><th>Specialization</th><th>Phone</th><th>Action</th></tr></thead>
+        <tbody>{% for d in doctors %}<tr><td>{{ forloop.counter }}</td><td>{{ d.name }}</td><td>{{ d.department }}</td><td>{{ d.specialization }}</td><td>{{ d.phone }}</td><td><a href="#">Edit</a></td></tr>{% endfor %}</tbody></table>
+    </div>
+</div>
+{% endblock %}

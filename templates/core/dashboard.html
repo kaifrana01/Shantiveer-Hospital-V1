@@ -1,0 +1,1083 @@
+{% extends 'base_dashboard.html' %}
+{% block page_title %}Dashboard{% endblock %}
+{% block extra_css %}
+
+<style>
+/* ===== ENHANCED DASHBOARD STYLES ===== */
+
+/* Animated KPI cards */
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.kpi-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20px;
+  width: 80px;
+  height: 160%;
+  background: rgba(255,255,255,0.07);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+.kpi-card .kpi-trend {
+  font-size: 0.65rem;
+  margin-top: 2px;
+  opacity: 0.85;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.kpi-trend.up { color: #bbf7d0; }
+.kpi-trend.down { color: #fca5a5; }
+.kpi-card .kpi-sparkline { margin-top: 4px; }
+
+/* Activity pulse dot */
+.pulse-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34,197,94,0.4);
+  animation: pulse-ring 1.8s ease-out infinite;
+  margin-right: 5px;
+}
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+/* Section tab switcher */
+.dash-tab-bar {
+  display: flex;
+  gap: 0.25rem;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 8px;
+  width: fit-content;
+}
+.dash-tab-bar .tab-btn {
+  border: none;
+  background: transparent;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.15s;
+}
+.dash-tab-bar .tab-btn.active {
+  background: #fff;
+  color: #1e40af;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  font-weight: 600;
+}
+
+/* Progress bar beds */
+.bed-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: #e2e8f0;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.bed-progress .fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s ease;
+}
+
+/* Metric ring */
+.metric-ring-wrap {
+  position: relative;
+  width: 80px; height: 80px;
+  margin: 0 auto;
+}
+.metric-ring-wrap svg { transform: rotate(-90deg); }
+.metric-ring-wrap .ring-label {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.1;
+}
+
+/* Patient row hover highlight */
+.hms-table tbody tr {
+  transition: background 0.15s;
+  cursor: pointer;
+}
+
+/* Quick Action Buttons – larger + labeled icons */
+.qa-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+.qa-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0.65rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.15s;
+  border: 1.5px solid transparent;
+}
+.qa-btn i { font-size: 1.2rem; }
+.qa-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+.qa-btn.qa-primary   { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+.qa-btn.qa-warning   { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+.qa-btn.qa-info      { background: #ecfeff; color: #164e63; border-color: #a5f3fc; }
+.qa-btn.qa-success   { background: #f0fdf4; color: #065f46; border-color: #bbf7d0; }
+.qa-btn.qa-secondary { background: #f8fafc; color: #334155; border-color: #e2e8f0; }
+.qa-btn.qa-danger    { background: #fff1f2; color: #9f1239; border-color: #fecdd3; }
+
+/* Live time widget */
+.live-time {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e40af;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.live-date {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+{% comment %} /* Notification item */
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid #f1f5f9;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.1s;
+  border-radius: 4px;
+} {% endcomment %}
+.notif-item:hover { background: #f8fafc; }
+.notif-icon {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.notif-icon.danger  { background: #fee2e2; color: #dc2626; }
+.notif-icon.warning { background: #fef3c7; color: #d97706; }
+.notif-icon.info    { background: #e0f2fe; color: #0284c7; }
+
+/* Alert banner */
+.alert-ticker {
+  background: linear-gradient(90deg, #7f1d1d, #991b1b);
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 0.35rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+.alert-ticker .ticker-label {
+  background: rgba(255,255,255,0.2);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+.alert-ticker .ticker-text {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Bed grid visual */
+.bed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 6px;
+}
+.bed-cell {
+  border-radius: 6px;
+  padding: 6px 4px;
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border: 1.5px solid;
+  transition: transform 0.15s;
+  cursor: default;
+}
+.bed-cell:hover { transform: scale(1.05); }
+.bed-cell.vacant   { background: #f0fdf4; border-color: #86efac; color: #15803d; }
+.bed-cell.occupied { background: #fff1f2; border-color: #fca5a5; color: #be123c; }
+.bed-cell i { display: block; font-size: 0.9rem; margin-bottom: 1px; }
+
+/* Section divider with label */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+}
+.section-divider::before, .section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+/* Appointment timeline */
+.appt-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.appt-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  background: #f8fafc;
+  font-size: 0.8rem;
+  border-left: 3px solid #3b82f6;
+  transition: background 0.15s;
+}
+.appt-row:hover { background: #eff6ff; }
+.appt-row .appt-avatar {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; font-weight: 700; flex-shrink: 0;
+}
+.appt-row .appt-name { font-weight: 600; flex: 1; }
+.appt-row .appt-doc  { font-size: 0.7rem; color: #64748b; }
+.appt-row .appt-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; }
+
+/* Revenue highlight numbers */
+.rev-num {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.rev-num.green { color: #059669; }
+.rev-num.red   { color: #dc2626; }
+.rev-label     { font-size: 0.68rem; color: #94a3b8; margin-top: 2px; }
+
+/* Scrollable widget body */
+.widget-scroll {
+  max-height: 220px;
+  overflow-y: auto;
+}
+.widget-scroll::-webkit-scrollbar { width: 4px; }
+.widget-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+
+/* Status dot in table */
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+}
+
+/* Rx item */
+.rx-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.12s;
+}
+.rx-row:hover { background: #f8fafc; }
+.rx-row .rx-init {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #1e40af;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; font-weight: 700; flex-shrink: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ===== Role Welcome Banner ===== -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 p-3" style="background:linear-gradient(90deg,#1e293b,#334155);border-radius:12px;color:#fff">
+  <div class="d-flex align-items-center gap-2">
+    <i class="bi {{ user_role_icon|default:'bi-person' }}" style="font-size:1.4rem"></i>
+    <div>
+      <div style="font-weight:600">Welcome, {{ user.first_name|default:user.username }}</div>
+      <div style="font-size:.75rem;opacity:.75">{{ user_role_label|default:"User" }} Dashboard</div>
+    </div>
+  </div>
+  <div style="font-size:.75rem;opacity:.8">{% now "l, d M Y" %}</div>
+</div>
+
+<!-- ===== Low Stock Alert Ticker ===== -->
+{% if low_stock_medicines %}
+<div class="alert-ticker mb-3">
+  <span class="ticker-label">⚠ ALERT</span>
+  <span class="ticker-text">
+    Low stock:
+    {% for m in low_stock_medicines %}
+      <strong>{{ m.name }}</strong> ({{ m.stock }} {{ m.unit }})
+      {% if not forloop.last %}&nbsp;·&nbsp;{% endif %}
+    {% endfor %}
+  </span>
+  <a href="{% url 'pharmacy:items' %}" class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:#fff;font-size:0.7rem;padding:2px 10px;border-radius:4px;white-space:nowrap">
+    Manage →
+  </a>
+</div>
+{% endif %}
+
+
+<!-- ===== KPI Cards ===== -->
+<div class="row g-3 mb-3">
+  {% if module_access.uhid != 'none' %}
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-icon"><i class="bi bi-people-fill"></i></div>
+      <div class="kpi-val">{{ stats.total_patients }}</div>
+      <div class="kpi-lbl">Total Patients</div>
+      <div class="kpi-trend up"><i class="bi bi-arrow-up-short"></i> Active</div>
+    </div>
+  </div>
+  {% endif %}
+  {% if module_access.opd_list != 'none' or module_access.opd_registration != 'none' %}
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="kpi-card kpi-green">
+      <div class="kpi-icon"><i class="bi bi-calendar-check"></i></div>
+      <div class="kpi-val">{{ stats.appointment_key }}</div>
+      <div class="kpi-lbl">OPD Today</div>
+      <div class="kpi-trend up"><span class="pulse-dot"></span>Live</div>
+    </div>
+  </div>
+  {% endif %}
+  {% if module_access.ipd_list != 'none' %}
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="kpi-card kpi-orange">
+      <div class="kpi-icon"><i class="bi bi-hospital"></i></div>
+      <div class="kpi-val">{{ stats.ipd_admitted }}</div>
+      <div class="kpi-lbl">IPD Admitted</div>
+      <div class="kpi-trend"><i class="bi bi-dot"></i> In-ward</div>
+    </div>
+  </div>
+  {% endif %}
+  {% if module_access.beds != 'none' %}
+  <div class="col-6 col-md-4 col-lg-2">
+    <a href="{% url 'core:bed_manage' %}" style="text-decoration:none">
+    <div class="kpi-card kpi-red">
+      <div class="kpi-icon"><i class="bi bi-bed"></i></div>
+      <div class="kpi-val">{{ stats.vacant_beds }}<span class="kpi-sub">/{{ stats.total_beds }}</span></div>
+      <div class="kpi-lbl">Beds Vacant</div>
+      <div class="kpi-trend"><i class="bi bi-pencil-square"></i> Manage Beds</div>
+    </div>
+    </a>
+  </div>
+  {% endif %}
+  {% if module_access.income != 'none' or module_access.billing_collect != 'none' %}
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="kpi-card kpi-cyan">
+      <div class="kpi-icon"><i class="bi bi-currency-rupee"></i></div>
+      <div class="kpi-val" style="font-size:1rem">₹{{ stats.today_income }}</div>
+      <div class="kpi-lbl">Today's Income</div>
+      <div class="kpi-trend up"><i class="bi bi-graph-up"></i> Revenue</div>
+    </div>
+  </div>
+  {% endif %}
+  {% if module_access.opd_list != 'none' %}
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="kpi-card kpi-purple">
+      <div class="kpi-icon"><i class="bi bi-graph-up-arrow"></i></div>
+      <div class="kpi-val">{{ stats.appointments_month }}</div>
+      <div class="kpi-lbl">OPD This Month</div>
+      <div class="kpi-trend up"><i class="bi bi-calendar-month"></i> Monthly</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ===== Top Row: Quick Actions | Patient Mix | Search | Clock ===== -->
+<div class="row g-3 mb-3">
+
+  <!-- Quick Actions -->
+  <div class="col-lg-3">
+    <div class="widget-card h-100">
+      <div class="widget-title mb-3"><i class="bi bi-lightning-charge-fill text-warning"></i> Quick Actions</div>
+      <div class="qa-grid">
+        {% if module_access.opd_registration == 'full' %}
+        <a href="{% url 'opd:registration' %}" class="qa-btn qa-primary">
+          <i class="bi bi-person-plus"></i> New OPD
+        </a>
+        {% endif %}
+        {% if module_access.ipd_admission == 'full' %}
+        <a href="{% url 'ipd:admission' %}" class="qa-btn qa-warning">
+          <i class="bi bi-hospital"></i> IPD Admit
+        </a>
+        {% endif %}
+        {% if module_access.lab != 'none' %}
+        <a href="{% url 'lab:investigation' %}" class="qa-btn qa-info">
+          <i class="bi bi-droplet"></i> Lab Test
+        </a>
+        {% endif %}
+        {% if module_access.pharmacy != 'none' %}
+        <a href="{% url 'pharmacy:items' %}" class="qa-btn qa-success">
+          <i class="bi bi-capsule"></i> Pharmacy
+        </a>
+        {% endif %}
+        {% if module_access.prescription != 'none' %}
+        <a href="{% url 'prescription:list' %}" class="qa-btn qa-secondary">
+          <i class="bi bi-file-medical"></i> Prescriptions
+        </a>
+        {% endif %}
+        {% if module_access.income != 'none' %}
+        <a href="{% url 'income:daybook' %}" class="qa-btn qa-danger">
+          <i class="bi bi-journal-text"></i> Daybook
+        </a>
+        {% endif %}
+        {% if module_access.expenses != 'none' %}
+        <a href="{% url 'expenses:page' %}" class="qa-btn" style="background:#fff1f2;color:#9f1239;border-color:#fecdd3">
+          <i class="bi bi-cash-stack"></i> Expenses
+        </a>
+        {% endif %}
+        {% if module_access.billing_collect != 'none' %}
+        <a href="{% url 'ipd:payment' %}" class="qa-btn" style="background:#ecfeff;color:#155e75;border-color:#a5f3fc">
+          <i class="bi bi-credit-card"></i> Collect Payment
+        </a>
+        {% endif %}
+        {% if module_access.uhid == 'full' %}
+        <a href="{% url 'uhid:update' %}" class="qa-btn" style="background:#f5f3ff;color:#5b21b6;border-color:#ddd6fe">
+          <i class="bi bi-person-badge"></i> UHID
+        </a>
+        {% endif %}
+        {% if module_access.beds == 'full' %}
+        <a href="{% url 'core:bed_manage' %}" class="qa-btn" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">
+          <i class="bi bi-grid-3x2-gap"></i> Beds
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Patient Old/New Donut -->
+  <div class="col-lg-3">
+    <div class="widget-card h-100">
+      <div class="widget-title mb-2"><i class="bi bi-pie-chart-fill text-primary"></i> Patient Mix</div>
+      <canvas id="patientPieChart" height="145"></canvas>
+      <div class="d-flex justify-content-center gap-3 mt-2" style="font-size:0.75rem">
+        <span><span class="status-dot" style="background:#3b82f6"></span>Returning</span>
+        <span><span class="status-dot" style="background:#22c55e"></span>New</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Patient Search + Live Clock -->
+  <div class="col-lg-3">
+    <div class="widget-card h-100">
+      <div class="widget-title mb-2"><i class="bi bi-search"></i> Patient Search</div>
+      <form action="{% url 'uhid:update' %}" method="get" class="input-group input-group-sm mb-2">
+        <input type="text" name="q" class="form-control" placeholder="Name / UHID / Mobile">
+        <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
+      </form>
+      <div class="d-grid gap-2 mb-3">
+        <a href="{% url 'opd:registration' %}" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-plus-circle"></i> New OPD Registration
+        </a>
+        <a href="{% url 'uhid:update' %}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-person-badge"></i> UHID Lookup
+        </a>
+      </div>
+      <div class="text-center pt-2 border-top">
+        <div class="live-time" id="liveTime">--:--:--</div>
+        <div class="live-date" id="liveDate"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appointment Trend + Mini Stats -->
+  <div class="col-lg-3">
+    <div class="widget-card h-100">
+      <div class="widget-title mb-2"><i class="bi bi-calendar3-fill text-success"></i> Appointments</div>
+      <div class="row text-center mb-2 g-2">
+        <div class="col-6">
+          <div class="p-2 rounded" style="background:#eff6ff">
+            <div class="rev-num" style="font-size:1.4rem;color:#1e40af">{{ stats.appointment_key }}</div>
+            <div class="rev-label">Today</div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="p-2 rounded" style="background:#f0fdf4">
+            <div class="rev-num" style="font-size:1.4rem;color:#059669">{{ stats.appointments_month }}</div>
+            <div class="rev-label">This Month</div>
+          </div>
+        </div>
+      </div>
+      <canvas id="apptTrendChart" height="90"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Today's Appointments Timeline + Bed Visual ===== -->
+<div class="row g-3 mb-3">
+
+  {% if module_access.opd_list != 'none' or module_access.opd_registration != 'none' %}
+  <!-- Today's Appointments as timeline cards -->
+  <div class="col-lg-7">
+    <div class="widget-card">
+      <div class="widget-header">
+        <span class="widget-title"><i class="bi bi-calendar-event"></i> Today's OPD Queue</span>
+        {% if module_access.opd_registration == 'full' %}
+        <a href="{% url 'opd:registration' %}" class="btn btn-sm btn-primary">
+          <i class="bi bi-plus"></i> New OPD
+        </a>
+        {% endif %}
+      </div>
+      <div class="widget-scroll">
+        <div class="appt-timeline">
+          {% for a in today_appointments %}
+          <div class="appt-row">
+            <div class="appt-avatar">{{ a.name|first|upper }}</div>
+            <div>
+              <div class="appt-name">{{ a.name }}</div>
+              <div class="appt-doc"><i class="bi bi-person-badge text-muted"></i> {{ a.doctor }} &nbsp;·&nbsp; {{ a.gender }}</div>
+            </div>
+            <span class="badge bg-light text-dark appt-badge ms-auto">{{ a.opd_no }}</span>
+          </div>
+          {% empty %}
+          <div class="text-muted text-center py-4 small">
+            <i class="bi bi-calendar-x" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;opacity:0.4"></i>
+            No appointments scheduled today
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if module_access.beds != 'none' %}
+  <!-- Bed Availability — visual grid -->
+  <div class="col-lg-5">
+    <div class="widget-card">
+      <div class="widget-header">
+        <span class="widget-title"><i class="bi bi-grid-3x2-gap"></i> Bed Status</span>
+        <div class="d-flex gap-1">
+          <span class="badge bg-success">{{ stats.vacant_beds }} Free</span>
+          <span class="badge bg-danger">{{ stats.occupied_beds }} Taken</span>
+        </div>
+      </div>
+      <!-- Occupancy bar -->
+      <div class="mb-3">
+        <div class="d-flex justify-content-between" style="font-size:0.7rem;color:#64748b;margin-bottom:3px">
+          <span>Occupancy Rate</span>
+          <span id="occupancyPct">—</span>
+        </div>
+      <div class="bed-progress">
+          <div class="fill" id="occupancyFill"
+               style="background: linear-gradient(90deg,#ef4444,#f59e0b); width: {% if stats.total_beds %}{% widthratio stats.occupied_beds stats.total_beds 100 %}{% else %}0{% endif %}%"></div>
+        </div>
+
+      </div>
+      <!-- Bed grid -->
+      <div class="bed-grid">
+        {% for bed in beds %}
+        <div class="bed-cell {% if bed.occupied %}occupied{% else %}vacant{% endif %}"
+             title="{% if bed.occupied %}{{ bed.patient }}{% else %}Vacant{% endif %}">
+          <i class="bi bi-{% if bed.occupied %}person-fill{% else %}person{% endif %}"></i>
+          {{ bed.bed_no }}
+        </div>
+        {% empty %}
+        <div class="text-muted small text-center py-2 col-12">No beds configured</div>
+        {% endfor %}
+      </div>
+      <div class="d-flex gap-2 mt-3">
+        {% if module_access.beds == 'full' %}
+        <a href="{% url 'core:bed_manage' %}" class="btn btn-sm btn-primary">
+          <i class="bi bi-pencil-square"></i> Manage Beds
+        </a>
+        {% endif %}
+        {% if module_access.ipd_admission == 'full' %}
+        <a href="{% url 'ipd:admission' %}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-hospital"></i> IPD Admissions
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- =========================
+     Expenses & Prescriptions
+========================== -->
+<div class="row g-3 mb-3">
+
+  {% if module_access.expenses != 'none' %}
+    <!-- Expenses Summary -->
+    <div class="col-lg-4">
+        <div class="widget-card h-100">
+
+            <div class="widget-header">
+                <span class="widget-title">
+                    <i class="bi bi-cash-stack"></i>
+                    Total Expenses
+                </span>
+
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <div class="filter-tabs" id="expensesChartFilters">
+                        <button class="active" data-range="today">Today</button>
+                        <button data-range="week">Week</button>
+                        <button data-range="month">Month</button>
+                        <button data-range="year">Year</button>
+                    </div>
+
+                    <a href="{% url 'expenses:page' %}"
+                       class="btn btn-sm btn-outline-primary">
+                        View All
+                    </a>
+                </div>
+            </div>
+
+            <div class="expense-summary mb-3">
+                <div class="p-3 rounded text-center bg-danger-subtle">
+                    <div class="rev-num text-danger">
+                        ₹{{ stats.total_expenses }}
+                    </div>
+                    <div class="rev-label">
+                        Sum of All Expenses
+                    </div>
+                </div>
+            </div>
+
+            <canvas id="expensesChart" height="110"></canvas>
+
+            <div class="small text-muted text-center mt-2">
+                Expense chart updates based on the selected period.
+            </div>
+
+        </div>
+    </div>
+  {% endif %}
+
+  {% if module_access.prescription != 'none' %}
+    <!-- Recent Prescriptions -->
+    <div class="col-lg-8">
+        <div class="widget-card h-100">
+
+            <div class="widget-header">
+                <span class="widget-title">
+                    <i class="bi bi-file-medical"></i>
+                    Recent Prescriptions
+                </span>
+
+                <a href="{% url 'prescription:list' %}"
+                   class="btn btn-sm btn-outline-primary">
+                    View All
+                </a>
+            </div>
+
+            <div class="widget-scroll">
+
+                {% for p in recent_prescriptions %}
+                <div class="rx-row">
+
+                    <div class="rx-init">
+                        {{ p.patient_name|first|upper }}
+                    </div>
+
+                    <div class="flex-grow-1 text-truncate">
+                        <div class="fw-semibold text-truncate">
+                            {{ p.patient_name }}
+                        </div>
+
+                        <div class="small text-muted">
+                            {{ p.diagnosis|default:"—" }}
+                            &nbsp;•&nbsp;
+                            {{ p.updated }}
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-1">
+                        {% if module_access.prescription == 'full' %}
+                        <a href="{% url 'prescription:detail' p.id %}"
+                           class="btn btn-sm btn-primary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        {% endif %}
+
+                        <a href="{% url 'prescription:print' p.id %}"
+                           class="btn btn-sm btn-outline-secondary"
+                           target="_blank">
+                            <i class="bi bi-printer"></i>
+                        </a>
+                    </div>
+
+                </div>
+                {% empty %}
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">
+                        No prescriptions available.
+                    </p>
+                </div>
+                {% endfor %}
+
+            </div>
+
+        </div>
+    </div>
+  {% endif %}
+
+</div>
+
+<!-- ===== Income Breakdown (Doctor Fees / Medicine / Room Charges by Category) ===== -->
+{% if module_access.income != 'none' %}
+<div class="row g-3 mb-3">
+  <div class="col-12">
+    <div class="widget-card">
+      <div class="widget-header">
+        <span class="widget-title"><i class="bi bi-bar-chart-line-fill text-success"></i> Income Breakdown</span>
+        <div class="filter-tabs" id="incomeBreakdownFilters">
+          <button class="active" data-range="today">Today</button>
+          <button data-range="week">Week</button>
+          <button data-range="month">Month</button>
+          <button data-range="year">Year</button>
+        </div>
+      </div>
+      <div class="row g-2 mb-3" id="incomeBreakdownSummary">
+        <div class="col-6 col-md-2">
+          <div class="p-2 rounded text-center" style="background:#eff6ff">
+            <div class="rev-num" style="color:#1e40af" id="ibDoctorFees">₹0</div>
+            <div class="rev-label">Doctor Fees</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="p-2 rounded text-center" style="background:#f0fdf4">
+            <div class="rev-num" style="color:#15803d" id="ibMedicine">₹0</div>
+            <div class="rev-label">Medicine Charges</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="p-2 rounded text-center" style="background:#fef2f2">
+            <div class="rev-num" style="color:#b91c1c" id="ibRoomTotal">₹0</div>
+            <div class="rev-label">Room Charges (All)</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="p-2 rounded text-center" style="background:#fff7ed">
+            <div class="rev-num" style="color:#c2410c" id="ibInvestigation">₹0</div>
+            <div class="rev-label">Investigations</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="p-2 rounded text-center" style="background:#faf5ff">
+            <div class="rev-num" style="color:#7c3aed" id="ibOther">₹0</div>
+            <div class="rev-label">Other Income</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="p-2 rounded text-center" style="background:#f8fafc;border:1px solid #e2e8f0">
+            <div class="rev-num" style="color:#0f172a" id="ibGrandTotal">₹0</div>
+            <div class="rev-label">Total Income</div>
+          </div>
+        </div>
+      </div>
+      <canvas id="incomeBreakdownChart" height="100"></canvas>
+      <div class="small text-muted mt-2 text-center">
+        Room charges are split by category (ICU / Private / General); any admission outside those
+        categories is grouped under "Other" so the total always reconciles with actual collections.
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ===== Notifications (disabled) + Emergency + Pharmacy Alerts ===== -->
+<div class="row g-3 mb-3">
+
+  <!-- Notifications (intentionally removed/disabled) -->
+
+  {% if module_access.ipd_list != 'none' %}
+  <!-- Emergency / ICU -->
+  <div class="col-lg-4">
+    <div class="widget-card">
+      <div class="widget-header">
+        <span class="widget-title"><i class="bi bi-heart-pulse-fill text-danger"></i> Emergency / ICU</span>
+        <a href="{% url 'ipd:patient_list' %}" class="btn btn-sm btn-outline-danger">View All</a>
+      </div>
+      <div class="widget-scroll">
+        {% for e in emergency_patients %}
+        <div class="appt-row" style="border-left-color:#ef4444">
+          <div class="appt-avatar" style="background:linear-gradient(135deg,#991b1b,#ef4444)">{{ e.name|first|upper }}</div>
+          <div>
+            <div class="appt-name">{{ e.name }}</div>
+            <div class="appt-doc"><i class="bi bi-clock text-muted"></i> Since {{ e.date }}</div>
+          </div>
+          <span class="badge bg-danger appt-badge ms-auto">ICU</span>
+        </div>
+        {% empty %}
+        <div class="text-muted text-center py-4 small">
+          <i class="bi bi-heart-pulse" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;opacity:0.3"></i>
+          No ICU admissions
+        </div>
+        {% endfor %}
+      </div>
+      {% if module_access.ipd_admission == 'full' %}
+      <a href="{% url 'ipd:admission' %}" class="btn btn-sm btn-outline-danger mt-2 w-100">
+        <i class="bi bi-plus-circle"></i> New IPD Admission
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if module_access.pharmacy != 'none' %}
+  <!-- Pharmacy Stock Alert -->
+  <div class="col-lg-4">
+    <div class="widget-card">
+      <div class="widget-header">
+        <span class="widget-title"><i class="bi bi-exclamation-triangle-fill text-danger"></i> Pharmacy Alerts</span>
+        <a href="{% url 'pharmacy:items' %}" class="btn btn-sm btn-outline-danger">Manage</a>
+      </div>
+      {% if low_stock_medicines %}
+      <div class="widget-scroll">
+        {% for m in low_stock_medicines %}
+        <div class="rx-row" style="border-left: 3px solid {% if m.urgency == 'critical' %}#ef4444{% else %}#f59e0b{% endif %}; border-radius: 0 6px 6px 0">
+          <div class="rx-init" style="background:{% if m.urgency == 'critical' %}#fee2e2{% else %}#fef3c7{% endif %};color:{% if m.urgency == 'critical' %}#dc2626{% else %}#d97706{% endif %}">
+            <i class="bi bi-capsule"></i>
+          </div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:0.82rem">{{ m.name }}</div>
+            <div style="font-size:0.7rem;color:#64748b">Stock: {{ m.stock }} {{ m.unit }} &nbsp;·&nbsp; Buffer: {{ m.buffer }}</div>
+          </div>
+          <span class="badge {% if m.urgency == 'critical' %}bg-danger{% else %}bg-warning text-dark{% endif %}" style="font-size:0.6rem">
+            {% if m.urgency == 'critical' %}Critical{% else %}Low{% endif %}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center py-4 small text-success">
+        <i class="bi bi-check-circle-fill" style="font-size:1.5rem;display:block;margin-bottom:0.5rem"></i>
+        All medicines above buffer
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ===== Required Medicines from Prescriptions ===== -->
+{% if required_medicines %}
+<div class="row g-3">
+  <div class="col-12">
+    <div class="widget-card">
+      <div class="widget-header">
+        <span class="widget-title"><i class="bi bi-capsule-pill text-primary"></i> Pending Prescription Medicines</span>
+        <a href="{% url 'pharmacy:items' %}" class="btn btn-sm btn-outline-primary">Pharmacy</a>
+      </div>
+      <div class="table-responsive">
+        <table class="hms-table">
+          <thead><tr><th>Patient</th><th>UHID</th><th>Medicine</th><th>Qty</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+          {% for r in required_medicines %}
+          <tr>
+            <td>{{ r.patient_name }}</td>
+            <td><small class="text-muted">{{ r.uhid }}</small></td>
+            <td><strong>{{ r.medicine }}</strong></td>
+            <td>{{ r.quantity }}</td>
+            <td>
+              <span class="badge {% if r.status == 'Low Stock — Reorder Required' %}bg-danger{% else %}bg-warning text-dark{% endif %}" style="font-size:0.65rem">
+                {{ r.status }}
+              </span>
+            </td>
+            <td class="text-nowrap">
+              <a href="{% url 'prescription:dispense' r.id %}" class="btn btn-sm btn-success">
+                <i class="bi bi-check2"></i> Dispense
+              </a>
+              <a href="{% url 'prescription:detail' r.visit_id %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-file-medical"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+window.DASHBOARD_API = "{% url 'api:dashboard_stats' %}";
+window.DASHBOARD_INCOME_BREAKDOWN_API = "{% url 'api:dashboard_income_breakdown' %}";
+
+// Income Breakdown widget (Doctor/Medicine/Room/Investigation/Other)
+(function() {
+  function money(v) {
+    var n = Number(v || 0);
+    return '₹' + n.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 0 });
+  }
+
+  function setText(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = money(value);
+  }
+
+  function updateSummary(data) {
+    setText('ibDoctorFees', data.doctor_fees);
+    setText('ibMedicine', data.medicine_charges);
+    setText('ibRoomTotal', data.room_charges_total);
+    setText('ibInvestigation', data.investigation_charges);
+    setText('ibOther', data.other_income);
+    setText('ibGrandTotal', data.total);
+  }
+
+  var chart = null;
+  function renderChart(values) {
+    var canvas = document.getElementById('incomeBreakdownChart');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+
+    var labels = values.labels || [
+      'Doctor Fees', 'Medicine Charges',
+      'Room Charges (ICU)', 'Room Charges (Private)', 'Room Charges (General)', 'Room Charges (Other)',
+      'Investigations', 'Other Income'
+    ];
+    var dataValues = values.values || [0,0,0,0,0,0,0,0];
+
+    var colors = [
+      '#1e40af', '#15803d', '#b91c1c', '#c2410c', '#7c3aed', '#7c3aed', '#0f172a', '#7c3aed'
+    ];
+
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Income',
+          data: dataValues,
+          backgroundColor: colors,
+          borderWidth: 0,
+          borderRadius: 6,
+          barPercentage: 0.85,
+          categoryPercentage: 0.8,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                var v = ctx.parsed && (ctx.parsed.y ?? ctx.parsed) ? ctx.parsed.y : ctx.raw;
+                return money(v);
+              }
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { maxRotation: 0, autoSkip: false, font: { size: 10 } } },
+          y: { beginAtZero: true, ticks: { callback: function(val) { return '₹' + val; } } }
+        },
+      }
+    });
+  }
+
+  function load(range) {
+    if (!window.DASHBOARD_INCOME_BREAKDOWN_API) return;
+    var url = window.DASHBOARD_INCOME_BREAKDOWN_API + '?range=' + encodeURIComponent(range);
+    fetch(url, { credentials: 'same-origin' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || data.error) return;
+        updateSummary(data);
+        renderChart(data);
+      })
+      .catch(function() {
+        // keep defaults
+      });
+  }
+
+  // bind filters
+  var root = document.getElementById('incomeBreakdownFilters');
+  if (root) {
+    root.addEventListener('click', function(e) {
+      var btn = e.target && e.target.closest ? e.target.closest('button[data-range]') : null;
+      if (!btn) return;
+(function() {
+  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function tick() {
+    var now = new Date();
+    var h = String(now.getHours()).padStart(2,'0');
+    var m = String(now.getMinutes()).padStart(2,'0');
+    var s = String(now.getSeconds()).padStart(2,'0');
+    var el = document.getElementById('liveTime');
+    var del = document.getElementById('liveDate');
+    if (el) el.textContent = h + ':' + m + ':' + s;
+    if (del) del.textContent = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+
+// Occupancy % label
+(function() {
+  var pctEl = document.getElementById('occupancyPct');
+  var fillEl = document.getElementById('occupancyFill');
+  if (pctEl && fillEl) {
+    var w = parseFloat(fillEl.style.width) || 0;
+    pctEl.textContent = Math.round(w) + '%';
+  }
+})();
+</script>
+{% endblock %}

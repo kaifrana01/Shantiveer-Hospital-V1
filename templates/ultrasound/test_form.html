@@ -1,0 +1,38 @@
+{% extends 'ultrasound/base_ultrasound.html' %}
+{% block title %}{{ action }} Test — Ultrasound{% endblock %}
+{% block page_title %}{{ action }} Ultrasound Test{% endblock %}
+
+{% block content %}
+{% if messages %}
+  {% for msg in messages %}
+    <div class="usg-alert usg-alert-{{ msg.tags }}">{{ msg }}</div>
+  {% endfor %}
+{% endif %}
+
+<div class="usg-card" style="max-width:480px;">
+  <div class="usg-card-header">
+    <div class="usg-card-title"><i class="bi bi-activity"></i> {{ action }} Test</div>
+  </div>
+  <div class="usg-card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="usg-form-group">
+        <label>Test Name *</label>
+        <input type="text" name="name" value="{{ obj.name|default:'' }}" required
+               placeholder="e.g. USG Whole Abdomen" />
+      </div>
+      <div class="usg-form-group">
+        <label>Standard Rate (₹) *</label>
+        <input type="number" name="rate" value="{{ obj.rate|default:'' }}" step="0.01" min="0" required
+               placeholder="e.g. 500" />
+      </div>
+      <div style="display:flex;gap:10px;margin-top:6px;">
+        <button type="submit" class="btn-usg-primary">
+          <i class="bi bi-check2"></i> {{ action }}
+        </button>
+        <a href="{% url 'ultrasound:test_list' %}" class="btn-usg-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

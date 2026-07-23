@@ -1,0 +1,39 @@
+/* ShantiVeer HMS — Design tokens (mirrors :root in main.css) */
+:root {
+    --brand-navy:     #0f2244;
+    --brand-teal:     #0e7490;
+    --brand-teal-lt:  #cffafe;
+    --accent-gold:    #b45309;
+    --accent-gold-lt: #fbbf24;
+
+    /* legacy aliases */
+    --navy:           #0f2244;
+    --navy-light:     #1a3560;
+    --cyan:           #0e7490;
+    --cyan-dark:      #0c6480;
+    --primary-blue:   #0e7490;
+    --header-cyan:    #0e7490;
+    --green-header:   #2e7d32;
+    --green-btn:      #4caf50;
+    --ipd-nav:        #0f2244;
+
+    --bg-light:    #f8fafc;
+    --surface:     #f8fafc;
+    --surface-alt: #f0f9ff;
+    --card-white:  #ffffff;
+
+    --text-dark:    #0f172a;
+    --text-primary: #0f172a;
+    --text-muted:   #64748b;
+
+    --border:        #e2e8f0;
+    --border-strong: #94a3b8;
+
+    --danger:     #b91c1c;
+    --danger-bg:  #fef2f2;
+    --warning:    #d97706;
+    --success:    #15803d;
+    --success-bg: #f0fdf4;
+
+    --sidebar-width: 240px;
+}

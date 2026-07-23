@@ -1,0 +1,449 @@
+{% extends 'base_ipd.html' %}
+{% block title %}IPD Payment{% endblock %}
+{% block page_title %}IPD Payment{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Design tokens (match bill page) ── */
+  :root {
+    --navy:       #0f2244;
+    --teal:       #0e7490;
+    --teal-lt:    #e0f7fa;
+    --teal-mid:   #b2ebf2;
+    --gold:       #b45309;
+    --surface:    #f8fafc;
+    --surface-2:  #f0f9ff;
+    --border:     #e2e8f0;
+    --border-hi:  #94a3b8;
+    --text:       #0f172a;
+    --text-muted: #64748b;
+    --green:      #15803d;
+    --green-bg:   #f0fdf4;
+    --red:        #b91c1c;
+    --red-bg:     #fef2f2;
+    --radius:     10px;
+  }
+
+  .page-container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+
+  /* ── Card shell ── */
+  .form-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(15,34,68,.08), 0 1px 4px rgba(15,34,68,.04);
+  }
+
+  /* ── Page header band ── */
+  .pay-header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--teal) 100%);
+    padding: 1.4rem 2rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+  }
+  .pay-header::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--gold), #fbbf24, var(--gold));
+  }
+  .pay-header-icon {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; color: #fff; flex-shrink: 0;
+  }
+  .pay-header h2 {
+    margin: 0; font-size: 1.15rem; font-weight: 700; color: #fff; letter-spacing: .01em;
+  }
+  .pay-header p {
+    margin: .1rem 0 0; font-size: .78rem; color: rgba(255,255,255,.7); letter-spacing: .03em;
+  }
+
+  /* ── Body ── */
+  .pay-body { padding: 1.8rem 2rem; }
+
+  /* ── Step label ── */
+  .step-label {
+    font-size: .68rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--teal);
+    display: flex; align-items: center; gap: .45rem;
+    margin-bottom: 1rem;
+  }
+  .step-label::before {
+    content: '';
+    display: block; width: 3px; height: 1em;
+    background: var(--teal); border-radius: 2px;
+  }
+
+  /* ── Field grid ── */
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr 1fr 1fr;
+    gap: .9rem;
+    margin-bottom: 1.2rem;
+  }
+  .field-grid.remarks-row { grid-template-columns: 1fr 1fr; }
+
+  .field-wrap { display: flex; flex-direction: column; gap: .3rem; }
+  .field-label {
+    font-size: .68rem; font-weight: 700;
+    letter-spacing: .05em; text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  input.f-input,
+  select.f-input {
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: .55rem .8rem;
+    font-size: .9rem;
+    color: var(--text);
+    background: #fff;
+    width: 100%;
+    outline: none;
+    transition: border-color .18s, box-shadow .18s;
+    appearance: none;
+  }
+  input.f-input:focus,
+  select.f-input:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(14,116,144,.13);
+  }
+  input.f-input[readonly] { background: var(--surface); color: var(--text-muted); cursor: default; }
+
+  /* Amount field highlight */
+  #paymentAmount {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--navy);
+    border-color: var(--teal-mid);
+    background: var(--surface-2);
+  }
+  #paymentAmount:focus { border-color: var(--teal); }
+
+  /* ── UPI panel ── */
+  .upi-panel {
+    display: none;
+    background: var(--surface-2);
+    border: 1.5px solid var(--teal-mid);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 1.2rem;
+    gap: 1.4rem;
+    align-items: flex-start;
+  }
+  .upi-panel.visible { display: flex; }
+
+  .upi-qr-box {
+    width: 160px; height: 160px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; flex-shrink: 0;
+  }
+  .upi-qr-box img { width: 100%; height: 100%; object-fit: contain; }
+
+  .upi-info { flex: 1; }
+  .upi-info .upi-id-badge {
+    display: inline-flex; align-items: center; gap: .4rem;
+    background: var(--navy); color: #fff;
+    border-radius: 6px; padding: .3rem .75rem;
+    font-size: .8rem; font-weight: 600;
+    letter-spacing: .02em; margin-bottom: .65rem;
+  }
+  .upi-amount-display {
+    font-size: 1.5rem; font-weight: 800;
+    color: var(--navy); margin-bottom: .3rem;
+  }
+  .upi-amount-display span { font-size: .85rem; font-weight: 500; color: var(--text-muted); }
+  .upi-hint { font-size: .78rem; color: var(--text-muted); }
+
+  /* ── Save button ── */
+  .btn-save {
+    background: var(--teal);
+    color: #fff; border: none;
+    border-radius: 9px;
+    padding: .65rem 2rem;
+    font-size: .95rem; font-weight: 700;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: .45rem;
+    transition: background .18s, transform .1s, box-shadow .18s;
+    box-shadow: 0 2px 8px rgba(14,116,144,.25);
+  }
+  .btn-save:hover  { background: #0c6480; box-shadow: 0 4px 16px rgba(14,116,144,.3); }
+  .btn-save:active { transform: scale(.97); }
+
+  /* ── Toast notification ── */
+  #pay-toast {
+    position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999;
+    background: var(--green); color: #fff;
+    border-radius: 10px; padding: .8rem 1.3rem;
+    font-size: .88rem; font-weight: 600;
+    display: flex; align-items: center; gap: .55rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,.18);
+    opacity: 0; transform: translateY(12px);
+    transition: opacity .3s, transform .3s;
+    pointer-events: none;
+  }
+  #pay-toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── Divider ── */
+  .section-divider {
+    border: none; border-top: 1px solid var(--border);
+    margin: 1.6rem 0;
+  }
+
+  /* ── Recent payments table ── */
+  .section-heading {
+    font-size: .68rem; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--navy);
+    display: flex; align-items: center; gap: .45rem;
+    margin-bottom: .9rem;
+  }
+  .section-heading::before {
+    content: ''; display: block;
+    width: 3px; height: 1em;
+    background: var(--navy); border-radius: 2px;
+  }
+
+  .hms-table {
+    width: 100%;
+    border-collapse: separate; border-spacing: 0;
+    font-size: .85rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .hms-table thead tr { background: var(--navy); }
+  .hms-table thead th {
+    padding: .65rem 1rem;
+    color: #fff;
+    font-size: .68rem; font-weight: 700;
+    letter-spacing: .06em; text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .hms-table tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
+  .hms-table tbody tr:last-child { border-bottom: none; }
+  .hms-table tbody tr:nth-child(even) { background: var(--surface); }
+  .hms-table tbody tr:hover { background: var(--surface-2); }
+  .hms-table td { padding: .6rem 1rem; color: var(--text); vertical-align: middle; }
+
+  .mode-chip {
+    display: inline-block;
+    padding: .18rem .55rem;
+    border-radius: 20px;
+    font-size: .68rem; font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase;
+  }
+  .mode-cash { background: #dcfce7; color: #15803d; }
+  .mode-upi  { background: #dbeafe; color: #1d4ed8; }
+  .mode-card { background: #f3e8ff; color: #7e22ce; }
+
+  .text-end { text-align: right; }
+  .text-muted { color: var(--text-muted); }
+  .empty-row td { text-align: center; padding: 1.4rem; color: var(--text-muted); font-size: .85rem; }
+
+  @media (max-width: 640px) {
+    .pay-body { padding: 1.2rem 1rem; }
+    .field-grid { grid-template-columns: 1fr 1fr; }
+    .field-grid.remarks-row { grid-template-columns: 1fr; }
+    .upi-panel { flex-direction: column; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+  <div class="form-card">
+
+    <!-- Header -->
+    <div class="pay-header">
+      <div class="pay-header-icon"><i class="bi bi-credit-card-2-front-fill"></i></div>
+      <div>
+        <h2>Collect IPD Payment</h2>
+        <p>Shanti Veer Charitable Hospital &nbsp;·&nbsp; In-Patient Department</p>
+      </div>
+    </div>
+
+    <div class="pay-body">
+
+      <!-- Payment form -->
+      <div class="step-label">Payment Details</div>
+
+      <form method="post" id="payForm">{% csrf_token %}
+
+        <!-- Row 1: IPD No / Patient / Amount / Mode -->
+        <div class="field-grid">
+          <div class="field-wrap">
+            <label class="field-label" for="ipdNoInput">IPD No</label>
+            <input id="ipdNoInput" name="ipd_no" class="f-input" placeholder="e.g. IPD101" required autocomplete="off">
+          </div>
+          <div class="field-wrap">
+            <label class="field-label" for="patientNameInput">Patient Name</label>
+            <input id="patientNameInput" name="patient_name" class="f-input" placeholder="Auto-filled" readonly>
+          </div>
+          <div class="field-wrap">
+            <label class="field-label" for="paymentAmount">Amount (₹)</label>
+            <input id="paymentAmount" name="amount" type="number" step="0.01" min="0"
+                   class="f-input" placeholder="0.00" required>
+          </div>
+          <div class="field-wrap">
+            <label class="field-label" for="modeSelect">Payment Mode</label>
+            <select id="modeSelect" name="mode" class="f-input">
+              <option value="Cash">💵 Cash</option>
+              <option value="UPI">📲 UPI</option>
+              <option value="Card">💳 Card</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Row 2: Remarks -->
+        <div class="field-grid remarks-row">
+          <div class="field-wrap">
+            <label class="field-label" for="remarksField">Remarks (optional)</label>
+            <input id="remarksField" name="remarks" class="f-input" placeholder="e.g. Advance, Discharge settlement…">
+          </div>
+        </div>
+
+        <!-- UPI panel (shown only when UPI mode selected) -->
+        <div class="upi-panel" id="upiPanel">
+          <div class="upi-qr-box" id="upiQrBox">
+            <img src="/static/img/QR%20code.png" alt="UPI QR Code">
+          </div>
+          <div class="upi-info">
+            <div class="upi-id-badge">
+              <i class="bi bi-upc-scan"></i>
+              <span id="upiIdDisplay">kaif.rajput@ptsbi</span>
+            </div>
+            <div class="upi-amount-display" id="upiAmountDisplay">
+              ₹<span id="upiAmountVal">—</span>
+              <span>to pay</span>
+            </div>
+            <div class="upi-hint">Ask patient to scan the QR or use the UPI ID above.<br>Confirm payment before clicking Save.</div>
+            <input type="hidden" name="upi_id" id="upiIdHidden" value="kaif.rajput@ptsbi">
+          </div>
+        </div>
+
+        <button type="submit" class="btn-save">
+          <i class="bi bi-check-circle-fill"></i> Save Payment
+        </button>
+      </form>
+
+      <hr class="section-divider">
+
+      <!-- Recent payments -->
+      <div class="section-heading">Recent Payments</div>
+      <table class="hms-table">
+        <thead>
+          <tr>
+            <th>IPD No</th>
+            <th>Patient</th>
+            <th class="text-end">Amount</th>
+            <th>Mode</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td><strong>{{ p.ipd_no }}</strong></td>
+            <td>{{ p.name }}</td>
+            <td class="text-end" style="font-weight:600;">₹{{ p.amount }}</td>
+            <td>
+              <span class="mode-chip mode-{{ p.mode|lower }}">{{ p.mode }}</span>
+            </td>
+            <td class="text-muted">{{ p.date }}</td>
+          </tr>
+          {% empty %}
+          <tr class="empty-row"><td colspan="5">No payments recorded yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    </div><!-- /pay-body -->
+  </div><!-- /form-card -->
+</div>
+
+<!-- Toast -->
+<div id="pay-toast">
+  <i class="bi bi-check-circle-fill"></i>
+  <span>Payment saved successfully.</span>
+</div>
+
+<script>
+(function () {
+  const form        = document.getElementById('payForm');
+  const ipdInput    = document.getElementById('ipdNoInput');
+  const nameInput   = document.getElementById('patientNameInput');
+  const amtInput    = document.getElementById('paymentAmount');
+  const modeSelect  = document.getElementById('modeSelect');
+  const upiPanel    = document.getElementById('upiPanel');
+  const upiAmtVal   = document.getElementById('upiAmountVal');
+  const toast       = document.getElementById('pay-toast');
+
+  // ── Fetch bill total when IPD No is entered ──
+  let fetchTimer;
+  async function fetchTotal() {
+    const ipd = (ipdInput.value || '').trim();
+    if (!ipd) return;
+    try {
+      const res  = await fetch(`{% url 'ipd:payment_total' %}?ipd_no=${encodeURIComponent(ipd)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.total     !== undefined) amtInput.value  = data.total;
+      if (data.patient_name)            nameInput.value = data.patient_name;
+      updateUpiAmount();
+    } catch (_) {}
+  }
+
+  ipdInput.addEventListener('blur', fetchTotal);
+  ipdInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); fetchTotal(); } });
+  ipdInput.addEventListener('input',   () => { clearTimeout(fetchTimer); fetchTimer = setTimeout(fetchTotal, 600); });
+
+  // ── UPI panel toggle ──
+  function updateUpiPanel() {
+    const isUpi = modeSelect.value === 'UPI';
+    upiPanel.classList.toggle('visible', isUpi);
+    if (isUpi) updateUpiAmount();
+  }
+
+  function updateUpiAmount() {
+    const amt = (amtInput.value || '').trim();
+    upiAmtVal.textContent = amt ? parseFloat(amt).toLocaleString('en-IN') : '—';
+  }
+
+  // Ensure hidden input always matches displayed UPI details
+  function syncUpiIdHidden() {
+    const hidden = document.getElementById('upiIdHidden');
+    const display = document.getElementById('upiIdDisplay');
+    if (hidden && display) hidden.value = (display.textContent || '').trim();
+  }
+
+  modeSelect.addEventListener('change', updateUpiPanel);
+  syncUpiIdHidden();
+  amtInput.addEventListener('input', () => {
+    if (modeSelect.value === 'UPI') updateUpiAmount();
+  });
+
+  // ── Toast on submit ──
+  form.addEventListener('submit', () => {
+    setTimeout(() => {
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }, 200);
+  });
+
+  // Init
+  updateUpiPanel();
+  syncUpiIdHidden();
+})();
+</script>
+{% endblock %}
+

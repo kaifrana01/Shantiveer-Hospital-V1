@@ -1,0 +1,27 @@
+{% comment %} {% extends 'base_dashboard.html' %}
+{% block page_title %}Notifications{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0"><i class="bi bi-bell"></i> All Notifications</h5>
+    <a href="{% url 'core:notifications_read_all' %}" class="btn btn-sm btn-outline-primary">Mark All Read</a>
+</div>
+<div class="widget-card">
+    {% for n in notifications %}
+    <div class="notification-item {% if not n.is_read %}unread{% endif %} d-flex justify-content-between align-items-start py-3 border-bottom">
+        <div>
+            <span class="badge {% if n.notification_type == 'pharmacy_low' %}bg-danger{% elif n.notification_type == 'prescription_required' %}bg-warning text-dark{% else %}bg-secondary{% endif %} me-2">
+                {{ n.get_notification_type_display }}
+            </span>
+            <strong>{{ n.title }}</strong>
+            <p class="text-muted small mb-0 mt-1">{{ n.message }}</p>
+            <small class="text-muted">{{ n.created_at|timesince }} ago</small>
+        </div>
+        {% if not n.is_read %}
+        <a href="{% url 'core:notification_read' n.pk %}" class="btn btn-sm btn-primary">View</a>
+        {% endif %}
+    </div>
+    {% empty %}
+    <p class="text-muted text-center py-4">No notifications.</p>
+    {% endfor %}
+</div>
+{% endblock %} {% endcomment %}

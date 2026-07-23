@@ -1,0 +1,319 @@
+{% extends 'ultrasound/base_ultrasound.html' %}
+{% block title %}Ultrasound Dashboard — ShantiVeer{% endblock %}
+{% block page_title %}Ultrasound Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ── KPI Row ── -->
+<div class="usg-kpi-grid">
+  <div class="usg-kpi kpi-teal">
+    <i class="bi bi-currency-rupee kpi-icon"></i>
+    <label>Today's Income</label>
+    <div class="val">₹{{ today_income|floatformat:0 }}</div>
+    <div class="sub">{{ today_count }} bill{{ today_count|pluralize }} today</div>
+  </div>
+  <div class="usg-kpi kpi-red">
+    <i class="bi bi-wallet2 kpi-icon"></i>
+    <label>Today's Expenses</label>
+    <div class="val">₹{{ today_expenses|floatformat:0 }}</div>
+    <div class="sub">Ultrasound dept costs</div>
+  </div>
+  <div class="usg-kpi {% if today_net >= 0 %}kpi-green{% else %}kpi-red{% endif %}">
+    <i class="bi bi-graph-up kpi-icon"></i>
+    <label>Today's Net</label>
+    <div class="val">₹{{ today_net|floatformat:0 }}</div>
+    <div class="sub">Income – Expenses</div>
+  </div>
+  <div class="usg-kpi kpi-indigo">
+    <i class="bi bi-calendar-month kpi-icon"></i>
+    <label>Month Income</label>
+    <div class="val">₹{{ month_income|floatformat:0 }}</div>
+    <div class="sub">{{ month_count }} bill{{ month_count|pluralize }} this month</div>
+  </div>
+  <div class="usg-kpi kpi-purple">
+    <i class="bi bi-receipt kpi-icon"></i>
+    <label>Month Expenses</label>
+    <div class="val">₹{{ month_expenses|floatformat:0 }}</div>
+    <div class="sub">Running costs</div>
+  </div>
+  <div class="usg-kpi {% if month_net >= 0 %}kpi-navy{% else %}kpi-red{% endif %}">
+    <i class="bi bi-piggy-bank kpi-icon"></i>
+    <label>Month Net Profit</label>
+    <div class="val">₹{{ month_net|floatformat:0 }}</div>
+    <div class="sub">After all deductions</div>
+  </div>
+</div>
+
+<!-- ── Charts Row ── -->
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">
+
+  <!-- Daily Income vs Expenses (30 days) -->
+  <div class="usg-card">
+    <div class="usg-card-header">
+      <div class="usg-card-title"><i class="bi bi-bar-chart-line"></i> Daily Income vs Expenses (Last 30 Days)</div>
+      <div style="display:flex;gap:14px;font-size:0.75rem;color:var(--usg-muted)">
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#0d9488;margin-right:4px;"></span>Income</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#ef4444;margin-right:4px;"></span>Expenses</span>
+      </div>
+    </div>
+    <div class="usg-card-body">
+      <div class="usg-chart-box"><canvas id="dailyChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Payment Mode Pie -->
+  <div class="usg-card">
+    <div class="usg-card-header">
+      <div class="usg-card-title"><i class="bi bi-pie-chart"></i> Payment Mode (This Month)</div>
+    </div>
+    <div class="usg-card-body">
+      <div style="position:relative;height:220px;display:flex;align-items:center;justify-content:center;">
+        <canvas id="paymentChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Monthly Trend + Expense Breakdown Row ── -->
+<div style="display:grid;grid-template-columns:3fr 2fr;gap:16px;margin-bottom:16px;">
+
+  <!-- Monthly Trend -->
+  <div class="usg-card">
+    <div class="usg-card-header">
+      <div class="usg-card-title"><i class="bi bi-graph-up-arrow"></i> Monthly Income & Expenses Trend</div>
+    </div>
+    <div class="usg-card-body">
+      <div class="usg-chart-box"><canvas id="monthlyChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Expense by Category -->
+  <div class="usg-card">
+    <div class="usg-card-header">
+      <div class="usg-card-title"><i class="bi bi-tags"></i> Expense by Category (This Month)</div>
+    </div>
+    <div class="usg-card-body" style="padding-top:12px;">
+      {% if exp_by_cat %}
+        {% for exp in exp_by_cat %}
+          <div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:3px;">
+              <span style="font-weight:600;text-transform:capitalize;">{{ exp.category }}</span>
+              <span style="color:var(--usg-muted);">₹{{ exp.total|floatformat:0 }}</span>
+            </div>
+            <div style="height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;">
+              <div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#0d9488,#4f46e5);width:{% widthratio exp.total month_expenses 100 %}%;"></div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center;color:var(--usg-muted);padding:30px 0;font-size:0.85rem;">No expenses recorded this month</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Bottom row: Test Stats + Recent Bills ── -->
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;">
+
+  <!-- Popular Tests -->
+  <div class="usg-card">
+    <div class="usg-card-header">
+      <div class="usg-card-title"><i class="bi bi-trophy"></i> Top Tests (All Time)</div>
+    </div>
+    <div class="usg-card-body" style="padding:0;">
+      <div class="usg-table-wrap">
+        <table class="usg-table">
+          <thead><tr><th>Test</th><th>Count</th><th>Revenue</th></tr></thead>
+          <tbody>
+            {% for t in test_stats %}
+              <tr>
+                <td style="font-weight:600;">{{ t.test__name }}</td>
+                <td><span class="badge-teal">{{ t.count }}</span></td>
+                <td style="color:#059669;font-weight:600;">₹{{ t.revenue|floatformat:0 }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" style="text-align:center;color:var(--usg-muted);padding:20px;">No data yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Bills -->
+  <div class="usg-card">
+    <div class="usg-card-header">
+      <div class="usg-card-title"><i class="bi bi-clock-history"></i> Recent Bills</div>
+      <a href="{% url 'ultrasound:patient_list' %}" class="btn-usg-outline btn-usg-sm">View All</a>
+    </div>
+    <div class="usg-card-body" style="padding:0;">
+      <div class="usg-table-wrap">
+        <table class="usg-table">
+          <thead>
+            <tr><th>Bill No</th><th>Patient</th><th>Tests</th><th>Amount</th><th>Date</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for b in recent_bills %}
+              <tr>
+                <td><span class="badge-indigo">{{ b.bill_no }}</span></td>
+                <td style="font-weight:600;">{{ b.patient_name }}</td>
+                <td style="color:var(--usg-muted);font-size:0.78rem;">
+                  {{ b.items.all|length }} test{{ b.items.all|length|pluralize }}
+                </td>
+                <td style="color:#059669;font-weight:700;">₹{{ b.total }}</td>
+                <td style="color:var(--usg-muted);">{{ b.test_date }}</td>
+                <td>
+                  <a href="{% url 'ultrasound:ultrasound_view_report' b.pk %}" class="btn-usg-outline btn-usg-sm">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" style="text-align:center;color:var(--usg-muted);padding:24px;">No bills yet. <a href="{% url 'ultrasound:ultrasound_investigation' %}">Create first bill</a></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Action FAB -->
+<a href="{% url 'ultrasound:ultrasound_investigation' %}" 
+   style="position:fixed;bottom:28px;right:28px;background:linear-gradient(135deg,#0d9488,#4f46e5);color:#fff;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;box-shadow:0 6px 20px rgba(13,148,136,0.45);text-decoration:none;transition:all 0.2s;z-index:200;"
+   title="New Bill"
+   onmouseover="this.style.transform='scale(1.1)'"
+   onmouseout="this.style.transform='scale(1)'">
+  <i class="bi bi-plus-lg"></i>
+</a>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const daily_labels   = {{ chart_labels|safe }};
+  const daily_income   = {{ chart_income|safe }};
+  const daily_expenses = {{ chart_expenses|safe }};
+  const monthly_labels   = {{ monthly_chart_labels|safe }};
+  const monthly_income   = {{ monthly_chart_income|safe }};
+  const monthly_expenses = {{ monthly_chart_expenses|safe }};
+  const pay_dist = {{ payment_dist|default:'[]'|safe }};
+
+  // ── Shared chart defaults ──
+  Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+  Chart.defaults.font.size = 11;
+
+  // ── Daily Bar Chart ──
+  new Chart(document.getElementById('dailyChart'), {
+    type: 'bar',
+    data: {
+      labels: daily_labels,
+      datasets: [
+        {
+          label: 'Income',
+          data: daily_income,
+          backgroundColor: 'rgba(13,148,136,0.75)',
+          borderRadius: 4,
+          borderSkipped: false,
+        },
+        {
+          label: 'Expenses',
+          data: daily_expenses,
+          backgroundColor: 'rgba(239,68,68,0.65)',
+          borderRadius: 4,
+          borderSkipped: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } },
+        y: { grid: { color: '#f1f5f9' }, ticks: { callback: v => '₹' + v } }
+      }
+    }
+  });
+
+  // ── Payment Mode Doughnut ──
+  if (pay_dist.length) {
+    const payLabels = pay_dist.map(p => p.payment_mode);
+    const payData   = pay_dist.map(p => parseFloat(p.total));
+    new Chart(document.getElementById('paymentChart'), {
+      type: 'doughnut',
+      data: {
+        labels: payLabels,
+        datasets: [{
+          data: payData,
+          backgroundColor: ['#0d9488','#4f46e5','#7c3aed'],
+          borderWidth: 2,
+          borderColor: '#fff',
+          hoverOffset: 6,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 14, font: { size: 11 } } },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ₹${parseFloat(ctx.parsed).toLocaleString('en-IN')}`
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // ── Monthly Line Chart ──
+  new Chart(document.getElementById('monthlyChart'), {
+    type: 'line',
+    data: {
+      labels: monthly_labels,
+      datasets: [
+        {
+          label: 'Income',
+          data: monthly_income,
+          borderColor: '#0d9488',
+          backgroundColor: 'rgba(13,148,136,0.1)',
+          pointBackgroundColor: '#0d9488',
+          pointRadius: 4,
+          tension: 0.4,
+          fill: true,
+        },
+        {
+          label: 'Expenses',
+          data: monthly_expenses,
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239,68,68,0.07)',
+          pointBackgroundColor: '#ef4444',
+          pointRadius: 4,
+          tension: 0.4,
+          fill: true,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { padding: 14 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ₹${parseFloat(ctx.parsed.y).toLocaleString('en-IN')}`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: '#f1f5f9' }, ticks: { callback: v => '₹' + v } }
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

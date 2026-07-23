@@ -1,0 +1,248 @@
+{% load static %}
+{% load group_tags %}
+<aside class="dash-sidebar" id="dashSidebar">
+
+  {# ── Brand ── #}
+  <a href="{% url 'core:dashboard' %}" class="dash-sidebar-brand text-decoration-none" style="color:inherit">
+    <img src="{% static 'img/logo.jpeg' %}" alt="ShantiVeer" class="logo-icon" style="border-radius:50%;object-fit:cover">
+    <div>
+      <strong>SHANTIVEER</strong><br>
+      <small style="opacity:.7;font-size:.7rem">{{ user_role_label|default:"HOSPITAL"|upper }}</small>
+    </div>
+  </a>
+
+  {# ── Role badge strip ── #}
+  <div class="role-strip" id="roleBadgeStrip">
+    <span class="rs-badge rs-{{ user_role|default:'admin'|lower }}">
+      <i class="bi {{ user_role_icon|default:'bi-shield-check' }}"></i> {{ user_role_label|default:"Administrator" }}
+    </span>
+  </div>
+
+  <nav class="dash-sidebar-nav">
+
+    <div class="dash-sidebar-section">Overview</div>
+    <a href="{% url 'core:dashboard' %}" class="{% if active_sidebar == 'dashboard' %}active{% endif %}">
+      <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+
+    {% if module_access.uhid != 'none' %}
+    <a href="{% url 'uhid:update' %}" class="{% if active_sidebar == 'uhid' %}active{% endif %}">
+      <i class="bi bi-person-badge"></i> UHID Registration
+      {% if module_access.uhid == 'view' %}<span class="badge-view">View</span>{% endif %}
+    </a>
+    {% endif %}
+
+    {% if module_access.opd_registration != 'none' or module_access.opd_list != 'none' %}
+    <div class="dash-sidebar-section">Patient Care</div>
+    {% endif %}
+
+    {% if module_access.opd_registration != 'none' %}
+    <a href="{% url 'opd:registration' %}" class="{% if active_sidebar == 'opd' %}active{% endif %}">
+      <i class="bi bi-clock-history"></i> OPD Registration
+      {% if module_access.opd_registration == 'view' %}<span class="badge-view">View</span>{% endif %}
+    </a>
+    {% if module_access.prescription != 'none' %}
+    <a href="{% url 'prescription:list' %}" class="{% if active_sidebar == 'prescription' %}active{% endif %}">
+      <i class="bi bi-file-medical"></i> OPD Patient List
+      {% if module_access.prescription == 'view' %}<span class="badge-view">View</span>{% endif %}
+    </a>
+    {% endif %}
+    {% endif %}
+
+
+    {% if module_access.ipd_admission != 'none' or module_access.ipd_list != 'none' or module_access.billing_collect != 'none' or module_access.patient_bill != 'none' or module_access.discharge != 'none' %}
+    {# IPD collapsible #}
+    <a class="sidebar-collapse-toggle {% if active_sidebar == 'ipd' or active_sidebar == 'ipd_admission' or active_sidebar == 'ipd_payment' or active_sidebar == 'ipd_bill' or active_sidebar == 'ipd_discharge' %}active open{% endif %}"
+       data-bs-toggle="collapse" href="#ipdSubmenu" role="button"
+       aria-expanded="{% if active_sidebar == 'ipd' or active_sidebar == 'ipd_admission' or active_sidebar == 'ipd_payment' or active_sidebar == 'ipd_bill' or active_sidebar == 'ipd_discharge' %}true{% else %}false{% endif %}">
+      <i class="bi bi-hospital"></i> IPD
+      <i class="bi bi-chevron-right sidebar-arrow ms-auto"></i>
+    </a>
+    <div class="collapse {% if active_sidebar == 'ipd' or active_sidebar == 'ipd_admission' or active_sidebar == 'ipd_payment' or active_sidebar == 'ipd_bill' or active_sidebar == 'ipd_discharge' %}show{% endif %}" id="ipdSubmenu">
+      {% if module_access.ipd_admission != 'none' %}
+      <a href="{% url 'ipd:admission' %}" class="sidebar-sub {% if active_sidebar == 'ipd_admission' %}active{% endif %}">
+        <i class="bi bi-file-earmark-plus"></i> Admission
+        {% if module_access.ipd_admission == 'view' %}<span class="badge-view">View</span>{% endif %}
+      </a>
+      {% endif %}
+      {% if module_access.ipd_list != 'none' %}
+      <a href="{% url 'ipd:patient_list' %}" class="sidebar-sub {% if active_sidebar == 'ipd' %}active{% endif %}">
+        <i class="bi bi-people"></i> Patient List
+        {% if module_access.ipd_list == 'view' %}<span class="badge-view">View</span>{% endif %}
+      </a>
+      {% endif %}
+      {% if module_access.billing_collect != 'none' %}
+      <a href="{% url 'ipd:payment' %}" class="sidebar-sub {% if active_sidebar == 'ipd_payment' %}active{% endif %}">
+        <i class="bi bi-credit-card"></i> Collect Payment
+      </a>
+      {% endif %}
+      {% if module_access.patient_bill != 'none' %}
+      <a href="{% url 'ipd:bill' %}" class="sidebar-sub {% if active_sidebar == 'ipd_bill' %}active{% endif %}">
+        <i class="bi bi-receipt"></i> Patient Bill
+        {% if module_access.patient_bill == 'view' %}<span class="badge-view">View</span>{% endif %}
+      </a>
+      {% endif %}
+      {% if module_access.discharge != 'none' %}
+      <a href="{% url 'ipd:discharge_list' %}" class="sidebar-sub {% if active_sidebar == 'ipd_discharge' %}active{% endif %}">
+        <i class="bi bi-box-arrow-right"></i> Discharge
+        {% if module_access.discharge == 'view' %}<span class="badge-view">View</span>{% endif %}
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if module_access.lab != 'none' or module_access.ultrasound != 'none' or module_access.pharmacy != 'none' or module_access.prescription != 'none' %}
+    <div class="dash-sidebar-section">Clinical</div>
+    {% endif %}
+
+    {% if module_access.lab != 'none' %}
+    <a href="{% url 'lab:investigation' %}" class="{% if active_sidebar == 'lab' %}active{% endif %}">
+      <i class="bi bi-droplet"></i> Lab
+      {% if module_access.lab == 'view' %}<span class="badge-view">View</span>{% endif %}
+    </a>
+
+    {% if module_access.lab_list != 'none' or module_access.lab != 'none' %}
+    <a href="{% url 'lab:patient_list' %}" class="sidebar-sub {% if active_sidebar == 'lab_patient_list' %}active{% endif %}">
+      <i class="bi bi-people"></i> Lab Patient List
+      {% if module_access.lab_list == 'view' or module_access.lab == 'view' %}<span class="badge-view">View</span>{% endif %}
+    </a>
+    {% endif %}
+    {% endif %}
+
+
+    {% if module_access.ultrasound != 'none' %}
+    <a href="{% url 'ultrasound:dashboard' %}" class="{% if active_sidebar == 'ultrasound_dashboard' %}active{% endif %}">
+      <i class="bi bi-grid-3x2-gap-fill"></i> USG Dashboard
+    </a>
+    <a href="{% url 'ultrasound:ultrasound_investigation' %}" class="{% if active_sidebar == 'ultrasound' %}active{% endif %}">
+      <i class="bi bi-activity"></i> Ultrasound
+      {% if module_access.ultrasound == 'view' %}<span class="badge-view">View</span>{% endif %}
+    </a>
+    {% endif %}
+
+    {# PHARMACY MODULE DISABLED — commented out per project requirements #}
+    {# Pharmacy has been superseded by the standalone Ultrasound module. #}
+    {# To re-enable: restore the block below and uncomment pharmacy urls. #}
+    {% if module_access.pharmacy != 'none' %}
+    {% comment %} <a href="{# url 'pharmacy:items' #}" class="">
+      <i class="bi bi-capsule"></i> Pharmacy (Disabled)
+    </a> {% endcomment %}
+    {% endif %} 
+
+    {% if module_access.beds != 'none' or module_access.masterdata != 'none' or module_access.income != 'none' or module_access.expenses != 'none' or module_access.backup != 'none' %}
+    <div class="dash-sidebar-section">Operations</div>
+    {% endif %}
+
+    {% if module_access.beds != 'none' %}
+    <a href="{% url 'core:bed_manage' %}" class="{% if active_sidebar == 'beds' %}active{% endif %}">
+      <i class="bi bi-grid-3x2-gap"></i> Bed Management
+      {% if module_access.beds == 'view' %}<span class="badge-view">View</span>{% endif %}
+    </a>
+    {% endif %}
+
+    {% if module_access.masterdata != 'none' %}
+    <a href="{% url 'masterdata:interpretation' %}" class="{% if active_sidebar == 'master' %}active{% endif %}">
+      <i class="bi bi-database"></i> Master Data
+    </a>
+    {% endif %}
+
+    {% if module_access.income != 'none' %}
+    <a href="{% url 'income:daybook' %}" class="{% if active_sidebar == 'income' %}active{% endif %}">
+      <i class="bi bi-currency-rupee"></i> Income / Daybook
+    </a>
+    {% endif %}
+
+    {% if module_access.expenses != 'none' %}
+    <a href="{% url 'expenses:page' %}" class="{% if active_sidebar == 'expenses' %}active{% endif %}">
+      <i class="bi bi-wallet2"></i> Expenses
+    </a>
+    {% endif %}
+
+    {% if module_access.backup != 'none' %}
+    <a href="{% url 'core:backup' %}" class="{% if active_sidebar == 'backup' %}active{% endif %}">
+      <i class="bi bi-shield-check"></i> Data Backup
+    </a>
+    {% endif %}
+
+    {% if module_access.history != 'none' %}
+    <a href="{% url 'history:log' %}" class="{% if active_sidebar == 'history' %}active{% endif %}">
+      <i class="bi bi-clock-history"></i> Activity History
+    </a>
+    {% endif %}
+
+    {% if module_access.django_admin != 'none' %}
+    <div class="dash-sidebar-section">System</div>
+    <a href="/admin/" target="_blank">
+      <i class="bi bi-gear"></i> Django Admin
+    </a>
+    {% endif %}
+
+    {# ── Common bottom links ── #}
+    <div style="margin-top:auto;padding-top:1rem;border-top:1px solid rgba(255,255,255,.08)">
+      <a href="{% url 'accounts:change_password' %}" class="{% if active_sidebar == 'password' %}active{% endif %}">
+        <i class="bi bi-key"></i> Change Password
+      </a>
+      <a href="{% url 'accounts:logout' %}" style="color:#f87171">
+        <i class="bi bi-box-arrow-right"></i> Logout
+      </a>
+    </div>
+
+  </nav>
+</aside>
+
+<style>
+/* IPD submenu indent & arrow animation */
+.sidebar-collapse-toggle {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.sidebar-collapse-toggle .sidebar-arrow {
+  transition: transform .2s ease;
+  font-size: .75rem;
+}
+.sidebar-collapse-toggle.open .sidebar-arrow,
+.sidebar-collapse-toggle[aria-expanded="true"] .sidebar-arrow {
+  transform: rotate(90deg);
+}
+.sidebar-sub {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  padding: .45rem 1rem .45rem 2.4rem !important;
+  font-size: .8rem;
+  color: rgba(255,255,255,.5);
+  text-decoration: none;
+  transition: color .15s, background .15s;
+  border-radius: 8px;
+  margin: 1px 0;
+}
+.sidebar-sub:hover,
+.sidebar-sub.active {
+  color: #fff;
+  background: rgba(255,255,255,.07);
+}
+.sidebar-sub.active {
+  color: var(--bs-primary, #3b82f6);
+}
+.badge-view {
+  margin-left: auto;
+  font-size: .58rem;
+  font-weight: 600;
+  letter-spacing: .03em;
+  color: rgba(255,255,255,.6);
+  background: rgba(255,255,255,.1);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.dash-sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+.rs-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+}
+</style>

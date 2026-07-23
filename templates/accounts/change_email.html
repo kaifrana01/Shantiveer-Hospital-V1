@@ -1,0 +1,35 @@
+{% extends 'base_dashboard.html' %}
+{% block page_title %}Change Email ID{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="widget-card">
+            <h5 class="mb-3"><i class="bi bi-envelope"></i> Change Email ID</h5>
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            <p class="text-muted small mb-3">Current email: <strong>{{ request.user.email|default:"(not set)" }}</strong></p>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
+                </div>
+                {% endfor %}
+                {% if form.non_field_errors %}
+                <div class="text-danger small mb-3">{{ form.non_field_errors.0 }}</div>
+                {% endif %}
+                <button type="submit" class="btn btn-info text-white">Update Email ID</button>
+                <a href="{% url 'accounts:change_password' %}" class="btn btn-secondary ms-2">Back</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

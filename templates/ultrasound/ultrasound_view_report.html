@@ -1,0 +1,53 @@
+{% extends 'base_dashboard.html' %}
+
+{% block page_title %}Ultrasound Report{% endblock %}
+
+{% block content %}
+  <h2 class="mb-2">Ultrasound Report</h2>
+  <div class="text-muted mb-3">Bill No: <b>{{ report.bill_no }}</b> | Patient: <b>{{ report.patient }}</b> | Date: {{ report.date }}</div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5>Selected Options</h5>
+      <table class="table table-sm">
+        <thead>
+          <tr><th>Option</th><th>Fee</th><th>Qty</th><th>Amount</th></tr>
+        </thead>
+        <tbody>
+          {% for it in report.items %}
+            <tr>
+              <td>{{ it.name }}</td>
+              <td>{{ it.rate }}</td>
+              <td>{{ it.qty }}</td>
+              <td>{{ it.amount }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="d-flex justify-content-end gap-3">
+        <div>Total: <b>{{ report.total }}</b></div>
+        {% if report.discount and report.discount != 0 %}
+          <div>Discount: <b>{{ report.discount }}</b></div>
+        {% endif %}
+        <div>Payable: <b>{{ report.payable }}</b></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5>Uploaded Documents</h5>
+      {% if report.documents %}
+        <ul>
+          {% for d in report.documents %}
+            <li><a href="{{ d.url }}" target="_blank">{{ d.name }}</a></li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="text-muted">No documents uploaded.</div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+

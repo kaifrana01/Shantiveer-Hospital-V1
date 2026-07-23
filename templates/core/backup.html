@@ -1,0 +1,332 @@
+{% extends 'base_dashboard.html' %}
+{% block page_title %}Data Backup{% endblock %}
+{% block extra_css %}
+<style>
+.backup-hero {
+  background: linear-gradient(135deg, #0f1c2e 0%, #1e3a5f 100%);
+  border-radius: 12px;
+  padding: 1.75rem 2rem;
+  color: #fff;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+.backup-hero .hero-icon {
+  width: 64px; height: 64px;
+  border-radius: 14px;
+  background: rgba(0, 212, 255, 0.15);
+  border: 2px solid rgba(0, 212, 255, 0.4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.75rem;
+  color: #00d4ff;
+  flex-shrink: 0;
+}
+.backup-hero h2 { font-size: 1.2rem; font-weight: 700; margin: 0 0 4px; }
+.backup-hero p  { font-size: 0.82rem; color: #94a3b8; margin: 0; }
+
+/* Schedule cards */
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+@media (max-width: 768px) { .schedule-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.schedule-card {
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.18s;
+  background: #fff;
+  position: relative;
+}
+.schedule-card:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(59,130,246,0.12);
+}
+.schedule-card.active {
+  border-color: #1e40af;
+  background: #eff6ff;
+  box-shadow: 0 0 0 3px rgba(30,64,175,0.12);
+}
+.schedule-card.active::after {
+  content: '✓';
+  position: absolute;
+  top: 8px; right: 10px;
+  font-size: 0.75rem;
+  color: #1e40af;
+  font-weight: 700;
+}
+.schedule-card .sc-icon {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+.schedule-card .sc-label { font-weight: 700; font-size: 0.88rem; color: #1e293b; }
+.schedule-card .sc-desc  { font-size: 0.7rem; color: #64748b; margin-top: 3px; }
+.schedule-card input[type=radio] { display: none; }
+
+/* Status badge */
+.backup-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 10px;
+  font-size: 0.7rem; font-weight: 600;
+}
+.backup-status.success     { background: #d1fae5; color: #065f46; }
+.backup-status.failed      { background: #fee2e2; color: #991b1b; }
+.backup-status.in_progress { background: #fef3c7; color: #92400e; }
+
+/* Backup history row */
+.backup-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.75rem;
+  border-radius: 8px;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.12s;
+}
+.backup-row:hover { background: #f8fafc; }
+.backup-row .bk-icon {
+  width: 38px; height: 38px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.bk-icon.success     { background: #d1fae5; color: #059669; }
+.bk-icon.failed      { background: #fee2e2; color: #dc2626; }
+.bk-icon.in_progress { background: #fef3c7; color: #d97706; }
+.backup-row .bk-name { font-weight: 600; font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px; }
+.backup-row .bk-meta { font-size: 0.7rem; color: #64748b; }
+
+/* Active schedule banner */
+.schedule-banner {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-bottom: 1.25rem;
+}
+.schedule-banner.active   { background: #d1fae5; color: #065f46; border: 1px solid #86efac; }
+.schedule-banner.inactive { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+
+/* Type badge */
+.type-pill {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.type-pill.manual  { background: #eff6ff; color: #1e40af; }
+.type-pill.daily   { background: #ecfdf5; color: #059669; }
+.type-pill.weekly  { background: #f0fdf4; color: #15803d; }
+.type-pill.monthly { background: #faf5ff; color: #7c3aed; }
+.type-pill.yearly  { background: #fff7ed; color: #c2410c; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<div class="backup-hero">
+  <div class="hero-icon"><i class="bi bi-shield-check"></i></div>
+  <div>
+    <h2>Data Backup &amp; Recovery</h2>
+    <p>Back up your entire HMS database and media files. Download or schedule automatic backups to keep your data safe.</p>
+  </div>
+  <form method="post" action="{% url 'core:backup_now' %}" class="ms-auto">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary"
+            onclick="return confirm('Create a manual backup now?')">
+      <i class="bi bi-download"></i> Backup Now
+    </button>
+  </form>
+</div>
+
+<!-- Active schedule banner -->
+{% if schedule and schedule.is_active %}
+<div class="schedule-banner active">
+  <i class="bi bi-check-circle-fill"></i>
+  Auto-backup is <strong>active</strong> — running
+  <strong>{{ schedule.get_frequency_display }}</strong>.
+  Run <code>python manage.py run_scheduled_backup</code> daily via cron/Task Scheduler.
+</div>
+{% else %}
+<div class="schedule-banner inactive">
+  <i class="bi bi-clock"></i>
+  No automatic schedule active. Set one below or trigger manual backups anytime.
+</div>
+{% endif %}
+
+<div class="row g-3">
+
+  <!-- Left: Schedule + Info -->
+  <div class="col-lg-4">
+
+    <!-- Schedule selector -->
+    <div class="widget-card mb-3">
+      <div class="widget-title mb-3"><i class="bi bi-calendar-check text-primary"></i> Backup Schedule</div>
+      <form method="post" action="{% url 'core:backup_schedule_save' %}">
+        {% csrf_token %}
+        <div class="schedule-grid" style="grid-template-columns: repeat(3, 1fr);">
+
+          <label class="schedule-card {% if not schedule or schedule.frequency == 'manual' %}active{% endif %}">
+            <input type="radio" name="frequency" value="manual"
+                   {% if not schedule or schedule.frequency == 'manual' %}checked{% endif %}>
+            <span class="sc-icon">🖐</span>
+            <div class="sc-label">Manual</div>
+            <div class="sc-desc">On demand only</div>
+          </label>
+
+          <label class="schedule-card {% if schedule and schedule.frequency == 'daily' %}active{% endif %}">
+            <input type="radio" name="frequency" value="daily"
+                   {% if schedule and schedule.frequency == 'daily' %}checked{% endif %}>
+            <div class="sc-icon">📅</div>
+            <div class="sc-label">Daily</div>
+            <div class="sc-desc">Every day at 2 AM</div>
+          </label>
+                    <label class="schedule-card {% if schedule and schedule.frequency == 'weekly' %}active{% endif %}">
+            <input type="radio" name="frequency" value="weekly"
+                   {% if schedule and schedule.frequency == 'weekly' %}checked{% endif %}>
+            <span class="sc-icon">📅</span>
+            <div class="sc-label">Weekly</div>
+            <div class="sc-desc">Every Monday</div>
+          </label>
+
+          <label class="schedule-card {% if schedule and schedule.frequency == 'monthly' %}active{% endif %}">
+            <input type="radio" name="frequency" value="monthly"
+                   {% if schedule and schedule.frequency == 'monthly' %}checked{% endif %}>
+            <span class="sc-icon">🗓</span>
+            <div class="sc-label">Monthly</div>
+            <div class="sc-desc">1st of each month</div>
+          </label>
+
+          <label class="schedule-card {% if schedule and schedule.frequency == 'yearly' %}active{% endif %}">
+            <input type="radio" name="frequency" value="yearly"
+                   {% if schedule and schedule.frequency == 'yearly' %}checked{% endif %}>
+            <span class="sc-icon">📆</span>
+            <div class="sc-label">Yearly</div>
+            <div class="sc-desc">1st January</div>
+          </label>
+
+        </div>
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-check-lg"></i> Save Schedule
+        </button>
+      </form>
+    </div>
+
+    <!-- What's included -->
+    <div class="widget-card">
+      <div class="widget-title mb-2"><i class="bi bi-info-circle text-info"></i> What's Included</div>
+      <ul class="list-unstyled" style="font-size:0.82rem">
+        <li class="py-1 border-bottom"><i class="bi bi-database-fill text-primary me-2"></i> SQLite database (all patient, billing, lab data)</li>
+        <li class="py-1 border-bottom"><i class="bi bi-images text-success me-2"></i> Media files (uploads, documents)</li>
+        <li class="py-1"><i class="bi bi-file-text text-secondary me-2"></i> Backup manifest (timestamp, user)</li>
+      </ul>
+      <div class="mt-2 p-2 rounded" style="background:#fef3c7;font-size:0.75rem;color:#92400e">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        Store downloaded backups on a separate drive or cloud storage for safety.
+      </div>
+    </div>
+
+    <!-- Cron setup info -->
+    <div class="widget-card mt-3">
+      <div class="widget-title mb-2"><i class="bi bi-terminal text-dark"></i> Auto-Backup Setup</div>
+      <p style="font-size:0.78rem;color:#64748b">
+        Automatic backups need a daily scheduler to call the management command:
+      </p>
+      <div class="p-2 rounded" style="background:#f1f5f9;font-family:monospace;font-size:0.72rem;color:#1e293b">
+        python manage.py run_scheduled_backup
+      </div>
+      <div class="mt-2" style="font-size:0.75rem;color:#64748b">
+        <strong>Linux cron</strong> (runs daily at 2 AM):<br>
+        <code>0 2 * * * /venv/bin/python /path/manage.py run_scheduled_backup</code>
+      </div>
+      <div class="mt-2" style="font-size:0.75rem;color:#64748b">
+        <strong>Windows Task Scheduler</strong>:<br>
+        Set to run daily, action = <code>python manage.py run_scheduled_backup</code>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right: Backup history -->
+  <div class="col-lg-8">
+    <div class="widget-card">
+      <div class="widget-header">
+        <span class="widget-title"><i class="bi bi-clock-history"></i> Backup History</span>
+        <span class="badge bg-secondary">{{ backups|length }} records</span>
+      </div>
+
+      {% if backups %}
+      {% for b in backups %}
+      <div class="backup-row">
+        <div class="bk-icon {{ b.status }}">
+          {% if b.status == 'success' %}<i class="bi bi-check-circle-fill"></i>
+          {% elif b.status == 'failed' %}<i class="bi bi-x-circle-fill"></i>
+          {% else %}<i class="bi bi-hourglass-split"></i>{% endif %}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="bk-name">{{ b.filename }}</div>
+          <div class="bk-meta">
+            <span class="type-pill {{ b.backup_type|cut:' Auto' }}">{{ b.get_backup_type_display }}</span>
+            &nbsp;{{ b.created_at|date:"d M Y, H:i" }}
+            {% if b.created_by %}&nbsp;·&nbsp; {{ b.created_by.get_full_name|default:b.created_by.username }}{% endif %}
+          </div>
+          {% if b.status == 'failed' %}
+          <div style="font-size:0.7rem;color:#dc2626;margin-top:2px">{{ b.error_message|truncatechars:80 }}</div>
+          {% endif %}
+        </div>
+        <div class="text-end flex-shrink-0">
+          {% if b.status == 'success' %}
+          <div style="font-size:0.75rem;color:#64748b;margin-bottom:4px">{{ b.size_display }}</div>
+          <a href="{% url 'core:backup_download' b.pk %}" class="btn btn-sm btn-success me-1">
+            <i class="bi bi-download"></i>
+          </a>
+          {% endif %}
+          <form method="post" action="{% url 'core:backup_delete' b.pk %}" style="display:inline"
+                onsubmit="return confirm('Delete this backup?')">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% else %}
+      <div class="text-center py-5 text-muted">
+        <i class="bi bi-shield" style="font-size:2.5rem;display:block;margin-bottom:0.75rem;opacity:0.3"></i>
+        No backups yet.<br>
+        <small>Click <strong>Backup Now</strong> to create your first backup.</small>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Highlight selected schedule card on click
+document.querySelectorAll('.schedule-card').forEach(function(card) {
+  card.addEventListener('click', function() {
+    document.querySelectorAll('.schedule-card').forEach(function(c) {
+      c.classList.remove('active');
+    });
+    this.classList.add('active');
+  });
+});
+</script>
+{% endblock %}

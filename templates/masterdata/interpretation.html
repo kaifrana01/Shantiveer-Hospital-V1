@@ -1,0 +1,36 @@
+{% extends 'base_cyan.html' %}
+{% block title %}Master Data - Interpretation{% endblock %}
+{% block page_title %}Master Data - Interpretation{% endblock %}
+{% block content %}
+<div class="d-flex gap-3 p-3">
+    <div class="master-sidebar" style="width:150px">
+        <a href="{% url 'masterdata:doctors' %}">add-doctor</a>
+        <a href="{% url 'masterdata:doctor_list' %}">list-doctor</a>
+    </div>
+    <div class="flex-grow-1">
+        <div class="form-card mb-3">
+            <div class="section-title" style="background:#999;color:#fff;margin:-1.5rem -1.5rem 1rem;padding:0.5rem 1rem">Add Interpretation</div>
+            <form method="post">{% csrf_token %}
+                <textarea name="interpretation" class="form-control mb-2" rows="8" placeholder="Enter clinical interpretation..."></textarea>
+                <div class="d-flex align-items-center gap-2">
+                    <label>Test :</label>
+                    <select name="test" class="form-select" style="max-width:300px"><option>-- TEST --</option>{% for t in tests %}<option>{{ t }}</option>{% endfor %}</select>
+                    <button class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+        <div class="form-card">
+            <div class="d-flex justify-content-between align-items-center mb-2" style="background:#999;color:#fff;margin:-1.5rem -1.5rem 1rem;padding:0.5rem 1rem">
+                <span>View Interpretation</span>
+                <form method="get" class="d-flex gap-2"><label class="small mb-0 align-self-center">Search By Name :</label><input name="q" class="form-control form-control-sm" placeholder="Name" style="width:150px"><button class="btn btn-primary btn-sm">Search</button></form>
+            </div>
+            <table class="hms-table green-head">
+                <thead><tr><th>S.No.</th><th>Test Name</th><th>Interpretation</th><th>Status</th><th>Action</th><th></th></tr></thead>
+                <tbody>{% for row in interpretations %}
+                <tr><td>{{ forloop.counter }}</td><td>{{ row.test_name }}</td><td style="max-width:400px;font-size:0.8rem">{{ row.text|truncatewords:40 }}</td><td>{{ row.status }}</td><td><a href="#">Edit</a></td><td><input type="checkbox"></td></tr>
+                {% endfor %}</tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

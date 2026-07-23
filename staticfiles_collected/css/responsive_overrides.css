@@ -1,0 +1,59 @@
+/* Responsive overrides / small fixes for data tables & lab pages */
+
+/* Ensure tables don't overflow on small screens */
+.hms-table {
+  table-layout: auto;
+}
+
+/* Generic responsive table container helpers (if pages wrap tables) */
+.table-responsive-hms,
+.lab-patient-list-wrapper {
+  width: 100%;
+}
+
+/* If the parent doesn't add overflow-x, allow horizontal scroll on narrow screens */
+@media (max-width: 992px) {
+  .hms-table,
+  .table-responsive,
+  .table-responsive-hms {
+    overflow-x: auto;
+  }
+}
+
+
+/* On very small widths, reduce paddings and allow wrapping */
+@media (max-width: 576px) {
+  .hms-table {
+    font-size: 0.78rem;
+  }
+  .hms-table thead th {
+    padding: 0.45rem 0.4rem;
+    white-space: normal;
+  }
+  .hms-table tbody td {
+    padding: 0.45rem 0.4rem;
+    white-space: normal;
+    word-break: break-word;
+  }
+}
+
+/* Dedicated lab patient list: make it readable on narrow screens */
+@media (max-width: 992px) {
+  .lab-patient-list-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Extra small widths: reduce column density a bit */
+@media (max-width: 420px) {
+  .hms-table {
+    font-size: 0.74rem;
+  }
+  .hms-table thead th,
+  .hms-table tbody td {
+    padding: 0.38rem 0.3rem;
+  }
+}
+
+

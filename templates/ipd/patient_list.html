@@ -1,0 +1,60 @@
+{% extends 'base_ipd.html' %}
+{% block title %}IPD Patient List{% endblock %}
+{% block page_title %}IPD Patient List{% endblock %}
+{% block content %}
+<div class="page-container">
+    <div class="form-card">
+        <h2>IPD Patient List</h2>
+        <div class="d-flex justify-content-between mb-3">
+            <div class="input-group" style="max-width:400px">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" placeholder="Search by name, IPD, or UHID..." name="q" form="searchForm">
+            </div>
+            <a href="{% url 'ipd:admission' %}" class="btn btn-info text-white">+ Add New Patient</a>
+        </div>
+        <form id="searchForm" method="get"></form>
+        <table class="hms-table">
+            <thead style="background:#000"><tr>
+                <th style="background:#000;color:#fff">#</th><th>Patient Name</th><th>Age/Gender</th><th>UHID</th><th>IPD</th>
+                <th>Consultant</th><th>Room</th><th>Diagnosis</th><th>Date</th><th>Status</th>
+                <th>Advance Payment</th><th>Due</th><th>Total Amount</th>
+                <th>Action</th>
+            </tr></thead>
+            <tbody>
+            {% for p in patients %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td><strong>{{ p.name }}</strong></td><td>{{ p.age }} / {{ p.gender }}</td>
+                <td>{{ p.uhid }}</td><td>{{ p.ipd_no }}</td><td>{{ p.consultant }}</td>
+                <td>{{ p.room }}</td><td>{{ p.diagnosis|truncatewords:5 }}</td><td>{{ p.date }}</td>
+                <td><span class="badge bg-info">{{ p.status }}</span></td>
+
+                <td>{{ p.advance_paid|stringformat:"0.2f" }}</td>
+                <td>{{ p.due_amount|stringformat:"0.2f" }}</td>
+                <td>{{ p.total_amount|stringformat:"0.2f" }}</td>
+
+                <td>
+                    <a href="{% url 'ipd:admission' %}?edit={{ p.id }}" class="btn btn-warning btn-sm">Edit</a>
+                    {% comment %} <a href="{% url 'prescription:list' %}?ipd_patient={{ p.ipd_no }}" class="btn btn-secondary btn-sm">Prescription</a> {% endcomment %}
+                    {% if p.status != 'Discharged' %}
+
+                    <form method="post" action="{% url 'ipd:discharge_add' %}" style="display:inline;" onsubmit="return confirm('Discharge {{ p.name }}?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="ipd_no" value="{{ p.ipd_no }}">
+<!-- After discharge, take user to Collect Payment -->
+<input type="hidden" name="next" value="{% url 'ipd:payment' %}?ipd_no={{ p.ipd_no }}">
+                        <button type="submit" class="btn btn-primary btn-sm">Discharge</button>
+                    </form>
+                    {% endif %}
+                    <form method="post" action="{% url 'ipd:delete_patient' p.id %}" style="display:inline;" onsubmit="return confirm('Delete?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

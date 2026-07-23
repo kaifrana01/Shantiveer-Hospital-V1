@@ -1,0 +1,55 @@
+{% extends 'base_module.html' %}
+{% block title %}Prescription - {{ record.name }}{% endblock %}
+{% block page_title %}Prescription - {{ record.name }}{% endblock %}
+{% block content %}
+<div class="page-container">
+    <div class="form-card">
+        <h2>Prescription</h2>
+        <p><strong>Patient:</strong> {{ record.name }} | <strong>OPD:</strong> {{ record.opd_no }} | <strong>UHID:</strong> {{ record.uhid }}</p>
+        <form method="post" id="rxForm">{% csrf_token %}
+            <div class="mb-3"><label class="form-label">Diagnosis</label><textarea name="diagnosis" class="form-control" rows="2">{{ record.diagnosis }}</textarea></div>
+
+            <div class="section-title"><i class="bi bi-capsule"></i> Required Medicines (Pharmacy will be notified)</div>
+            <table class="table table-sm" id="medTable">
+                <thead><tr><th>Medicine Name</th><th>Dosage</th><th>Qty</th><th></th></tr></thead>
+                <tbody>
+                {% for line in medicine_lines %}
+                <tr>
+                    <td><input name="med_name" class="form-control form-control-sm" value="{{ line.medicine_name }}"></td>
+                    <td><input name="med_dosage" class="form-control form-control-sm" value="{{ line.dosage }}" placeholder="1-0-1 x 5 days"></td>
+                    <td><input name="med_qty" type="number" class="form-control form-control-sm" value="{{ line.quantity }}" min="1" style="width:70px"></td>
+                    <td><button type="button" class="btn btn-sm btn-outline-danger remove-row">×</button></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td><input name="med_name" class="form-control form-control-sm" placeholder="e.g. PARACIP TAB"></td>
+                    <td><input name="med_dosage" class="form-control form-control-sm" placeholder="1-0-1 x 5 days"></td>
+                    <td><input name="med_qty" type="number" class="form-control form-control-sm" value="1" min="1" style="width:70px"></td>
+                    <td><button type="button" class="btn btn-sm btn-outline-danger remove-row">×</button></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <button type="button" class="btn btn-sm btn-outline-primary mb-3" id="addMedRow">+ Add Medicine</button>
+
+            <div class="mb-3"><label class="form-label">Medicines (Notes / Full Rx)</label><textarea name="medicines" class="form-control" rows="4" placeholder="Full prescription text for print">{{ record.medicines }}</textarea></div>
+            <div class="mb-3"><label class="form-label">Advice</label><textarea name="advice" class="form-control" rows="2">{{ record.advice }}</textarea></div>
+            <button type="submit" class="btn-save">Save Prescription</button>
+            <a href="{% url 'prescription:print' record.id %}" class="btn btn-warning ms-2" target="_blank">Print</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.getElementById('addMedRow')?.addEventListener('click', function() {
+    const tbody = document.querySelector('#medTable tbody');
+    const row = document.createElement('tr');
+    row.innerHTML = '<td><input name="med_name" class="form-control form-control-sm"></td><td><input name="med_dosage" class="form-control form-control-sm" placeholder="1-0-1 x 5 days"></td><td><input name="med_qty" type="number" class="form-control form-control-sm" value="1" min="1" style="width:70px"></td><td><button type="button" class="btn btn-sm btn-outline-danger remove-row">×</button></td>';
+    tbody.appendChild(row);
+});
+document.getElementById('medTable')?.addEventListener('click', e => {
+    if (e.target.classList.contains('remove-row')) e.target.closest('tr').remove();
+});
+</script>
+{% endblock %}

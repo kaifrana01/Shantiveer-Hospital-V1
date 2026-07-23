@@ -1,0 +1,188 @@
+{% extends 'base_ipd.html' %}
+{% block title %}IPD Patient Admission{% endblock %}
+{% block page_title %}IPD Patient Admission{% endblock %}
+{% block content %}
+<div class="ipd-split-layout">
+    <div class="form-card">
+        <button type="button" class="btn-cyan mb-3" data-bs-toggle="modal" data-bs-target="#uhidModal"><i class="bi bi-search"></i> Search UHID</button>
+        <form method="post">{% csrf_token %}
+            <input type="hidden" name="edit_id" value="{{ edit_id }}">
+            <div class="row g-2 mb-2">
+                <div class="col-md-2"><label class="small">UHID</label><input name="uhid" class="form-control form-control-sm" value="{{ form_uhid }}"></div>
+                <div class="col-md-2"><label class="small">IPD NO</label><input name="ipd_no" class="form-control form-control-sm" value="{{ ipd_no }}" readonly></div>
+                <div class="col-md-2"><label class="small">Date</label><input type="date" name="date" class="form-control form-control-sm" value="{{ form_date|default:today }}"></div>
+                <div class="col-md-2"><label class="small">Time</label><input type="time" name="time" class="form-control form-control-sm" value="{{ form_time }}"></div>
+            </div>
+            <div class="row g-2 mb-2">
+                <div class="col-md-1"><label class="small">Title</label><select name="title" class="form-select form-select-sm"><option>MR.</option><option>MRS.</option><option>MS.</option></select></div>
+                <div class="col-md-4"><label class="small">Patient Name</label><input name="patient_name" class="form-control form-control-sm" value="{{ form_patient_name }}" required></div>
+                <div class="col-md-1"><label class="small">Age</label><input name="age" class="form-control form-control-sm" value="{{ form_age }}"></div>
+                <div class="col-md-2"><label class="small">Gender</label><select name="gender" class="form-select form-select-sm">
+                    <option value="FEMALE" {% if form_gender == 'FEMALE' %}selected{% endif %}>FEMALE</option>
+                    <option value="MALE" {% if form_gender == 'MALE' %}selected{% endif %}>MALE</option>
+                </select></div>
+                <div class="col-md-2"><label class="small">Guardian</label><input name="guardian" class="form-control form-control-sm" value="{{ form_guardian }}"></div>
+                <div class="col-md-2"><label class="small">Contact Detail</label><input name="contact" class="form-control form-control-sm" value="{{ form_contact }}"></div>
+            </div>
+            <div class="row g-2 mb-2">
+                <div class="col-md-2"><label class="small">Marital</label><select name="marital" class="form-select form-select-sm"><option>Single</option><option>Married</option></select></div>
+                <div class="col-md-10"><label class="small">Address</label><input name="address" class="form-control form-control-sm" value="{{ form_address }}"></div>
+            </div>
+            <div class="row g-2 mb-2">
+                <div class="col-md-2">
+                    <label class="small">Bed Charges</label>
+                    <input type="number" id="bed_charge" name="bed_charge" class="form-control form-control-sm" value="{{ form_bed_charge|default:'' }}">
+                </div>
+                <script>
+                    function setBedChargeFromWard(wardType) {
+                        const map = {
+                          'General Ward': 2500,
+                          'Private Ward': 3500,
+                          'Emergency Ward': 2000
+                        };
+                        const val = map[wardType] || '';
+                        document.getElementById('bed_charge').value = val;
+                    }
+
+                    async function refreshBedOptions() {
+                        const wardEl = document.getElementById('room_category');
+                        const bedEl = document.getElementById('bed_no');
+                        if (!wardEl || !bedEl) return;
+
+                        const wardVal = wardEl.value || '';
+                        bedEl.innerHTML = '<option value="">Loading...</option>';
+                        if (!wardVal) {
+                            bedEl.innerHTML = '<option value="">Select Bed</option>';
+                            return;
+                        }
+
+                        try {
+                            const url = `/ipd/admission/beds/?ward=${encodeURIComponent(wardVal)}`;
+                            const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                            const data = await resp.json();
+                            if (!data || !Array.isArray(data.beds)) throw new Error('Bad response');
+
+                            if (data.beds.length === 0) {
+                                bedEl.innerHTML = '<option value="">No vacant beds</option>';
+                                return;
+                            }
+
+                            bedEl.innerHTML = '<option value="">Select Bed</option>';
+                            for (const b of data.beds) {
+                                const opt = document.createElement('option');
+                                opt.value = b.room_no;
+                                opt.textContent = `Bed ${b.bed_no} (Room ${b.room_no})`;
+                                bedEl.appendChild(opt);
+                            }
+                        } catch (e) {
+                            bedEl.innerHTML = '<option value="">No vacant beds</option>';
+                            console.error(e);
+                        }
+                    }
+
+
+                    document.addEventListener('DOMContentLoaded', function(){
+                        const bedChargeEl = document.getElementById('bed_charge');
+                        const wardEl = document.getElementById('room_category');
+                        const update = function(){
+                            if(wardEl && wardEl.value) {
+                                setBedChargeFromWard(wardEl.value);
+                                refreshBedOptions();
+                            }
+                        };
+                        if(wardEl) {
+                            wardEl.addEventListener('change', function(){
+                                // Reset bed selection when ward changes
+                                const bedEl = document.getElementById('bed_no');
+                                if (bedEl) bedEl.innerHTML = '<option value="">Select Bed</option>';
+                                update();
+                            });
+                        }
+                        update();
+                    });
+
+                </script>
+            <div class="col-md-3">
+
+                <label class="small">Consultant</label>
+
+                <select name="consultant" class="form-control form-control-sm">
+                    <option value="">Select Consultant</option>
+                    {% for d in doctors %}
+                        <option value="{{ d.name }}" {% if form_consultant == d.name %}selected{% endif %}>{{ d.name }}</option>
+                    {% endfor %}
+                    <option value="Other" {% if form_consultant == "Other" %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+                <div class="col-md-2"><label class="small">KYC</label><select name="kyc_type" class="form-select form-select-sm">
+                    <option value="Aadhar" {% if form_kyc_type == 'Aadhar' %}selected{% endif %}>Aadhar</option>
+                    <option value="PAN" {% if form_kyc_type == 'PAN' %}selected{% endif %}>PAN</option>
+                </select></div>
+                <div class="col-md-3"><label class="small">KYC Enter</label><input name="kyc_no" class="form-control form-control-sm" value="{{ form_kyc_no }}"></div>
+            </div>
+            <div class="row g-2 mb-2">
+                <div class="col-md-3">
+                    <label class="small">Ward Type (Category)</label>
+                    <select name="room_category" id="room_category" class="form-control form-control-sm">
+                        <option value="" {% if not form_room_category %}selected{% endif %}>Select Ward</option>
+                        <option value="General Ward" {% if form_room_category == 'General Ward' %}selected{% endif %}>General Ward</option>
+                        <option value="Private Ward" {% if form_room_category == 'Private Ward' %}selected{% endif %}>Private Ward</option>
+                        <option value="Emergency Ward" {% if form_room_category == 'Emergency Ward' %}selected{% endif %}>Emergency Ward</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="small">Bed No</label>
+                    <select name="room_no" id="bed_no" class="form-control form-control-sm">
+                        <option value="" {% if not form_room_no %}selected{% endif %}>Select Bed</option>
+                        {% for b in bed_options %}
+                          <option value="{{ b.room_no }}" {% if form_room_no == b.room_no %}selected{% endif %}}>
+                            Bed {{ b.bed_no }} (Room {{ b.room_no }})
+                          </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+            </div>
+
+
+            <div class="mb-2"><label class="small">Diagnosis</label><textarea name="diagnosis" class="form-control form-control-sm" rows="3">{{ form_diagnosis }}</textarea></div>
+            <div class="row g-2 mb-2">
+                <div class="col-md-2"><label class="small">TPA</label><input name="tpa" class="form-control form-control-sm" value="{{ form_tpa }}"></div>
+                <div class="col-md-3"><label class="small">Policy No</label><input name="policy_no" class="form-control form-control-sm" value="{{ form_policy_no }}"></div>
+                <div class="col-md-3"><label class="small">Insurance Co.</label><input name="insurance" class="form-control form-control-sm" value="{{ form_insurance }}"></div>
+                <div class="col-md-2"><label class="small">Referral</label><input name="referral" class="form-control form-control-sm" value="{{ form_referral }}"></div>
+                <div class="col-md-2"><label class="small">Status</label><select name="status" class="form-select form-select-sm">
+                    <option value="Admitted" {% if form_status == 'Admitted' %}selected{% endif %}>Admitted</option>
+                    <option value="Discharged" {% if form_status == 'Discharged' %}selected{% endif %}>Discharged</option>
+                </select></div>
+            </div>
+            <div class="mb-3"><label class="small">Upload Document</label><input type="file" name="document" class="form-control form-control-sm"></div>
+
+            <div class="d-flex gap-2 align-items-center mb-2">
+                <button type="submit" class="btn btn-secondary">Save</button>
+                <button type="reset" class="btn-cyan ms-2">New</button>
+                <div class="d-flex flex-column">
+                    <label class="small">Advance Payment</label>
+                    <input type="text" name="advance_payment" class="form-control form-control-sm" id="advancePaymentText" value="{{ form_advance_payment|default:'' }}" inputmode="decimal" style="max-width:170px;">
+                </div>
+            </div>
+        </form>
+
+    </div>
+    <div class="present-patients-panel">
+        <div class="d-flex gap-2 mb-2">
+            <input type="text" class="form-control form-control-sm" placeholder="Search patient name or IPD" id="ipdSearch">
+            <button class="btn-cyan btn-sm">Refresh</button>
+        </div>
+        <h6 class="fw-bold mb-2">Present Patients</h6>
+        <table class="hms-table">
+            <thead><tr><th>Name</th><th>Room</th><th>IPD</th><th>Category</th></tr></thead>
+            <tbody>
+            {% for p in present_patients %}
+            <tr><td>{{ p.name }}</td><td>{{ p.room }}</td><td>{{ p.ipd_no }}</td><td>{{ p.category }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

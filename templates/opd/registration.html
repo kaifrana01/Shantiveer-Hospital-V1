@@ -1,0 +1,284 @@
+{% extends 'base_module.html' %}
+
+
+{% block title %}OPD Registration{% endblock %}
+{% block page_title %}OPD Registration{% endblock %}
+{% block content %}
+<div class="page-container">
+    <div class="form-card">
+        <h2>Hospital OPD Registration</h2>
+        <form method="post" id="opdForm" onsubmit="return showPaymentReceived();">
+
+
+            {% csrf_token %}
+            <div class="row g-2 mb-3 align-items-end">
+                <div class="col-auto"><button type="button" class="btn-cyan" data-bs-toggle="modal" data-bs-target="#uhidModal"><i class="bi bi-search"></i> Search UHID</button></div>
+                <div class="col-md-2"><label class="form-label small">OPD No</label><input type="text" name="opd_no" class="form-control" value="{{ opd_no }}" readonly></div>
+                <div class="col-md-2"><label class="form-label small">UHID</label><input type="text" name="uhid" class="form-control" id="uhidField" value="{{ initial.patient.uhid|default:'' }}"></div>
+                <div class="col-md-2"><label class="form-label small">Date</label><input type="date" name="date" class="form-control" value="{{ initial.visit.date|default:today }}"></div>
+                <div class="col-md-2"><label class="form-label small">Time</label><input type="time" name="time" class="form-control" value="{{ initial.visit.time|default:now_time }}"></div>
+            </div>
+
+                <div class="section-title"><i class="bi bi-person"></i> Patient Details</div>
+                <div class="row g-2">
+
+
+                <div class="col-md-1"><label class="form-label small">Title</label><select name="title" class="form-select"><option>Mr.</option><option>Mrs.</option><option>Ms.</option></select></div>
+                <div class="col-md-3"><label class="form-label small">Patient Name</label><input type="text" name="patient_name" class="form-control" value="{{ initial.patient.name|default:'' }}" required></div>
+                <div class="col-md-2"><label class="form-label small">Phone</label><input type="text" name="phone" class="form-control" value="{{ initial.patient.mobile|default:'' }}"></div>
+                <div class="col-md-2"><label class="form-label small">Referral</label><input type="text" name="referral" class="form-control" value="{{ initial.visit.referral|default:'' }}"></div>
+                <div class="col-md-1"><label class="form-label small">Age</label><input type="number" name="age" class="form-control" value="{{ initial.patient.age_years|default:'' }}"></div>
+                <div class="col-md-1"><label class="form-label small">Gender</label><select name="gender" class="form-select">
+                    <option value="Male" {% if initial.patient.gender == 'Male' %}selected{% endif %}>Male</option>
+                    <option value="Female" {% if initial.patient.gender == 'Female' %}selected{% endif %}>Female</option>
+                    <option value="Other" {% if initial.patient.gender == 'Other' %}selected{% endif %}>Other</option>
+                </select></div>
+                <div class="col-md-2"><label class="form-label small">DOB</label><input type="date" name="dob" class="form-control" value=""></div>
+                <div class="col-12"><label class="form-label small">Address</label><input type="text" name="address" class="form-control" value="{{ initial.patient.address|default:'' }}"></div>
+            </div>
+
+            <div class="section-title"><i class="bi bi-search"></i> Medical Tests</div>
+
+            <div class="row g-2 align-items-start">
+                <div class="col-md-12">
+                    <div class="test-panel">
+                        <div class="p-2 border-bottom d-flex gap-2 align-items-center">
+                            <input type="text" class="form-control form-control-sm" placeholder="SEARCH TEST" id="opdTestSearch" style="flex:1">
+                        </div>
+
+                        <div class="small text-muted px-2 mt-2">Select the tests and enter quantity</div>
+
+                        <div class="px-2" id="opdTestsCheckboxWrap">
+                            {% if lab_tests %}
+                                {% for t in lab_tests %}
+                                    <label class="test-item me-3" style="display:inline-flex;align-items:center;gap:.4rem;margin-top:.25rem">
+                                        <input type="checkbox" class="opd-test-checkbox" name="tests" value="{{ t.id }}" data-name="{{ t.name }}" data-rate="{{ t.rate }}">
+                                        <span>{{ t.name }}</span>
+<input type="number" min="1" value="1" step="1" class="form-control form-control-sm opd-test-qty" name="test_qty_{{ t.id }}" style="width:70px" disabled>
+
+                                        <span>Rs {{ t.rate }}</span>
+                                    </label>
+                                {% endfor %}
+                            {% else %}
+                                <div class="small text-muted px-2">No test master data available.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title"><i class="bi bi-cash"></i> Payment Details</div>
+
+
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label small">Doctor Name</label>
+
+                    <select name="doctor" class="form-select" id="opdDoctorSelect">
+
+                    {% for d in doctors %}
+                        <option value="{{ d.name }}" {% if initial.visit.doctor_name == d.name %}selected{% endif %}>{{ d.name }}</option>
+                    {% endfor %}
+                    <option value="Other" {% if initial.visit.doctor_name == 'Other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3" id="opdDoctorOtherWrap" style="display:none;">
+                    <label class="form-label small">Enter Dr. Name</label>
+                    <input type="text" name="doctor_other" class="form-control" id="opdDoctorOther" placeholder="Type doctor name" value="" />
+                </div>
+                <div class="col-md-1"><label class="form-label small">Fees</label><input type="number" name="fees" class="form-control" value="{{ initial.visit.fees|default:500 }}" id="opdFees"></div>
+
+
+                <div class="col-md-2"><label class="form-label small">Head</label><input type="text" name="head" class="form-control" value="{{ initial.visit.head|default:'Opd Consultation' }}"></div>
+                <div class="col-md-1"><label class="form-label small">Discount</label><input type="number" name="discount" class="form-control" value="{{ initial.visit.discount|default:0 }}" id="opdDiscount"></div>
+                <div class="col-md-2"><label class="form-label small">Total Amount</label><input type="number" name="total" class="form-control" id="opdTotal" value="500" readonly></div>
+                <div class="col-md-1"><label class="form-label small">Payment Mode</label><select name="payment_mode" class="form-select" id="opdPaymentMode"><option>Cash</option><option>UPI</option><option>Card</option><option>Cheque</option></select></div>
+                <div class="col-md-2"><label class="form-label small">Reference Info</label><input type="text" name="reference" class="form-control" placeholder="UPI Ref No."></div>
+                <input type="hidden" name="upi_id" id="opdUpiId" value="kaif.rajput@ptsbi">
+
+                <!-- Temporary UPI QR (client-side) -->
+                <div class="row g-2 mt-2" id="opdUpiQrWrap" style="display:none;">
+                    <div class="col-md-6">
+                        <label class="form-label small">UPI QR</label>
+                        <div id="opdUpiQrBox" class="p-2 border rounded" style="text-align:center;"></div>
+                        <div class="small text-muted mt-1" id="opdUpiQrHint"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">UPI ID</label>
+                        <input type="text" class="form-control" name="upi_id_display" id="opdUpiIdField" value="kaif.rajput@ptsbi" readonly>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="text-center mt-4 gap-2">
+                <button type="submit" class="btn-save"><i class="bi bi-save"></i> Save / Update</button>
+                <a href="#" class="btn-view ms-2" onclick="return false;"><i class="bi bi-list"></i> OPD Patient History</a>
+
+
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal fade" id="uhidModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Search UHID</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body"><input type="text" class="form-control" id="uhidSearchInput" placeholder="Enter UHID"><div id="uhidResults" class="mt-2"></div></div>
+</div></div></div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.getElementById('opdFees')?.addEventListener('input', calcOpd);
+document.getElementById('opdDiscount')?.addEventListener('input', calcOpd);
+
+// update total whenever checkbox/qty changes
+function bindOPDTestTotalEvents() {
+    const checkboxes = document.querySelectorAll('.opd-test-checkbox');
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', calcOpd);
+        const qtyInput = cb.closest('label')?.querySelector('.opd-test-qty');
+        if (qtyInput) {
+            cb.addEventListener('change', () => {
+                qtyInput.disabled = !cb.checked;
+            });
+            qtyInput.addEventListener('input', calcOpd);
+        }
+    });
+
+    // if editing existing selection: enable qty inputs for checked boxes
+    checkboxes.forEach(cb => {
+        const qtyInput = cb.closest('label')?.querySelector('.opd-test-qty');
+        if (qtyInput) qtyInput.disabled = !cb.checked;
+    });
+}
+
+function calcOpd() {
+    const f = parseFloat(document.getElementById('opdFees').value) || 0;
+    const d = parseFloat(document.getElementById('opdDiscount').value) || 0;
+
+    // add selected test amounts into total
+    const testTotal = computeSelectedTestsTotal();
+
+    // total = (fees - discount) + testsTotal
+    document.getElementById('opdTotal').value = Math.max(0, (f - d) + testTotal);
+}
+
+function computeSelectedTestsTotal(){
+    const checkboxes = document.querySelectorAll('.opd-test-checkbox');
+    let sum = 0;
+    checkboxes.forEach(cb => {
+        if(!cb.checked) return;
+        const rate = parseFloat(cb.dataset.rate || '0') || 0;
+        const qtyInput = cb.closest('label')?.querySelector('.opd-test-qty');
+        const qty = qtyInput ? (parseFloat(qtyInput.value || '1') || 1) : 1;
+        sum += rate * qty;
+    });
+    return sum;
+}
+
+
+// NOTE: This UI currently adds empty test rows; backend wiring is required to save selections & compute fees.
+let testIndex = 0;
+
+// bind checkbox+qty events after DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof bindOPDTestTotalEvents === 'function') {
+        bindOPDTestTotalEvents();
+        calcOpd();
+    }
+});
+function addTestRow(){
+    const container = document.getElementById('testsContainer');
+
+    if(!container) return;
+
+    // UPI QR (client-side) + auto set amount is handled by backend ledger posting.
+
+    const row = document.createElement('div');
+    row.className = 'row g-2 mb-2 align-items-end';
+    row.innerHTML = `
+        <div class="col-md-6">
+            <label class="form-label small">Test</label>
+            <input type="text" class="form-control" name="test_name_${testIndex}" placeholder="Type test name" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">Fees</label>
+            <input type="number" class="form-control" name="test_fees_${testIndex}" placeholder="0" />
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-danger" onclick="this.closest('.row').remove()">X</button>
+        </div>
+    `;
+    container.appendChild(row);
+    testIndex += 1;
+}
+</script>
+
+<script>
+function showPaymentReceived() {
+        try { alert('Payment received.'); } catch (e) {}
+        return true;
+    }
+
+    // Show textbox when Doctor Name = Other
+    function toggleOPDDoctorOther() {
+        const select = document.getElementById('opdDoctorSelect');
+        const wrap = document.getElementById('opdDoctorOtherWrap');
+        if (!select || !wrap) return;
+        wrap.style.display = (select.value === 'Other') ? 'block' : 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const select = document.getElementById('opdDoctorSelect');
+        if (!select) return;
+
+        const otherInput = document.getElementById('opdDoctorOther');
+        const existingDoctor = '{{ initial.visit.doctor_name|default:'' }}';
+
+        toggleOPDDoctorOther();
+
+        if (otherInput && select.value === 'Other') {
+            otherInput.value = existingDoctor;
+        }
+
+        select.addEventListener('change', toggleOPDDoctorOther);
+    });
+
+
+
+        // Build temporary UPI QR (temporary placeholder QR image).
+        function buildOPDUPIQR() {
+        const mode = document.getElementById('opdPaymentMode')?.value;
+        const upiId = document.getElementById('opdUpiIdField')?.value || document.getElementById('opdUpiId')?.value || 'kaif.rajput@ptsbi';
+        const amount = (document.getElementById('opdTotal')?.value || '').trim();
+
+        const wrap = document.getElementById('opdUpiQrWrap');
+        if (wrap) wrap.style.display = (mode === 'UPI') ? 'block' : 'none';
+        if (mode !== 'UPI') return;
+
+        // QR payload is not encoded because we use a static placeholder QR image.
+        // (Keep hint text showing the intended UPI and amount.)
+        // Use existing static placeholder QR image (temporary QR).
+        const qrImgUrl = `/static/img/QR%20code.png`;
+
+        const box = document.getElementById('opdUpiQrBox');
+        if (box) box.innerHTML = `<img src="${qrImgUrl}" alt="UPI QR" width="200" height="200"/>`;
+
+        const hint = document.getElementById('opdUpiQrHint');
+        if (hint) hint.textContent = `Scan to pay ${amount ? '₹' + amount : ''} to ${upiId}`;
+
+        // Ensure backend gets the same UPI ID
+        const hidden = document.getElementById('opdUpiId');
+        if (hidden) hidden.value = upiId;
+    }
+
+    // QR update bindings
+    const opdModeSelect = document.getElementById('opdPaymentMode');
+    opdModeSelect && opdModeSelect.addEventListener('change', buildOPDUPIQR);
+    const amountInput = document.getElementById('opdTotal');
+    amountInput && amountInput.addEventListener('input', buildOPDUPIQR);
+
+    // Initial build (in case user edits existing visit)
+    document.addEventListener('DOMContentLoaded', () => buildOPDUPIQR());
+</script>
+{% endblock %}
+

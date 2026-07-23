@@ -1,0 +1,46 @@
+{% extends 'base_dashboard.html' %}
+
+{% block page_title %}Ultrasound Bills{% endblock %}
+
+{% block content %}
+  <h2 class="mb-3">Ultrasound Bills</h2>
+
+  <form class="mb-3" method="get">
+    <input class="form-control" name="q" placeholder="Search by Bill No / Patient" value="{{ q|default:'' }}" />
+  </form>
+
+  <div class="card">
+    <div class="card-body">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Bill No</th>
+            <th>Patient</th>
+            <th>Options</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in reports %}
+            <tr>
+              <td>{{ r.bill_no }}</td>
+              <td>{{ r.patient }}</td>
+              <td>{{ r.tests }}</td>
+              <td>{{ r.amount }}</td>
+              <td>{{ r.date }}</td>
+              <td>
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'ultrasound:ultrasound_view_report' r.id %}">View</a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="text-center">No ultrasound bills found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+
+

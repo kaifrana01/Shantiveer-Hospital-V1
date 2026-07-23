@@ -1,0 +1,19 @@
+{% extends 'base_ipd.html' %}
+{% block title %}IPD Medicine Bill{% endblock %}
+{% block page_title %}IPD Medicine Bill{% endblock %}
+{% block content %}
+<div class="page-container"><div class="form-card">
+    <h2>IPD Medicine Bill</h2>
+    <form method="post">{% csrf_token %}
+        <div class="row g-2 mb-3">
+            <div class="col-md-2"><label class="small">IPD No</label><input name="ipd_no" class="form-control" required></div>
+            <div class="col-md-3"><label class="small">Medicine</label><input name="medicine" class="form-control"></div>
+            <div class="col-md-1"><label class="small">Qty</label><input type="number" name="qty" class="form-control" value="1"></div>
+            <div class="col-md-2"><label class="small">Rate</label><input type="number" name="rate" class="form-control" step="0.01"></div>
+            <div class="col-md-2"><label class="small">&nbsp;</label><button class="btn-cyan d-block w-100">Add</button></div>
+        </div>
+    </form>
+    <table class="hms-table"><thead><tr><th>Medicine</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
+    <tbody>{% for m in medicines %}<tr><td>{{ m.name }}</td><td>{{ m.qty }}</td><td>{{ m.rate }}</td><td>{{ m.amount }}</td></tr>{% endfor %}</tbody></table>
+</div></div>
+{% endblock %}

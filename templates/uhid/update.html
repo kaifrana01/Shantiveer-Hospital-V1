@@ -1,0 +1,48 @@
+{% extends 'base_cyan.html' %}
+{% block title %}UHID Update{% endblock %}
+{% block page_title %}UHID Update{% endblock %}
+{% block content %}
+<div class="uhid-green-header">UHID Update</div>
+<div class="search-bar-row">
+    <label>Enter UHID :</label>
+    <form method="get" class="d-flex gap-2 flex-grow-1"><input name="uhid" class="form-control form-control-sm" style="max-width:200px" placeholder="UHID" value="{{ search_uhid }}"><button class="btn btn-primary btn-sm">Search</button></form>
+</div>
+<div class="page-container">
+    <div class="form-card mb-3" style="border:1px solid #ccc">
+        <form method="post">{% csrf_token %}
+            <div class="row g-2 mb-2">
+                <div class="col-md-4"><label class="small">Patient Name</label><div class="input-group input-group-sm"><select class="form-select" style="max-width:70px"><option>Mr</option><option>Mrs</option></select><input name="patient_name" class="form-control" value="{{ patient.name }}"></div></div>
+                <div class="col-md-4"><label class="small">Relation</label><div class="input-group input-group-sm"><select class="form-select" style="max-width:70px"><option>S/o</option><option>D/o</option><option>W/o</option></select><input name="guardian" class="form-control"></div></div>
+            </div>
+            <div class="row g-2 mb-2">
+                <div class="col-md-2"><label class="small">Gender</label><select name="gender" class="form-select form-select-sm"><option>Male</option><option>Female</option></select></div>
+                <div class="col-md-2"><label class="small">Marital</label><select name="marital" class="form-select form-select-sm"><option>Single</option><option>Married</option></select></div>
+                <div class="col-md-2"><label class="small">DOB</label><input type="date" name="dob" class="form-control form-control-sm"></div>
+                <div class="col-md-2"><label class="small">Mobile</label><input name="mobile" class="form-control form-control-sm"></div>
+                <div class="col-md-1"><label class="small">B.G.</label><select name="blood_group" class="form-select form-select-sm"><option>NA</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+<option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div>
+                <div class="col-md-1"><label class="small">Resident</label><select class="form-select form-select-sm"><option>India</option></select></div>
+            </div>
+            <div class="row g-2 mb-2">
+                <div class="col-md-2"><label class="small">State</label><select class="form-select form-select-sm"><option>-- Select State --</option><option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Goa</option><option>Gujarat</option>
+                    <option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option>
+                    <option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option><option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option><option>Delhi</option><option>Jammu and Kashmir</option><option>Ladakh</option><option>Chandigarh</option><option>Lakshadweep</option><option>Puducherry</option></select></div>
+                <div class="col-md-2"><label class="small">City</label><select class="form-select form-select-sm"><option>-- Select City --</option><option>Agra</option><option>Aligarh</option><option>Ambedkar Nagar</option><option>Amethi</option><option>Amroha</option><option>Auraiya</option><option>Ayodhya</option><option>Azamgarh</option><option>Baghpat</option><option>Bahraich</option><option>Ballia</option><option>Balrampur</option><option>Banda</option><option>Barabanki</option><option>Bareilly</option>
+
+<option>Basti</option><option>Bhadohi</option><option>Bijnor</option><option>Budaun</option><option>Bulandshahr</option><option>Chandauli</option><option>Chitrakoot</option><option>Deoria</option><option>Etah</option><option>Etawah</option><option>Farrukhabad</option><option>Fatehpur</option><option>Firozabad</option><option>Gautam Buddha Nagar (Noida)</option><option>Ghaziabad</option>
+
+<option>Ghazipur</option><option>Gonda</option><option>Gorakhpur</option><option>Hamirpur</option><option>Hapur</option><option>Hardoi</option><option>Hathras</option><option>Jalaun</option><option>Jaunpur</option><option>Jhansi</option><option>Kannauj</option><option>Kanpur Dehat</option><option>Kanpur Nagar</option><option>Kasganj</option><option>Kaushambi</option>
+
+<option>Kheri (Lakhimpur Kheri)</option><option>Kushinagar</option><option>Lalitpur</option><option>Lucknow</option><option>Maharajganj</option><option>Mahoba</option><option>Mainpuri</option><option>Mathura</option><option>Mau</option><option>Meerut</option><option>Mirzapur</option><option>Moradabad</option><option>Muzaffarnagar</option><option>Pilibhit</option><option>Pratapgarh</option>
+
+<option>Prayagraj</option><option>Raebareli</option><option>Rampur</option><option>Saharanpur</option><option>Sambhal</option><option>Sant Kabir Nagar</option><option>Shahjahanpur</option><option>Shamli</option><option>Shravasti</option><option>Siddharthnagar</option><option>Sitapur</option><option>Sonbhadra</option><option>Sultanpur</option><option>Unnao</option><option>Varanasi</option></select></div>
+                <div class="col-md-6"><label class="small">Address</label><textarea name="address" class="form-control form-control-sm" rows="2"></textarea></div>
+                <div class="col-md-2 d-flex align-items-end"><button type="submit" class="btn btn-primary w-100">Save</button></div>
+            </div>
+        </form>
+    </div>
+    <table class="hms-table"><thead><tr><th>UHID</th><th>Patient Name</th><th>Gender</th><th>Age</th><th>Mobile</th></tr></thead>
+    <tbody>{% for p in patients %}<tr><td><a href="?uhid={{ p.uhid }}">{{ p.uhid }}</a></td><td>{{ p.name }}</td><td>{{ p.gender }}</td><td>{{ p.age }}</td><td>{{ p.mobile }}</td></tr>{% endfor %}</tbody></table>
+    <nav class="mt-3"><ul class="pagination justify-content-center">{% for i in "123456" %}<li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>{% endfor %}<li class="page-item"><a class="page-link" href="#">Next →</a></li></ul></nav>
+</div>
+{% endblock %}

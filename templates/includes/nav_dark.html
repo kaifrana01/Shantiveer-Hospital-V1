@@ -1,0 +1,14 @@
+<nav class="dark-navbar">
+    <a href="{% url 'core:home' %}" class="brand">Hospital</a>
+    <a href="{% url 'core:home' %}" class="{% if active_nav == 'home' %}active{% endif %}"><i class="bi bi-house"></i> Home</a>
+    <a href="{% url 'opd:registration' %}" class="{% if active_nav == 'opd' %}active{% endif %}"><i class="bi bi-person"></i> OPD</a>
+    <a href="{% url 'prescription:list' %}" class="{% if active_nav == 'pres' %}active{% endif %}"><i class="bi bi-heart-pulse"></i> Prescription</a>
+    <a href="{% url 'lab:investigation' %}" class="{% if active_nav == 'lab' %}active{% endif %}"><i class="bi bi-droplet"></i> Lab</a>
+    <a href="{% url 'lab:view_all' %}" class="{% if active_nav == 'lab2' %}active{% endif %}"><i class="bi bi-droplet-half"></i> Lab</a>
+    <a href="{% url 'masterdata:interpretation' %}" class="{% if active_nav == 'master' %}active{% endif %}"><i class="bi bi-database"></i> Master Data</a>
+    <a href="{% url 'uhid:update' %}" class="{% if active_nav == 'uhid' %}active{% endif %}"><i class="bi bi-plus-circle"></i> UHID</a>
+    <a href="{% url 'pharmacy:items' %}" class="{% if active_nav == 'pharmacy' %}active{% endif %}"><i class="bi bi-capsule"></i> Pharmacy</a>
+    <a href="{% url 'income:daybook' %}" class="{% if active_nav == 'income' %}active{% endif %}"><i class="bi bi-cash"></i> Income</a>
+    <a href="{% url 'core:dashboard' %}" class="{% if active_nav == 'mis' %}active{% endif %}"><i class="bi bi-bar-chart"></i> MIS</a>
+    <a href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+</nav>

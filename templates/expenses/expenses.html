@@ -1,0 +1,357 @@
+{% extends 'base_dashboard.html' %}
+{% load group_tags %}
+
+{% block page_title %}Expenses{% endblock %}
+
+{% block content %}
+
+<style>
+  .expense-line-row { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px dashed #eee; }
+  .expense-line-row:last-child { border-bottom:none; }
+  .expense-line-label { width:120px; flex:0 0 120px; font-size:0.85rem; font-weight:600; color:#444; }
+  .expense-line-amount { width:120px; flex:0 0 120px; }
+  .expense-line-name { flex:1 1 auto; }
+  .register-cell-name { display:block; font-size:0.72rem; color:#888; margin-top:2px; }
+  .register-cell-amount { font-weight:600; }
+</style>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-6">
+    <div class="widget-card">
+      <div class="widget-header">
+        <span class="widget-title"><i class="bi bi-cash-stack"></i> Basic Expenses — New Entry</span>
+      </div>
+
+      <form method="post" class="mt-2">
+        {% csrf_token %}
+        <input type="hidden" name="form" value="basic" />
+
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label">Date</label>
+            {{ basic_form.date }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Remarks (general note for this entry)</label>
+            {{ basic_form.remarks }}
+          </div>
+        </div>
+
+        <div class="section-divider mt-3 mb-1">Amounts &amp; Given To</div>
+        <div class="expense-line-header expense-line-row" style="border-bottom:1px solid #ddd;">
+          <div class="expense-line-label">Category</div>
+          <div class="expense-line-amount"><small class="text-muted">Amount (₹)</small></div>
+          <div class="expense-line-name"><small class="text-muted">Given To / Paid To</small></div>
+        </div>
+        {% for label, amount_field, name_field in basic_form.rows_meta %}
+          <div class="expense-line-row">
+            <div class="expense-line-label">{{ label }}:</div>
+            <div class="expense-line-amount">{{ amount_field }}</div>
+            <div class="expense-line-name">{{ name_field }}</div>
+          </div>
+        {% endfor %}
+
+        <div class="mt-3 d-flex gap-2">
+          <button class="btn btn-primary" type="submit"><i class="bi bi-save"></i> Save Basic Expenses</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="widget-card">
+      <div class="widget-header">
+        <span class="widget-title"><i class="bi bi-truck"></i> Advance Expenses — New Entry</span>
+      </div>
+
+      <form method="post" class="mt-2">
+        {% csrf_token %}
+        <input type="hidden" name="form" value="advance" />
+
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label">Date</label>
+            {{ advance_form.date }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Remarks (general note for this entry)</label>
+            {{ advance_form.remarks }}
+          </div>
+        </div>
+
+        <div class="section-divider mt-3 mb-1">Amounts &amp; Given To</div>
+        <div class="expense-line-header expense-line-row" style="border-bottom:1px solid #ddd;">
+          <div class="expense-line-label">Category</div>
+          <div class="expense-line-amount"><small class="text-muted">Amount (₹)</small></div>
+          <div class="expense-line-name"><small class="text-muted">Given To / Paid To</small></div>
+        </div>
+        {% for label, amount_field, name_field in advance_form.rows_meta %}
+          <div class="expense-line-row">
+            <div class="expense-line-label">{{ label }}:</div>
+            <div class="expense-line-amount">{{ amount_field }}</div>
+            <div class="expense-line-name">{{ name_field }}</div>
+          </div>
+        {% endfor %}
+
+        <div class="mt-3 d-flex gap-2">
+          <button class="btn btn-primary" type="submit"><i class="bi bi-save"></i> Save Advance Expenses</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-12">
+    <div class="widget-card">
+      <div class="widget-header">
+        <span class="widget-title"><i class="bi bi-funnel"></i> Filter Registers / Chart</span>
+      </div>
+      <form id="expensesFilterForm" method="get">
+        <div class="row g-2 mt-2">
+          <div class="col-md-4">
+            <label class="form-label">From Date</label>
+            <input type="date" class="form-control form-control-sm" name="date_from" value="{{ date_from|default_if_none:'' }}" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">To Date</label>
+            <input type="date" class="form-control form-control-sm" name="date_to" value="{{ date_to|default_if_none:'' }}" />
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-funnel"></i> Apply Filter</button>
+          </div>
+        </div>
+      </form>
+      {% if date_from or date_to %}
+        <a class="btn btn-sm btn-outline-secondary mt-2" href="{% url 'expenses:page' %}">Clear filter</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-12">
+    <div class="widget-card">
+      <div class="widget-header">
+        <span class="widget-title"><i class="bi bi-cash-stack"></i> Basic Expenses — Register</span>
+        <span class="badge bg-light text-dark">Total: ₹{{ basic_pivot_grand_total|floatformat:2 }}</span>
+      </div>
+      <div class="table-responsive mt-2" style="max-height:460px; overflow-y:auto;">
+        <table class="hms-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Remarks</th>
+              {% for code, label in basic_categories %}
+                <th class="text-end">{{ label }}</th>
+              {% endfor %}
+              <th class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in basic_pivot_rows %}
+              <tr>
+                <td>{{ row.date }}</td>
+                <td>{{ row.remarks|default:"—" }}</td>
+                {% for code, label in basic_categories %}
+                  <td class="text-end">
+                    {% with amt=row.amounts|get_item:code name=row.names|get_item:code %}
+                      {% if amt %}
+                        <span class="register-cell-amount">₹{{ amt|floatformat:2 }}</span>
+                        {% if name %}<span class="register-cell-name">{{ name }}</span>{% endif %}
+                      {% else %}
+                        —
+                      {% endif %}
+                    {% endwith %}
+                  </td>
+                {% endfor %}
+                <td class="text-end"><strong>₹{{ row.total|floatformat:2 }}</strong></td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="{{ basic_categories|length|add:3 }}" class="text-muted text-center">No basic expenses in selected range</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          {% if basic_pivot_rows %}
+          <tfoot>
+            <tr>
+              <th colspan="2" class="text-end">Column Totals</th>
+              {% for code, label in basic_categories %}
+                <th class="text-end">₹{{ basic_pivot_totals|get_item:code|floatformat:2 }}</th>
+              {% endfor %}
+              <th class="text-end">₹{{ basic_pivot_grand_total|floatformat:2 }}</th>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-12">
+    <div class="widget-card">
+      <div class="widget-header">
+        <span class="widget-title"><i class="bi bi-truck"></i> Advance Expenses — Register</span>
+        <span class="badge bg-light text-dark">Total: ₹{{ advance_pivot_grand_total|floatformat:2 }}</span>
+      </div>
+      <div class="table-responsive mt-2" style="max-height:320px; overflow-y:auto;">
+        <table class="hms-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Remarks</th>
+              {% for code, label in advance_categories %}
+                <th class="text-end">{{ label }}</th>
+              {% endfor %}
+              <th class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in advance_pivot_rows %}
+              <tr>
+                <td>{{ row.date }}</td>
+                <td>{{ row.remarks|default:"—" }}</td>
+                {% for code, label in advance_categories %}
+                  <td class="text-end">
+                    {% with amt=row.amounts|get_item:code name=row.names|get_item:code %}
+                      {% if amt %}
+                        <span class="register-cell-amount">₹{{ amt|floatformat:2 }}</span>
+                        {% if name %}<span class="register-cell-name">{{ name }}</span>{% endif %}
+                      {% else %}
+                        —
+                      {% endif %}
+                    {% endwith %}
+                  </td>
+                {% endfor %}
+                <td class="text-end"><strong>₹{{ row.total|floatformat:2 }}</strong></td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="{{ advance_categories|length|add:3 }}" class="text-muted text-center">No advance expenses in selected range</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          {% if advance_pivot_rows %}
+          <tfoot>
+            <tr>
+              <th colspan="2" class="text-end">Column Totals</th>
+              {% for code, label in advance_categories %}
+                <th class="text-end">₹{{ advance_pivot_totals|get_item:code|floatformat:2 }}</th>
+              {% endfor %}
+              <th class="text-end">₹{{ advance_pivot_grand_total|floatformat:2 }}</th>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="widget-card">
+      <div class="widget-header">
+        <span class="widget-title"><i class="bi bi-list-ul"></i> All Expenses — Flat Log</span>
+        <span class="badge bg-light text-dark">Total: ₹{{ chart_total|floatformat:2 }}</span>
+      </div>
+
+      <div class="table-responsive mt-3" style="max-height:320px; overflow-y:auto;">
+        <table class="hms-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Category</th>
+              <th>Paid To</th>
+              <th class="text-end">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in basic_rows %}
+              <tr>
+                <td>{{ r.date }}</td>
+                <td><strong>basic</strong></td>
+                <td>{{ r.category }}</td>
+                <td>{{ r.paid_to|default:"—" }}</td>
+                <td class="text-end">₹{{ r.amount|floatformat:2 }}</td>
+              </tr>
+            {% endfor %}
+            {% for r in advance_rows %}
+              <tr>
+                <td>{{ r.date }}</td>
+                <td><strong>advance</strong></td>
+                <td>{{ r.category }}</td>
+                <td>{{ r.paid_to|default:"—" }}</td>
+                <td class="text-end">₹{{ r.amount|floatformat:2 }}</td>
+              </tr>
+            {% endfor %}
+            {% if not basic_rows and not advance_rows %}
+              <tr>
+                <td colspan="5" class="text-muted text-center">No expenses in selected range</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="widget-card">
+      <div class="widget-header">
+        <span class="widget-title"><i class="bi bi-pie-chart"></i> Total Expenses Chart</span>
+      </div>
+      <div class="p-2">
+        <canvas id="expensesPieChart" height="220"></canvas>
+      </div>
+      <script>
+        (function(){
+          const data = [
+            {% if breakdown %}
+            {% for r in breakdown %}
+              { label: '{{ r.category }}', value: {{ r.total|default:0 }} },
+            {% endfor %}
+            {% else %}
+              { label: 'None', value: 0 },
+            {% endif %}
+          ];
+
+          const labels = data.map(d=>d.label);
+          const values = data.map(d=>d.value);
+
+          const ctx = document.getElementById('expensesPieChart');
+          if(!ctx || typeof Chart==='undefined') return;
+
+          new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels,
+              datasets: [{
+                data: values,
+                backgroundColor: labels.map((_,i)=>[
+                  '#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#14b8a6','#f97316','#10b981','#64748b'
+                ][i%9])
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                  callbacks: {
+                    label: (ctx)=> '₹' + Number(ctx.parsed).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})
+                  }
+                }
+              }
+            }
+          });
+        })();
+      </script>
+    </div>
+  </div>
+</div>
+{% endblock %}

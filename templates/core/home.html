@@ -1,0 +1,68 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - SantiVeer HMS </title>
+    <link rel="icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{% static 'css/main.css' %}" rel="stylesheet">
+</head>
+<body>
+<div class="home-page">
+    <aside class="home-sidebar">
+        <a href="{% url 'opd:registration' %}">OPD</a>
+        <a href="{% url 'ipd:admission' %}">IPD</a>
+        <a href="{% url 'lab:investigation' %}">Lab</a>
+        <a href="{% url 'pharmacy:items' %}">Pharmacy</a>
+        <a href="{% url 'prescription:list' %}">Prescription</a>
+        <a href="{% url 'core:dashboard' %}">MIS Report</a>
+        <a href="{% url 'uhid:update' %}">UHID</a>
+        <a href="{% url 'accounts:logout' %}">logout</a>
+    </aside>
+    <main class="home-main">
+        <div class="home-header">
+            <div class="brand-row">
+                <div class="brand-logo">
+                    <strong style="color:#c00;font-size:1.5rem">♥</strong>
+                    <strong style="color:#1e40af">SantiVeer</strong>
+                </div>
+                <h1>HOSPITAL MANAGEMENT SOFTWARE</h1>
+            </div>
+        </div>
+        <div class="module-circles">
+            <a href="{% url 'opd:registration' %}" class="module-circle"><div class="circle"><i class="bi bi-person"></i></div><span>OPD</span></a>
+            <a href="{% url 'ipd:admission' %}" class="module-circle"><div class="circle"><i class="bi bi-hospital"></i></div><span>IPD</span></a>
+            <a href="{% url 'lab:investigation' %}" class="module-circle"><div class="circle"><i class="bi bi-droplet"></i></div><span>Lab</span></a>
+            <a href="{% url 'pharmacy:items' %}" class="module-circle"><div class="circle"><i class="bi bi-capsule"></i></div><span>Pharmacy</span></a>
+            <a href="{% url 'prescription:list' %}" class="module-circle"><div class="circle"><i class="bi bi-file-medical"></i></div><span>Prescription</span></a>
+            <a href="{% url 'core:dashboard' %}" class="module-circle"><div class="circle"><i class="bi bi-bar-chart"></i></div><span>MIS</span></a>
+            <a href="{% url 'uhid:update' %}" class="module-circle"><div class="circle"><i class="bi bi-person-badge"></i></div><span>UHID</span></a>
+            <a href="{% url 'accounts:logout' %}" class="module-circle"><div class="circle"><i class="bi bi-shield-check"></i></div><span>logout</span></a>
+        </div>
+        <div class="home-info-cards">
+            <div class="info-card">
+                <div class="brand-logo" style="align-self:flex-start"><strong style="color:#c00">♥</strong> <strong>SantiVeer</strong></div>
+                <div>
+                    <h3>Hospital Details</h3>
+                    <p><i class="bi bi-building"></i> {{ hospital_name }}</p>
+                    <p><i class="bi bi-geo-alt"></i> {{ hospital_address }}</p>
+                    <p><i class="bi bi-geo-alt"></i> Near Bus Stand</p>
+                    <p><i class="bi bi-telephone"></i> {{ hospital_phone }}</p>
+                </div>
+            </div>
+            <div class="info-card">
+                <div>
+                    <h3>Software Info</h3>
+                    <p><i class="bi bi-code-slash"></i>Amayra Solutions</p>
+                    <p><i class="bi bi-telephone"></i> 9821235034</p>
+                    <p><i class="bi bi-envelope"></i> amiralamrana@gmail.com</p>
+                    <p><i class="bi bi-globe"></i> www.amayrasolutions.com</p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

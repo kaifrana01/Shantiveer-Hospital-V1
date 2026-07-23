@@ -1,0 +1,68 @@
+{% extends 'base_cyan.html' %}
+{% block title %}Pharmacy - Items Master{% endblock %}
+{% block page_title %}Pharmacy - Items Master{% endblock %}
+{% block content %}
+<div class="pharmacy-layout">
+    <div class="pharmacy-sidebar">
+        <a href="{% url 'pharmacy:purchase' %}">Purchase</a>
+        <a href="{% url 'pharmacy:items' %}" class="active">Items</a>
+        <a href="{% url 'pharmacy:sale' %}">Sale</a>
+        <a href="{% url 'pharmacy:sale_purchase' %}">Sale Purchase</a>
+    </div>
+    <div class="pharmacy-main">
+        <div class="form-card mb-3">
+            <h6 class="fw-bold mb-3">Add Item</h6>
+            <form method="post" class="row g-2 align-items-end">{% csrf_token %}
+                <div class="col-md-3"><label class="small">Name</label><input name="name" class="form-control form-control-sm" placeholder="CROSIN TAB"></div>
+                <div class="col-md-2"><label class="small">Drug (Optional)</label><input name="drug" class="form-control form-control-sm"></div>
+                <div class="col-md-2"><label class="small">Unit</label><select name="unit" class="form-select form-select-sm"><option>-- UNIT TYPE --</option><option>TAB</option><option>INJ</option><option>SRP</option></select></div>
+                <div class="col-md-1"><label class="small">Buffer</label><input name="buffer" class="form-control form-control-sm" value="20"></div>
+                <div class="col-md-2"><label class="small">HSN</label><select class="form-select form-select-sm"><option>HSN (SGST+CGST)</option></select></div>
+                <div class="col-md-1"><label class="small">Schedules</label><select class="form-select form-select-sm"><option>--NA--</option></select></div>
+                <div class="col-md-1"><label class="small">Packing</label><input name="packing" class="form-control form-control-sm" value="1"></div>
+                <div class="col-auto"><label class="small d-block"><input type="checkbox" name="discount"> Discount(Sale)</label></div>
+                <div class="col-auto"><button class="btn btn-primary btn-sm">Add</button></div>
+            </form>
+        </div>
+        <form method="get" class="d-flex gap-2 mb-2"><input name="q" class="form-control form-control-sm" style="max-width:200px" placeholder="Name"><button class="btn btn-primary btn-sm">Search</button></form>
+        <table class="hms-table green-head">
+            <thead>
+                <tr>
+                    <th>S.No.</th>
+                    <th>Item Name</th>
+                    <th>Schedule</th>
+                    <th>Unit Type</th>
+                    <th>HSN (GST)</th>
+                    <th>Packing</th>
+                    <th>Buffer</th>
+                    <th>Stock</th>
+                    <th>Status/Action</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in items %}
+            <tr class="{% if item.stock <= item.buffer %}table-warning{% endif %}">
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.name }}</td>
+                <td>{{ item.schedule }}</td>
+                <td>{{ item.unit_type }}</td>
+                <td>{{ item.hsn }}</td>
+                <td>{{ item.packing }}</td>
+                <td>{{ item.buffer }}</td>
+                <td>
+                    <strong>{{ item.stock }}</strong>
+                    {% if item.stock <= item.buffer %}
+                        <div class="text-danger small">Low stock</div>
+                    {% endif %}
+                </td>
+                <td><a href="#">ActiveEdit</a></td>
+                <td><input type="checkbox"></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

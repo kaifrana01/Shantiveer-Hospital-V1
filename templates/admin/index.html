@@ -1,0 +1,412 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Console — ShantiVeer HMS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090f;
+      --bg-card: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.09);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --sidebar-w: 240px;
+      --topbar-h: 56px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* TOPBAR */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-h); z-index: 100;
+      background: rgba(7,9,15,0.95); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 20px; gap: 14px;
+    }
+    .topbar-brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1rem; color: #fff; text-decoration: none; }
+    .brand-icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg,#1e40af,#7c3aed); display: flex; align-items: center; justify-content: center; font-size: 15px; overflow: hidden; }
+    .brand-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .user-chip { display: flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); font-size: 0.8rem; }
+    .role-badge { background: rgba(59,130,246,0.2); color: #93c5fd; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
+    .topbar-btn { padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: var(--text); text-decoration: none; cursor: pointer; transition: background 0.15s; }
+    .topbar-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .topbar-btn.danger { border-color: rgba(239,68,68,0.3); color: #fca5a5; }
+    .topbar-btn.danger:hover { background: rgba(239,68,68,0.12); }
+
+    /* SIDEBAR */
+    .sidebar {
+      position: fixed; top: var(--topbar-h); left: 0; bottom: 0; width: var(--sidebar-w);
+      background: rgba(255,255,255,0.025); border-right: 1px solid var(--border);
+      overflow-y: auto; z-index: 50; padding: 12px 0;
+    }
+    .sidebar-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); display: block; padding: 8px 16px 4px; margin-top: 8px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 16px; margin: 1px 8px; text-decoration: none; color: var(--muted); font-size: 0.85rem; font-weight: 600; cursor: pointer; border-radius: 8px; transition: background 0.12s, color 0.12s; }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+    .nav-item.active { background: rgba(59,130,246,0.15); color: #93c5fd; }
+    .nav-item i { font-size: 0.95rem; flex-shrink: 0; }
+
+    /* MAIN */
+    .main-wrap { margin-left: var(--sidebar-w); padding-top: var(--topbar-h); min-height: 100vh; }
+    .admin-main { padding: 24px; }
+
+    /* STATS */
+    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 22px; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
+    .stat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+    .stat-val { font-size: 1.8rem; font-weight: 900; line-height: 1; }
+    .stat-lbl { font-size: 0.72rem; color: var(--muted); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* SECTION CARD */
+    .section-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 20px; overflow: hidden; }
+    .section-head { padding: 14px 18px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+    .section-head-title { font-size: 0.9rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .section-body { padding: 16px 18px; }
+
+    /* CONTROL GRID */
+    .ctrl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 12px; }
+    .ctrl-card { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); text-decoration: none; color: var(--text); transition: background 0.15s, border-color 0.15s; }
+    .ctrl-card:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.18); color: #fff; }
+    .ctrl-icon { width: 38px; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .ctrl-title { font-size: 0.82rem; font-weight: 700; }
+    .ctrl-desc { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+
+    /* TABLES */
+    .log-table, .user-table, .test-table { width: 100%; border-collapse: collapse; }
+    .log-table th, .user-table th, .test-table th { padding: 10px 14px; text-align: left; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); border-bottom: 1px solid var(--border); }
+    .log-table td, .user-table td, .test-table td { padding: 10px 14px; font-size: 0.82rem; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    .log-table tr:last-child td, .user-table tr:last-child td, .test-table tr:last-child td { border-bottom: none; }
+    .log-table tr:hover td, .user-table tr:hover td, .test-table tr:hover td { background: rgba(255,255,255,0.03); }
+
+    /* BADGES */
+    .badge-action { display: inline-block; padding: 2px 9px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
+    .badge-add    { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+    .badge-change { background: rgba(59,130,246,0.15);  color: #93c5fd; }
+    .badge-delete { background: rgba(239,68,68,0.15);   color: #fca5a5; }
+    .role-badge-tbl { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
+
+    /* SMALL BUTTONS */
+    .btn-sm-primary { padding: 5px 12px; border-radius: 7px; font-size: 0.75rem; font-weight: 700; background: #1d4ed8; color: #fff; border: none; text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: background 0.15s; }
+    .btn-sm-primary:hover { background: #1e40af; color: #fff; }
+    .btn-sm-ghost { padding: 5px 12px; border-radius: 7px; font-size: 0.75rem; font-weight: 700; background: rgba(255,255,255,0.05); color: var(--muted); border: 1px solid var(--border); text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: background 0.15s; }
+    .btn-sm-ghost:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+    /* WIDGET BANNER */
+    #widget-banner { display: none; margin-bottom: 16px; padding: 10px 14px; border-radius: 10px; background: #fff7ed; border: 1px solid #fed7aa; color: #92400e; font-size: .88rem; }
+
+    @media (max-width: 900px) {
+      .stats-row { grid-template-columns: repeat(2,1fr); }
+      .sidebar { display: none; }
+      .main-wrap { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <a class="topbar-brand" href="/admin/">
+    <div class="brand-icon">
+      <img src="{% static 'img/logo.jpeg' %}" alt="SV" onerror="this.parentNode.innerHTML='🏥'">
+    </div>
+    ShantiVeer HMS
+  </a>
+  <span style="color:var(--muted);font-size:.78rem;margin-left:4px">Admin Console</span>
+  <div class="topbar-right">
+    <div class="user-chip">
+      <i class="bi bi-person-circle" style="font-size:1rem"></i>
+      <span>{{ request.user.get_full_name|default:request.user.username }}</span>
+      <span class="role-badge">
+        {% if request.user.is_superuser %}Superuser
+        {% else %}{{ request.user.groups.first.name|default:"Admin" }}{% endif %}
+      </span>
+    </div>
+    <a class="topbar-btn" href="/"><i class="bi bi-house"></i> HMS</a>
+    <a class="topbar-btn danger" href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <span class="sidebar-label">Overview</span>
+  <a class="nav-item active" href="/admin/"><i class="bi bi-speedometer2"></i> Dashboard</a>
+
+  <span class="sidebar-label">Users &amp; Access</span>
+  <a class="nav-item" href="{% url 'admin:auth_user_add' %}"><i class="bi bi-person-plus"></i> Add User</a>
+  <a class="nav-item" href="{% url 'admin:auth_user_changelist' %}"><i class="bi bi-people"></i> All Users</a>
+  <a class="nav-item" href="{% url 'admin:auth_group_changelist' %}"><i class="bi bi-shield-check"></i> Role Groups</a>
+
+  <span class="sidebar-label">Medical</span>
+  <a class="nav-item" href="{% url 'admin:lab_labtestmaster_add' %}"><i class="bi bi-plus-circle"></i> Add Test</a>
+  <a class="nav-item" href="{% url 'admin:lab_labtestmaster_changelist' %}"><i class="bi bi-droplet"></i> Lab Tests</a>
+  <a class="nav-item" href="{% url 'admin:masterdata_doctor_changelist' %}"><i class="bi bi-person-badge"></i> Doctors</a>
+
+  <span class="sidebar-label">Activity</span>
+  <a class="nav-item" href="{% url 'admin:admin_logentry_changelist' %}"><i class="bi bi-journal-text"></i> Activity Logs</a>
+
+  <span class="sidebar-label">Account</span>
+  <a class="nav-item" href="{% url 'accounts:change_password' %}"><i class="bi bi-key"></i> Change Password</a>
+  <a class="nav-item" href="/"><i class="bi bi-arrow-left-circle"></i> Back to HMS</a>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div class="main-wrap">
+  <main class="admin-main">
+
+    <div id="widget-banner">Dashboard widgets are partially unavailable. Menus still work.</div>
+
+    <!-- STATS ROW -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-people-fill"></i></div>
+        <div>
+          <div class="stat-val" id="stat-users">—</div>
+          <div class="stat-lbl">Total Users</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#f0fdf4;color:#10b981"><i class="bi bi-droplet-fill"></i></div>
+        <div>
+          <div class="stat-val" id="stat-tests">—</div>
+          <div class="stat-lbl">Medical Tests</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fefce8;color:#d97706"><i class="bi bi-journal-text"></i></div>
+        <div>
+          <div class="stat-val" id="stat-logs">—</div>
+          <div class="stat-lbl">Log Entries Today</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fdf4ff;color:#9333ea"><i class="bi bi-shield-fill-check"></i></div>
+        <div>
+          <div class="stat-val" id="stat-groups">—</div>
+          <div class="stat-lbl">Role Groups</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK CONTROLS -->
+    <div class="section-card">
+      <div class="section-head">
+        <div class="section-head-title"><i class="bi bi-grid-3x3-gap-fill" style="color:#2563eb"></i> Quick Controls</div>
+      </div>
+      <div class="section-body">
+        <div class="ctrl-grid">
+          <a class="ctrl-card" href="{% url 'admin:auth_user_add' %}">
+            <div class="ctrl-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-person-plus-fill"></i></div>
+            <div><div class="ctrl-title">Add User</div><div class="ctrl-desc">Create doctor / receptionist / admin</div></div>
+          </a>
+          <a class="ctrl-card" href="{% url 'admin:auth_user_changelist' %}">
+            <div class="ctrl-icon" style="background:#f0fdf4;color:#10b981"><i class="bi bi-people-fill"></i></div>
+            <div><div class="ctrl-title">Manage Users</div><div class="ctrl-desc">Edit, activate, assign roles</div></div>
+          </a>
+          <a class="ctrl-card" href="{% url 'admin:auth_group_changelist' %}">
+            <div class="ctrl-icon" style="background:#fdf4ff;color:#9333ea"><i class="bi bi-shield-fill"></i></div>
+            <div><div class="ctrl-title">Role Groups</div><div class="ctrl-desc">Doctor, Receptionist, Admin…</div></div>
+          </a>
+          <a class="ctrl-card" href="{% url 'admin:admin_logentry_changelist' %}">
+            <div class="ctrl-icon" style="background:#fefce8;color:#d97706"><i class="bi bi-journal-text"></i></div>
+            <div><div class="ctrl-title">Activity Logs</div><div class="ctrl-desc">Who changed what &amp; when</div></div>
+          </a>
+          <a class="ctrl-card" href="{% url 'admin:lab_labtestmaster_add' %}">
+            <div class="ctrl-icon" style="background:#f0fdf4;color:#059669"><i class="bi bi-plus-circle-fill"></i></div>
+            <div><div class="ctrl-title">Add Medical Test</div><div class="ctrl-desc">Add test to catalog with rate</div></div>
+          </a>
+          <a class="ctrl-card" href="{% url 'admin:lab_labtestmaster_changelist' %}">
+            <div class="ctrl-icon" style="background:#fff7ed;color:#ea580c"><i class="bi bi-droplet-fill"></i></div>
+            <div><div class="ctrl-title">Edit Tests</div><div class="ctrl-desc">Update rates, activate/deactivate</div></div>
+          </a>
+          <a class="ctrl-card" href="{% url 'admin:lab_labinvestigation_changelist' %}">
+            <div class="ctrl-icon" style="background:#fdf4ff;color:#7c3aed"><i class="bi bi-clipboard2-pulse-fill"></i></div>
+            <div><div class="ctrl-title">Lab Bills</div><div class="ctrl-desc">View &amp; edit lab investigations</div></div>
+          </a>
+          <a class="ctrl-card" href="{% url 'admin:masterdata_doctor_changelist' %}">
+            <div class="ctrl-icon" style="background:#eff6ff;color:#1d4ed8"><i class="bi bi-person-badge-fill"></i></div>
+            <div><div class="ctrl-title">Doctors</div><div class="ctrl-desc">Add/edit consultant list</div></div>
+          </a>
+          <a class="ctrl-card" href="{% url 'accounts:change_password' %}">
+            <div class="ctrl-icon" style="background:#f1f5f9;color:#475569"><i class="bi bi-key-fill"></i></div>
+            <div><div class="ctrl-title">Change Password</div><div class="ctrl-desc">Update your login password</div></div>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px;">
+
+      <!-- RECENT ACTIVITY -->
+      <div class="section-card" style="margin-bottom:0">
+        <div class="section-head">
+          <div class="section-head-title"><i class="bi bi-journal-text" style="color:#d97706"></i> Recent Activity</div>
+          <a href="{% url 'admin:admin_logentry_changelist' %}" class="btn-sm-ghost" style="margin-left:auto"><i class="bi bi-arrow-right"></i> All Logs</a>
+        </div>
+        <div style="padding:0">
+          <table class="log-table">
+            <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Record</th></tr></thead>
+            <tbody id="log-tbody">
+              <tr><td colspan="4" style="text-align:center;padding:1.5rem;color:#aaa;font-size:.8rem">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- USERS BY ROLE -->
+      <div class="section-card" style="margin-bottom:0">
+        <div class="section-head">
+          <div class="section-head-title"><i class="bi bi-people-fill" style="color:#2563eb"></i> Users by Role</div>
+          <a href="{% url 'admin:auth_user_add' %}" class="btn-sm-primary" style="margin-left:auto"><i class="bi bi-plus"></i> Add User</a>
+        </div>
+        <div style="padding:0">
+          <table class="user-table">
+            <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th></th></tr></thead>
+            <tbody id="user-tbody">
+              <tr><td colspan="5" style="text-align:center;padding:1.5rem;color:#aaa;font-size:.8rem">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="padding:.75rem 1rem;border-top:1px solid var(--border);text-align:right">
+          <a href="{% url 'admin:auth_user_changelist' %}" class="btn-sm-ghost"><i class="bi bi-arrow-right"></i> View All Users</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEDICAL TESTS -->
+    <div class="section-card">
+      <div class="section-head">
+        <div class="section-head-title"><i class="bi bi-droplet-fill" style="color:#059669"></i> Medical Test Catalog</div>
+        <div style="margin-left:auto;display:flex;gap:.5rem">
+          <a href="{% url 'admin:lab_labtestmaster_add' %}" class="btn-sm-primary"><i class="bi bi-plus"></i> Add Test</a>
+          <a href="{% url 'admin:lab_labtestmaster_changelist' %}" class="btn-sm-ghost"><i class="bi bi-pencil"></i> Edit All</a>
+        </div>
+      </div>
+      <div style="padding:0">
+        <table class="test-table">
+          <thead><tr><th>#</th><th>Test Name</th><th>Rate (₹)</th><th>Status</th><th>History</th><th>Actions</th></tr></thead>
+          <tbody id="test-tbody">
+            <tr><td colspan="6" style="text-align:center;padding:1.5rem;color:#aaa;font-size:.8rem">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="padding:.75rem 1rem;border-top:1px solid var(--border);text-align:right">
+        <a href="{% url 'admin:lab_labtestmaster_changelist' %}" class="btn-sm-ghost"><i class="bi bi-arrow-right"></i> Full Test List</a>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const ROLE_COLOURS = {
+  'Doctor':        ['#dbeafe','#1d4ed8'],
+  'Administration':['#dcfce7','#166534'],
+  'Receptionist':  ['#cffafe','#0e7490'],
+  'Nurse':         ['#ffedd5','#c2410c'],
+  'LabTech':       ['#ede9fe','#5b21b6'],
+  'Pharmacist':    ['#d1fae5','#065f46'],
+  'Accountant':  ['#fef9c3','#713f12'],
+  'Admin':         ['#fee2e2','#991b1b'],
+  'Superuser':     ['#f3e8ff','#6b21a8'],
+};
+
+function roleBadge(role) {
+  const [bg, fg] = ROLE_COLOURS[role] || ['#f1f5f9','#374151'];
+  return `<span class="role-badge-tbl" style="background:${bg};color:${fg}">${role}</span>`;
+}
+function statusBadge(active) {
+  return active
+    ? `<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:700">● Active</span>`
+    : `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:700">● Inactive</span>`;
+}
+
+async function loadDashboard() {
+  try { await loadStats(); } catch(e) {
+    const b = document.getElementById('widget-banner');
+    if (b) b.style.display = 'block';
+  }
+  loadLogs(); loadUsers(); loadTests();
+}
+
+async function loadStats() {
+  const r = await fetch('/admin/hms-stats/', {credentials:'same-origin'});
+  if (r.ok) {
+    const d = await r.json();
+    document.getElementById('stat-users').textContent  = d.users ?? '—';
+    document.getElementById('stat-tests').textContent  = d.tests ?? '—';
+    document.getElementById('stat-logs').textContent   = d.logs_today ?? '—';
+    document.getElementById('stat-groups').textContent = d.groups ?? '—';
+  }
+}
+
+async function loadLogs() {
+  try {
+    const r = await fetch('/admin/hms-logs/', {credentials:'same-origin'});
+    if (!r.ok) throw new Error();
+    const data = await r.json();
+    const tb = document.getElementById('log-tbody');
+    if (!data.length) { tb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:1rem;color:#aaa;font-size:.8rem">No activity yet</td></tr>'; return; }
+    const AM = {1:['Added','badge-add'], 2:['Changed','badge-change'], 3:['Deleted','badge-delete']};
+    tb.innerHTML = data.map(l => {
+      const [lbl,cls] = AM[l.action_flag] || ['Unknown',''];
+      return `<tr>
+        <td style="white-space:nowrap;font-size:.75rem"><b>${l.date}</b><br><span style="color:#888">${l.time}</span></td>
+        <td style="font-size:.78rem"><b>${l.user_name}</b><br><span style="color:#888;font-size:.7rem">@${l.username}</span></td>
+        <td><span class="badge-action ${cls}">${lbl}</span></td>
+        <td style="font-size:.75rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.model}: ${l.object_repr}">
+          <span style="color:#888">${l.model}</span><br>${l.object_repr}
+        </td></tr>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('log-tbody').innerHTML='<tr><td colspan="4" style="text-align:center;padding:1rem;color:#aaa;font-size:.8rem">Could not load logs</td></tr>';
+  }
+}
+
+async function loadUsers() {
+  try {
+    const r = await fetch('/admin/hms-users/', {credentials:'same-origin'});
+    if (!r.ok) throw new Error();
+    const data = await r.json();
+    const tb = document.getElementById('user-tbody');
+    if (!data.length) { tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:1rem;color:#aaa">No users found</td></tr>'; return; }
+    tb.innerHTML = data.map(u => `<tr>
+      <td style="font-size:.82rem"><b>${u.full_name || u.username}</b></td>
+      <td style="font-size:.75rem;color:#888">@${u.username}</td>
+      <td>${roleBadge(u.role)}</td>
+      <td>${statusBadge(u.is_active)}</td>
+      <td><a href="/admin/auth/user/${u.id}/change/" class="btn-sm-ghost" style="font-size:.7rem;padding:2px 8px"><i class="bi bi-pencil"></i></a></td>
+    </tr>`).join('');
+  } catch(e) {
+    document.getElementById('user-tbody').innerHTML='<tr><td colspan="5" style="text-align:center;padding:1rem;color:#aaa">Could not load users</td></tr>';
+  }
+}
+
+async function loadTests() {
+  try {
+    const r = await fetch('/admin/hms-tests/', {credentials:'same-origin'});
+    if (!r.ok) throw new Error();
+    const data = await r.json();
+    const tb = document.getElementById('test-tbody');
+    if (!data.length) { tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:1rem;color:#aaa">No tests yet. <a href="/admin/lab/labtestmaster/add/" style="color:#60a5fa">Add first test →</a></td></tr>'; return; }
+    tb.innerHTML = data.map((t,i) => `<tr>
+      <td style="color:#aaa;font-size:.75rem">${i+1}</td>
+      <td style="font-size:.82rem"><b>${t.name}</b></td>
+      <td style="font-family:monospace;font-size:.82rem">₹ ${parseFloat(t.rate).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+      <td>${statusBadge(t.is_active)}</td>
+      <td style="font-size:.72rem;color:#888">${t.history_count} revision${t.history_count!==1?'s':''}</td>
+      <td style="display:flex;gap:4px">
+        <a href="/admin/lab/labtestmaster/${t.id}/change/" class="btn-sm-ghost" style="font-size:.7rem;padding:2px 8px"><i class="bi bi-pencil"></i> Edit</a>
+        <a href="/admin/lab/labtestmaster/${t.id}/history/" class="btn-sm-ghost" style="font-size:.7rem;padding:2px 8px"><i class="bi bi-clock-history"></i></a>
+      </td>
+    </tr>`).join('');
+  } catch(e) {
+    document.getElementById('test-tbody').innerHTML='<tr><td colspan="6" style="text-align:center;padding:1rem;color:#aaa">Could not load tests</td></tr>';
+  }
+}
+
+loadDashboard();
+</script>
+</body>
+</html>

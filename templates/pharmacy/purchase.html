@@ -1,0 +1,23 @@
+{% extends 'base_cyan.html' %}
+{% block title %}Pharmacy Purchase{% endblock %}
+{% block page_title %}Pharmacy Purchase{% endblock %}
+{% block content %}
+<div class="pharmacy-layout">
+    <div class="pharmacy-sidebar">
+        <a href="{% url 'pharmacy:purchase' %}" class="active">Purchase</a>
+        <a href="{% url 'pharmacy:items' %}">Items</a>
+        <a href="{% url 'pharmacy:sale' %}">Sale</a>
+        <a href="{% url 'pharmacy:sale_purchase' %}">Sale Purchase</a>
+    </div>
+    <div class="pharmacy-main"><div class="form-card">
+        <h2>Pharmacy Purchase</h2>
+        <form method="post">{% csrf_token %}
+            <div class="row g-2"><div class="col-md-3"><label class="small">Supplier</label><input name="supplier" class="form-control"></div>
+            <div class="col-md-3"><label class="small">Item</label><input name="item_name" class="form-control" placeholder="Type item name"/></div>
+            <div class="col-md-2"><label class="small">Qty</label><input type="number" name="qty" class="form-control"></div>
+            <div class="col-md-2"><label class="small">Rate</label><input type="number" name="rate" class="form-control" step="0.01"></div>
+            <div class="col-md-2"><label class="small">&nbsp;</label><button class="btn btn-primary d-block w-100">Add Purchase</button></div></div>
+        </form>
+    </div></div>
+</div>
+{% endblock %}

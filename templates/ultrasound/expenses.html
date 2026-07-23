@@ -1,0 +1,135 @@
+{% extends 'ultrasound/base_ultrasound.html' %}
+{% block title %}Expenses — Ultrasound{% endblock %}
+{% block page_title %}Ultrasound Expenses{% endblock %}
+
+{% block content %}
+{% if messages %}
+  {% for msg in messages %}
+    <div class="usg-alert usg-alert-{{ msg.tags }}">{{ msg }}</div>
+  {% endfor %}
+{% endif %}
+
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;">
+
+<!-- ── Add Expense Form ── -->
+{% if not request.is_view_only %}
+<div class="usg-card" style="align-self:start;">
+  <div class="usg-card-header">
+    <div class="usg-card-title"><i class="bi bi-plus-circle"></i> Record Expense</div>
+  </div>
+  <div class="usg-card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="usg-form-group">
+        <label>Date *</label>
+        <input type="date" name="date" value="{{ today }}" required />
+      </div>
+      <div class="usg-form-group">
+        <label>Category *</label>
+        <select name="category" required>
+          {% for val, label in categories %}
+            <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="usg-form-group">
+        <label>Description *</label>
+        <input type="text" name="description" required placeholder="e.g. Ultrasound gel purchase" />
+      </div>
+      <div class="usg-form-group">
+        <label>Amount (₹) *</label>
+        <input type="number" name="amount" step="0.01" min="0.01" required placeholder="0.00" />
+      </div>
+      <div class="usg-form-group">
+        <label>Remarks</label>
+        <textarea name="remarks" placeholder="Optional notes"></textarea>
+      </div>
+      <button type="submit" class="btn-usg-primary" style="width:100%;justify-content:center;">
+        <i class="bi bi-check2-circle"></i> Add Expense
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Expense List ── -->
+<div>
+  <!-- Summary -->
+  <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+    <div style="background:#fff;border:1px solid #e0e7ef;border-radius:12px;padding:12px 20px;flex:1;text-align:center;">
+      <div style="font-size:1.4rem;font-weight:800;color:#dc2626;">₹{{ total|floatformat:0 }}</div>
+      <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;">Total Expenses</div>
+    </div>
+    <div style="background:#fff;border:1px solid #e0e7ef;border-radius:12px;padding:12px 20px;flex:1;text-align:center;">
+      <div style="font-size:1.4rem;font-weight:800;color:#4f46e5;">{{ expenses|length }}</div>
+      <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;">Records</div>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="usg-card" style="margin-bottom:14px;">
+    <div class="usg-card-body" style="padding:12px 16px;">
+      <form method="get" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+        <div>
+          <label style="font-size:0.72rem;font-weight:600;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">From</label>
+          <input type="date" name="date_from" value="{{ date_from }}"
+                 style="border:1.5px solid #e0e7ef;border-radius:8px;padding:6px 10px;font-size:0.85rem;" />
+        </div>
+        <div>
+          <label style="font-size:0.72rem;font-weight:600;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">To</label>
+          <input type="date" name="date_to" value="{{ date_to }}"
+                 style="border:1.5px solid #e0e7ef;border-radius:8px;padding:6px 10px;font-size:0.85rem;" />
+        </div>
+        <button type="submit" class="btn-usg-primary" style="padding:6px 16px;">
+          <i class="bi bi-funnel"></i> Filter
+        </button>
+        <a href="{% url 'ultrasound:expenses' %}" class="btn-usg-outline" style="padding:6px 12px;">Clear</a>
+      </form>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="usg-card">
+    <div class="usg-card-body" style="padding:0;">
+      <div class="usg-table-wrap">
+        <table class="usg-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for exp in expenses %}
+            <tr>
+              <td style="white-space:nowrap;color:#64748b;">{{ exp.date }}</td>
+              <td>
+                {% if exp.category == 'consumables' %}<span class="badge-teal">Consumables</span>
+                {% elif exp.category == 'maintenance' %}<span class="badge-amber">Maintenance</span>
+                {% elif exp.category == 'staff' %}<span class="badge-indigo">Staff</span>
+                {% elif exp.category == 'utilities' %}<span class="badge-gray">Utilities</span>
+                {% else %}<span class="badge-gray">{{ exp.category }}</span>{% endif %}
+              </td>
+              <td style="font-weight:600;">{{ exp.description }}</td>
+              <td style="font-weight:700;color:#dc2626;">₹{{ exp.amount }}</td>
+              <td style="color:#64748b;font-size:0.8rem;">{{ exp.remarks|default:'—' }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" style="text-align:center;padding:30px;color:#64748b;">
+                No expenses recorded yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+{% endblock %}

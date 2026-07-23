@@ -1,0 +1,55 @@
+{% load static %}
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ultrasound Bills</title>
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body>
+  {% include 'includes/sidebar_dashboard.html' %}
+  <main class="dash-main">
+    <h2 class="mb-3">Ultrasound Bills</h2>
+
+    <form class="mb-3" method="get">
+      <input class="form-control" name="q" placeholder="Search by Bill No / Patient" value="{{ q|default:'' }}" />
+    </form>
+
+    <div class="card">
+      <div class="card-body">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Bill No</th>
+              <th>Patient</th>
+              <th>Options</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in reports %}
+              <tr>
+                <td>{{ r.bill_no }}</td>
+                <td>{{ r.patient }}</td>
+                <td>{{ r.tests }}</td>
+                <td>{{ r.amount }}</td>
+                <td>{{ r.date }}</td>
+                <td>
+                  <a class="btn btn-sm btn-outline-primary" href="{% url 'lab:ultrasound_view_report' r.id %}">View</a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" class="text-center">No ultrasound bills found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
+

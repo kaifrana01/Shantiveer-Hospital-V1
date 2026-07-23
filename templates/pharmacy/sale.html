@@ -1,0 +1,25 @@
+{% extends 'base_cyan.html' %}
+{% block title %}Pharmacy Sale{% endblock %}
+{% block page_title %}Pharmacy Sale{% endblock %}
+{% block content %}
+<div class="pharmacy-layout">
+    <div class="pharmacy-sidebar">
+        <a href="{% url 'pharmacy:purchase' %}">Purchase</a>
+        <a href="{% url 'pharmacy:items' %}">Items</a>
+        <a href="{% url 'pharmacy:sale' %}" class="active">Sale</a>
+        <a href="{% url 'pharmacy:sale_purchase' %}">Sale Purchase</a>
+    </div>
+    <div class="pharmacy-main"><div class="form-card">
+        <h2>Pharmacy Sale</h2>
+        <form method="post">{% csrf_token %}
+<div class="row g-2"><div class="col-md-2"><label class="small">UHID/Patient</label><input name="patient" class="form-control"></div>
+            <div class="col-md-3"><label class="small">Item</label><input name="item_text" class="form-control" placeholder="Type item name"></div>
+            <input type="hidden" name="item" value="">
+
+            <div class="col-md-2"><label class="small">Qty</label><input type="number" name="qty" class="form-control" value="1"></div>
+            <div class="col-md-2"><label class="small">Mode</label><select name="mode" class="form-select"><option>Cash</option><option>UPI</option></select></div>
+            <div class="col-md-2"><label class="small">&nbsp;</label><button class="btn btn-primary d-block w-100">Complete Sale</button></div></div>
+        </form>
+    </div></div>
+</div>
+{% endblock %}

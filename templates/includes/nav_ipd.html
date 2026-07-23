@@ -1,0 +1,8 @@
+<nav class="ipd-navbar">
+    <a href="{% url 'ipd:patient_list' %}" class="{% if active_ipd == 'home' %}active{% endif %}"><i class="bi bi-house"></i> Home</a>
+    <a href="{% url 'ipd:admission' %}" class="{% if active_ipd == 'admission' %}active{% endif %}"><i class="bi bi-file-earmark-plus"></i> Admission</a>
+    <a href="{% url 'ipd:payment' %}" class="{% if active_ipd == 'payment' %}active{% endif %}"><i class="bi bi-credit-card"></i> Payment</a>
+    <a href="{% url 'ipd:bill' %}" class="{% if active_ipd == 'bill' %}active{% endif %}"><i class="bi bi-receipt"></i> Bill</a>
+    <a href="{% url 'ipd:discharge_list' %}" class="{% if active_ipd == 'discharge' %}active{% endif %}"><i class="bi bi-box-arrow-right"></i> Discharge</a>
+    <a href="{% url 'ipd:medicine' %}" class="{% if active_ipd == 'medicine' %}active{% endif %}"><i class="bi bi-capsule"></i> Medicine</a>
+</nav>

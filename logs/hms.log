@@ -1,0 +1,742 @@
+[2026-07-01 07:34:38,965] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-01 07:34:38,966] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-01 07:34:39,239] WARNING django.request Not Found: /favicon.ico
+[2026-07-01 07:34:39,240] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 11576
+[2026-07-01 07:34:39,250] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-01 07:34:39,258] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-01 07:34:39,290] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-01 07:34:39,291] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-01 07:34:39,309] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-01 07:34:39,310] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-01 07:36:55,991] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-01 07:36:55,993] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-01 07:36:56,292] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-01 07:36:56,302] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-01 07:36:56,345] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-01 07:36:56,367] WARNING django.request Not Found: /favicon.ico
+[2026-07-01 07:36:56,368] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-01 07:36:56,371] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 11576
+[2026-07-01 07:36:56,386] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-01 07:36:56,389] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-01 07:42:04,478] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-01 07:42:04,545] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-01 07:42:04,658] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-01 07:42:04,659] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-01 07:42:04,673] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-01 07:42:04,713] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-01 07:42:04,733] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-01 07:42:04,736] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-01 07:43:00,963] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-01 07:43:01,013] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-01 07:43:01,144] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-01 07:43:01,161] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-01 07:43:01,211] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-01 07:43:01,218] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-01 07:43:01,236] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-01 07:43:01,240] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-01 07:44:31,106] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-01 07:44:31,116] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-01 07:44:31,132] WARNING django.request Not Found: /favicon.ico
+[2026-07-01 07:44:31,138] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 11576
+[2026-07-01 07:44:31,240] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-01 07:44:31,265] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-01 07:44:31,266] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-01 07:44:31,267] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-01 07:44:31,286] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-01 07:44:31,304] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-01 07:51:12,846] WARNING django.request Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2026-07-01 07:51:12,860] WARNING django.server "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11687
+[2026-07-01 07:53:40,327] WARNING django.request Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2026-07-01 07:53:40,330] WARNING django.server "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11687
+[2026-07-01 07:54:14,534] WARNING django.request Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2026-07-01 07:54:14,540] WARNING django.server "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11687
+[2026-07-01 07:54:59,228] WARNING django.request Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2026-07-01 07:54:59,360] WARNING django.server "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11687
+[2026-07-01 07:55:25,359] WARNING django.request Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2026-07-01 07:55:25,600] WARNING django.server "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11687
+[2026-07-01 07:55:33,165] WARNING django.request Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2026-07-01 07:55:33,166] WARNING django.server "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11687
+[2026-07-01 07:56:24,619] WARNING django.request Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2026-07-01 07:56:24,621] WARNING django.server "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11687
+[2026-07-01 07:56:27,642] WARNING django.request Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2026-07-01 07:56:27,644] WARNING django.server "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11687
+[2026-07-01 07:58:04,458] WARNING django.request Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[2026-07-01 07:58:04,458] WARNING django.server "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11687
+[2026-07-01 07:59:26,937] ERROR django.request Internal Server Error: /history/
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'opd_visit'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\core\rbac.py", line 130, in _wrapped
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\history\views.py", line 112, in activity_log
+    'object_repr': str(rec)[:80],
+                   ~~~^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\simple_history\models.py", line 584, in <lambda>
+    "__str__": lambda self: "{} as of {}".format(
+                            ~~~~~~~~~~~~~~~~~~~~^
+        self.history_object, self.history_date
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\prescription\models.py", line 16, in __str__
+    return f'Prescription for {self.opd_visit.opd_no}'
+                               ^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 391, in get_object
+    return super().get_object(instance)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 635, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+opd.models.OPDVisit.DoesNotExist: OPDVisit matching query does not exist.
+[2026-07-01 07:59:26,949] ERROR django.server "GET /history/ HTTP/1.1" 500 127544
+[2026-07-01 08:02:24,891] ERROR django.request Internal Server Error: /history/
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'opd_visit'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\core\rbac.py", line 130, in _wrapped
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\history\views.py", line 112, in activity_log
+    'object_repr': str(rec)[:80],
+                   ~~~^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\simple_history\models.py", line 584, in <lambda>
+    "__str__": lambda self: "{} as of {}".format(
+                            ~~~~~~~~~~~~~~~~~~~~^
+        self.history_object, self.history_date
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\prescription\models.py", line 16, in __str__
+    return f'Prescription for {self.opd_visit.opd_no}'
+                               ^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 391, in get_object
+    return super().get_object(instance)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 635, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+opd.models.OPDVisit.DoesNotExist: OPDVisit matching query does not exist.
+[2026-07-01 08:02:24,895] ERROR django.server "GET /history/ HTTP/1.1" 500 127681
+[2026-07-01 08:02:31,422] ERROR django.request Internal Server Error: /history/
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'opd_visit'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\core\rbac.py", line 130, in _wrapped
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\history\views.py", line 112, in activity_log
+    'object_repr': str(rec)[:80],
+                   ~~~^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\simple_history\models.py", line 584, in <lambda>
+    "__str__": lambda self: "{} as of {}".format(
+                            ~~~~~~~~~~~~~~~~~~~~^
+        self.history_object, self.history_date
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\prescription\models.py", line 16, in __str__
+    return f'Prescription for {self.opd_visit.opd_no}'
+                               ^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 391, in get_object
+    return super().get_object(instance)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 635, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+opd.models.OPDVisit.DoesNotExist: OPDVisit matching query does not exist.
+[2026-07-01 08:02:31,429] ERROR django.server "GET /history/ HTTP/1.1" 500 127544
+[2026-07-01 08:02:35,847] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-01 08:02:35,848] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-01 08:02:36,034] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-01 08:02:36,035] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-01 08:02:36,047] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-01 08:02:36,048] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-01 08:02:36,081] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-01 08:02:36,082] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-01 08:09:11,336] ERROR django.request Internal Server Error: /history/
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'opd_visit'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\core\rbac.py", line 130, in _wrapped
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\history\views.py", line 112, in activity_log
+    'object_repr': str(rec)[:80],
+                   ~~~^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\simple_history\models.py", line 584, in <lambda>
+    "__str__": lambda self: "{} as of {}".format(
+                            ~~~~~~~~~~~~~~~~~~~~^
+        self.history_object, self.history_date
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\prescription\models.py", line 16, in __str__
+    return f'Prescription for {self.opd_visit.opd_no}'
+                               ^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 391, in get_object
+    return super().get_object(instance)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 635, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+opd.models.OPDVisit.DoesNotExist: OPDVisit matching query does not exist.
+[2026-07-01 08:09:11,347] ERROR django.server "GET /history/ HTTP/1.1" 500 127544
+[2026-07-01 08:09:14,330] ERROR django.request Internal Server Error: /history/
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'opd_visit'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\core\rbac.py", line 130, in _wrapped
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\history\views.py", line 112, in activity_log
+    'object_repr': str(rec)[:80],
+                   ~~~^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\simple_history\models.py", line 584, in <lambda>
+    "__str__": lambda self: "{} as of {}".format(
+                            ~~~~~~~~~~~~~~~~~~~~^
+        self.history_object, self.history_date
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\prescription\models.py", line 16, in __str__
+    return f'Prescription for {self.opd_visit.opd_no}'
+                               ^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 391, in get_object
+    return super().get_object(instance)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 635, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+opd.models.OPDVisit.DoesNotExist: OPDVisit matching query does not exist.
+[2026-07-01 08:09:14,335] ERROR django.server "GET /history/ HTTP/1.1" 500 127681
+[2026-07-01 08:31:38,292] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-01 08:31:38,293] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-01 08:31:38,502] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-01 08:31:38,503] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-01 08:31:38,525] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-01 08:31:38,526] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-01 08:31:38,541] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-01 08:31:38,542] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-01 09:14:27,613] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-01 09:14:27,613] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-01 09:14:27,780] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-01 09:14:27,791] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-01 09:14:27,795] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-01 09:14:27,796] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-01 09:14:27,815] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-01 09:14:27,819] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-01 09:14:33,039] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-01 09:14:33,040] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-01 09:14:33,109] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-01 09:14:33,125] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-01 09:14:33,132] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-01 09:14:33,133] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-01 09:14:33,141] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-01 09:14:33,141] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-01 09:14:35,280] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-01 09:14:35,281] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-01 09:14:35,375] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-01 09:14:35,378] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-01 09:14:35,382] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-01 09:14:35,383] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-01 09:14:35,401] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-01 09:14:35,402] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-01 17:52:11,257] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-01 17:52:11,263] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-01 17:52:11,508] WARNING django.request Not Found: /favicon.ico
+[2026-07-01 17:52:11,509] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 11576
+[2026-07-01 17:52:11,613] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-01 17:52:11,618] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-01 17:52:11,625] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-01 17:52:11,627] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-01 17:52:11,654] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-01 17:52:11,655] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-01 17:57:20,361] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-01 17:57:20,363] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-01 17:57:20,634] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-01 17:57:20,635] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-01 17:57:20,652] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-01 17:57:20,653] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-01 17:57:20,680] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-01 17:57:20,681] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-01 18:03:45,596] ERROR django.request Internal Server Error: /history/
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'opd_visit'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\core\rbac.py", line 130, in _wrapped
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\history\views.py", line 112, in activity_log
+    'object_repr': str(rec)[:80],
+                   ~~~^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\simple_history\models.py", line 584, in <lambda>
+    "__str__": lambda self: "{} as of {}".format(
+                            ~~~~~~~~~~~~~~~~~~~~^
+        self.history_object, self.history_date
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\opd\models.py", line 72, in __str__
+    return f"{self.opd_visit.opd_no} - {self.test.name}"
+              ^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 635, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+opd.models.OPDVisit.DoesNotExist: OPDVisit matching query does not exist.
+[2026-07-01 18:03:45,604] ERROR django.server "GET /history/ HTTP/1.1" 500 128504
+[2026-07-01 18:04:04,713] ERROR django.request Internal Server Error: /history/
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'opd_visit'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\core\rbac.py", line 130, in _wrapped
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\history\views.py", line 112, in activity_log
+    'object_repr': str(rec)[:80],
+                   ~~~^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\simple_history\models.py", line 584, in <lambda>
+    "__str__": lambda self: "{} as of {}".format(
+                            ~~~~~~~~~~~~~~~~~~~~^
+        self.history_object, self.history_date
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\opd\models.py", line 72, in __str__
+    return f"{self.opd_visit.opd_no} - {self.test.name}"
+              ^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 635, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+opd.models.OPDVisit.DoesNotExist: OPDVisit matching query does not exist.
+[2026-07-01 18:04:04,720] ERROR django.server "GET /history/ HTTP/1.1" 500 128504
+[2026-07-01 18:17:45,584] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-01 18:17:45,585] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-01 18:17:45,954] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-01 18:17:45,956] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-01 18:17:46,004] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-01 18:17:46,007] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-01 18:17:46,022] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-01 18:17:46,023] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-01 18:32:57,511] ERROR django.request Internal Server Error: /history/
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'opd_visit'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\core\rbac.py", line 130, in _wrapped
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\history\views.py", line 112, in activity_log
+    'object_repr': str(rec)[:80],
+                   ~~~^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\simple_history\models.py", line 584, in <lambda>
+    "__str__": lambda self: "{} as of {}".format(
+                            ~~~~~~~~~~~~~~~~~~~~^
+        self.history_object, self.history_date
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\opd\models.py", line 72, in __str__
+    return f"{self.opd_visit.opd_no} - {self.test.name}"
+              ^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 635, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+opd.models.OPDVisit.DoesNotExist: OPDVisit matching query does not exist.
+[2026-07-01 18:32:57,519] ERROR django.server "GET /history/ HTTP/1.1" 500 128482
+[2026-07-01 18:35:30,146] ERROR django.request Internal Server Error: /history/
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'opd_visit'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\core\rbac.py", line 130, in _wrapped
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\history\views.py", line 112, in activity_log
+    'object_repr': str(rec)[:80],
+                   ~~~^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\simple_history\models.py", line 584, in <lambda>
+    "__str__": lambda self: "{} as of {}".format(
+                            ~~~~~~~~~~~~~~~~~~~~^
+        self.history_object, self.history_date
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\opd\models.py", line 72, in __str__
+    return f"{self.opd_visit.opd_no} - {self.test.name}"
+              ^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 635, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+opd.models.OPDVisit.DoesNotExist: OPDVisit matching query does not exist.
+[2026-07-01 18:35:30,154] ERROR django.server "GET /history/ HTTP/1.1" 500 128619
+[2026-07-01 18:39:48,792] ERROR django.request Internal Server Error: /history/
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'opd_visit'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\core\rbac.py", line 130, in _wrapped
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\history\views.py", line 112, in activity_log
+    'object_repr': str(rec)[:80],
+                   ~~~^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\simple_history\models.py", line 584, in <lambda>
+    "__str__": lambda self: "{} as of {}".format(
+                            ~~~~~~~~~~~~~~~~~~~~^
+        self.history_object, self.history_date
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\opd\models.py", line 72, in __str__
+    return f"{self.opd_visit.opd_no} - {self.test.name}"
+              ^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 635, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+opd.models.OPDVisit.DoesNotExist: OPDVisit matching query does not exist.
+[2026-07-01 18:39:48,801] ERROR django.server "GET /history/ HTTP/1.1" 500 128619
+[2026-07-01 18:39:54,735] ERROR django.request Internal Server Error: /history/
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'opd_visit'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\core\rbac.py", line 130, in _wrapped
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\history\views.py", line 112, in activity_log
+    'object_repr': str(rec)[:80],
+                   ~~~^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\simple_history\models.py", line 584, in <lambda>
+    "__str__": lambda self: "{} as of {}".format(
+                            ~~~~~~~~~~~~~~~~~~~~^
+        self.history_object, self.history_date
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\opd\models.py", line 72, in __str__
+    return f"{self.opd_visit.opd_no} - {self.test.name}"
+              ^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 635, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+opd.models.OPDVisit.DoesNotExist: OPDVisit matching query does not exist.
+[2026-07-01 18:39:54,738] ERROR django.server "GET /history/ HTTP/1.1" 500 128482
+[2026-07-03 08:31:56,051] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-03 08:31:56,066] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-03 08:31:56,266] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-03 08:31:56,269] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-03 08:31:56,342] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-03 08:31:56,343] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-03 08:31:56,359] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-03 08:31:56,369] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-03 08:31:56,395] WARNING django.request Not Found: /favicon.ico
+[2026-07-03 08:31:56,401] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 11576
+[2026-07-03 08:32:33,195] WARNING django.request Not Found: /favicon.ico
+[2026-07-03 08:32:33,197] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 11576
+[2026-07-03 09:20:02,261] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-03 09:20:02,262] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-03 09:20:02,490] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-03 09:20:02,492] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-03 09:20:02,527] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-03 09:20:02,531] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-03 09:20:02,539] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-03 09:20:02,542] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-03 09:34:55,027] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-03 09:34:55,028] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-03 09:34:55,233] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-03 09:34:55,234] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-03 09:34:55,268] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-03 09:34:55,296] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-03 09:34:55,303] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-03 09:34:55,305] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-03 09:47:24,635] ERROR core.backup_views Backup failed: Unsupported database engine for backup: django.db.backends.sqlite3
+Traceback (most recent call last):
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\core\backup_views.py", line 124, in _do_backup
+    arcname_db = _dump_database(dump_path)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\core\backup_views.py", line 92, in _dump_database
+    raise RuntimeError(f'Unsupported database engine for backup: {engine}')
+RuntimeError: Unsupported database engine for backup: django.db.backends.sqlite3
+[2026-07-03 09:51:57,845] WARNING django.security.csrf Forbidden (CSRF token from POST incorrect.): /login/
+[2026-07-03 09:51:57,863] WARNING django.server "POST /login/ HTTP/1.1" 403 2503
+[2026-07-03 13:22:36,361] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-03 13:22:36,362] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-03 13:22:36,483] WARNING django.request Not Found: /favicon.ico
+[2026-07-03 13:22:36,484] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 11576
+[2026-07-03 13:22:36,522] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-03 13:22:36,532] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-03 13:22:36,532] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-03 13:22:36,533] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-03 13:22:36,542] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-03 13:22:36,543] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-03 13:25:46,873] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-03 13:25:46,874] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-03 13:25:47,220] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-03 13:25:47,251] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-03 13:25:47,274] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-03 13:25:47,369] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-03 13:25:47,376] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-03 13:25:47,536] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-03 16:36:18,469] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-03 16:36:18,470] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-03 16:36:18,565] WARNING django.request Not Found: /favicon.ico
+[2026-07-03 16:36:18,600] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 11576
+[2026-07-03 16:36:18,640] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-03 16:36:18,645] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-03 16:36:18,689] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-03 16:36:18,693] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-03 16:36:18,701] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-03 16:36:18,701] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-03 16:39:38,034] WARNING django.request Forbidden (Permission denied): /expenses/
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\core\rbac.py", line 130, in _wrapped
+    raise PermissionDenied(
+        f"Your role does not have access to this module.")
+django.core.exceptions.PermissionDenied: Your role does not have access to this module.
+[2026-07-03 16:39:38,174] WARNING django.server "GET /expenses/ HTTP/1.1" 403 135
+[2026-07-03 16:40:03,907] WARNING django.request Forbidden (Permission denied): /expenses/
+Traceback (most recent call last):
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mohd Kaif\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Kaif\Projects\ShantiVeer_HMS_Updated\core\rbac.py", line 130, in _wrapped
+    raise PermissionDenied(
+        f"Your role does not have access to this module.")
+django.core.exceptions.PermissionDenied: Your role does not have access to this module.
+[2026-07-03 16:40:03,953] WARNING django.server "GET /expenses/ HTTP/1.1" 403 135
+[2026-07-03 16:41:14,191] WARNING django.security.csrf Forbidden (CSRF token from POST incorrect.): /login/
+[2026-07-03 16:41:14,251] WARNING django.server "POST /login/ HTTP/1.1" 403 2503
+[2026-07-16 18:30:17,026] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-16 18:30:17,027] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-16 18:30:17,230] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-16 18:30:17,232] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-16 18:30:17,262] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-16 18:30:17,264] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-16 18:30:17,270] WARNING django.request Not Found: /favicon.ico
+[2026-07-16 18:30:17,271] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 11576
+[2026-07-16 18:30:17,293] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-16 18:30:17,294] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-22 12:48:37,217] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-22 12:48:37,376] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11256
+[2026-07-22 12:48:37,741] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-22 12:48:37,877] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11253
+[2026-07-22 12:48:37,857] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-22 12:48:38,251] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11256
+[2026-07-22 12:48:38,292] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-22 12:48:38,318] WARNING django.request Not Found: /favicon.ico
+[2026-07-22 12:48:39,024] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 11576
+[2026-07-22 12:48:38,907] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256

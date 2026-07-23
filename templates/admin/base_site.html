@@ -1,0 +1,39 @@
+{% extends "admin/base.html" %}
+{% load static i18n %}
+
+{% block title %}{{ title }} | ShantiVeer HMS Admin{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/admin_theme.css' %}">
+{% endblock %}
+
+{% block branding %}
+  <a href="{% url 'admin:index' %}" class="sv-brand">
+    <span class="sv-brand-logo"><img src="{% static 'img/logo.jpeg' %}" alt=""></span>
+    <span class="sv-brand-text">
+      <span class="sv-brand-title">ShantiVeer HMS</span>
+      <span class="sv-brand-subtitle">Admin Console</span>
+    </span>
+  </a>
+{% endblock %}
+
+{% block usertools %}
+  {% if has_permission %}
+    <div id="user-tools">
+      <span class="sv-user-pill">
+        {% firstof user.get_full_name user.get_username %}
+        {% if user_role_label %}<span class="sv-user-role">{{ user_role_label }}</span>{% endif %}
+      </span>
+      {% if user.has_usable_password %}
+        <a href="{% url 'admin:password_change' %}">{% translate 'Change password' %}</a> /
+      {% endif %}
+      <a href="{% url 'admin:logout' %}">{% translate 'Log out' %}</a>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block footer %}
+  {{ block.super }}
+  <div class="sv-footer">Design by Amayra Solutions</div>
+{% endblock %}

@@ -1,0 +1,536 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — ShantiVeer HMS</title>
+<link rel="icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#080f1c;min-height:100vh;overflow-x:hidden;}
+
+/* ── animated orbs ── */
+.bg-orbs{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
+.bg-orbs span{position:absolute;border-radius:50%;filter:blur(80px);opacity:.12;animation:drift 20s infinite ease-in-out;}
+.bg-orbs span:nth-child(1){width:600px;height:600px;background:#1e40af;top:-150px;left:-150px;}
+.bg-orbs span:nth-child(2){width:400px;height:400px;background:#00d4ff;bottom:-100px;right:5%;animation-delay:-8s;animation-duration:16s;}
+.bg-orbs span:nth-child(3){width:250px;height:250px;background:#7c3aed;top:40%;right:30%;animation-delay:-4s;animation-duration:22s;}
+@keyframes drift{0%,100%{transform:translate(0,0);}33%{transform:translate(20px,-30px);}66%{transform:translate(-15px,20px);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+
+/* ── SCREEN 1 — role picker ── */
+#roleScreen{
+  position:relative;z-index:2;min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:2rem;
+}
+#roleScreen.hidden{display:none;}
+
+.hms-brand{display:flex;align-items:center;gap:1rem;margin-bottom:2.5rem;}
+.hms-brand .ring{
+  width:62px;height:62px;border-radius:50%;
+  background:linear-gradient(135deg,#1e40af,#00d4ff);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.7rem;color:#fff;
+  box-shadow:0 0 36px rgba(0,212,255,.5);
+  flex-shrink:0;
+}
+.hms-brand strong{color:#fff;font-size:1.45rem;font-weight:800;display:block;letter-spacing:.04em;}
+.hms-brand small{color:#475569;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;}
+
+.pick-title{color:#94a3b8;font-size:.82rem;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:2rem;}
+
+.role-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;max-width:1000px;width:100%;}
+
+.rc{
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;padding:1.8rem 1.2rem;
+  text-align:center;cursor:pointer;
+  transition:transform .22s,border-color .22s,box-shadow .22s;
+  position:relative;overflow:hidden;
+}
+.rc::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .22s;border-radius:18px;}
+.rc:hover{transform:translateY(-6px);}
+.rc:hover::before{opacity:1;}
+
+.rc-admin::before  {background:linear-gradient(135deg,rgba(30,64,175,.22),rgba(0,212,255,.08));}
+.rc-admin:hover    {border-color:rgba(59,130,246,.55);box-shadow:0 8px 30px rgba(59,130,246,.22);}
+.rc-doctor::before {background:linear-gradient(135deg,rgba(5,150,105,.22),rgba(16,185,129,.08));}
+.rc-doctor:hover   {border-color:rgba(16,185,129,.55);box-shadow:0 8px 30px rgba(16,185,129,.22);}
+.rc-recept::before {background:linear-gradient(135deg,rgba(124,58,237,.22),rgba(167,139,250,.08));}
+.rc-recept:hover   {border-color:rgba(124,58,237,.55);box-shadow:0 8px 30px rgba(124,58,237,.22);}
+.rc-pharma::before {background:linear-gradient(135deg,rgba(245,158,11,.22),rgba(251,191,36,.08));}
+.rc-pharma:hover   {border-color:rgba(245,158,11,.55);box-shadow:0 8px 30px rgba(245,158,11,.22);}
+
+.rc-icon{
+  width:70px;height:70px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto .9rem;font-size:1.8rem;position:relative;z-index:1;
+}
+.rc-admin  .rc-icon{background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;box-shadow:0 0 22px rgba(59,130,246,.5);}
+.rc-doctor .rc-icon{background:linear-gradient(135deg,#065f46,#10b981);color:#fff;box-shadow:0 0 22px rgba(16,185,129,.5);}
+.rc-recept .rc-icon{background:linear-gradient(135deg,#5b21b6,#8b5cf6);color:#fff;box-shadow:0 0 22px rgba(139,92,246,.5);}
+.rc-pharma .rc-icon{background:linear-gradient(135deg,#92400e,#f59e0b);color:#fff;box-shadow:0 0 22px rgba(245,158,11,.5);}
+
+.rc h3{color:#f1f5f9;font-size:1rem;font-weight:700;margin-bottom:.35rem;position:relative;z-index:1;}
+.rc p{color:#64748b;font-size:.72rem;line-height:1.55;margin-bottom:.9rem;position:relative;z-index:1;}
+.rc-pill{display:inline-block;padding:.2rem .7rem;border-radius:20px;font-size:.65rem;font-weight:700;letter-spacing:.06em;position:relative;z-index:1;}
+.rc-admin  .rc-pill{background:rgba(59,130,246,.18);color:#93c5fd;}
+.rc-doctor .rc-pill{background:rgba(16,185,129,.18);color:#6ee7b7;}
+.rc-recept .rc-pill{background:rgba(139,92,246,.18);color:#c4b5fd;}
+.rc-pharma .rc-pill{background:rgba(245,158,11,.18);color:#fcd34d;}
+
+/* ── SCREEN 2 — login form ── */
+#loginScreen{
+  position:relative;z-index:2;min-height:100vh;
+  display:none;
+}
+#loginScreen.active{display:flex;}
+
+/* hero side */
+.login-hero{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:2rem;
+}
+.hero-inner{text-align:center;color:#fff;max-width:460px;}
+.hero-role-icon{
+  width:96px;height:96px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:2.3rem;margin:0 auto 1.2rem;
+}
+.hero-inner h2{font-size:1.55rem;font-weight:700;margin-bottom:.5rem;}
+.hero-inner p{color:#64748b;font-size:.85rem;line-height:1.65;margin-bottom:2rem;}
+
+.hero-modules{display:grid;grid-template-columns:repeat(4,1fr);gap:1.1rem;}
+.hm-item{text-align:center;}
+.hm-icon{
+  width:58px;height:58px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.12);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto .45rem;font-size:1.25rem;color:rgba(255,255,255,.55);
+  transition:border-color .2s,color .2s;
+}
+.hm-icon:hover{border-color:var(--accent,#00d4ff);color:var(--accent,#00d4ff);}
+.hm-label{font-size:.6rem;color:#475569;text-transform:uppercase;letter-spacing:.06em;}
+
+/* form panel */
+.login-panel{
+  width:410px;flex-shrink:0;
+  background:rgba(8,15,28,.97);
+  border-left:1px solid rgba(255,255,255,.06);
+  padding:3rem 2.5rem;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.back-btn{
+  display:inline-flex;align-items:center;gap:.4rem;
+  background:none;border:none;color:#475569;font-size:.8rem;
+  cursor:pointer;margin-bottom:2rem;transition:color .15s;padding:0;
+}
+.back-btn:hover{color:#fff;}
+.panel-badge{
+  display:inline-flex;align-items:center;gap:.4rem;
+  padding:.28rem .8rem;border-radius:20px;font-size:.73rem;font-weight:700;
+  margin-bottom:1.5rem;
+}
+.panel-title{
+  color:#fff;font-size:.8rem;letter-spacing:.14em;
+  text-transform:uppercase;text-align:center;margin-bottom:1.5rem;
+}
+.creds-box{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;padding:.75rem 1rem;margin-bottom:1.5rem;
+}
+.creds-box .cb-head{font-size:.65rem;color:#475569;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;}
+.creds-row{display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.2rem;}
+.creds-row span:first-child{color:#64748b;}
+.creds-row span:last-child{color:#e2e8f0;font-weight:600;font-family:monospace;}
+
+.inp-wrap{position:relative;margin-bottom:1.1rem;}
+.inp-wrap i{position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:#475569;pointer-events:none;}
+.inp-wrap input{
+  width:100%;padding:.82rem 1rem .82rem 2.6rem;
+  border:1px solid rgba(255,255,255,.12);border-radius:30px;
+  background:#f1f5f9;font-size:.92rem;
+  transition:border-color .2s,box-shadow .2s;
+}
+.inp-wrap input:focus{
+  outline:none;border-color:var(--accent,#00d4ff);
+  box-shadow:0 0 0 3px rgba(0,212,255,.18);
+}
+.btn-login{
+  width:100%;padding:.84rem;border:none;border-radius:30px;
+  background:var(--accent-grad,linear-gradient(90deg,#0077cc,#00d4ff));
+  color:#fff;font-weight:700;font-size:.95rem;cursor:pointer;margin-top:.4rem;
+  display:flex;align-items:center;justify-content:center;gap:.5rem;
+  transition:opacity .15s,transform .15s;
+}
+.btn-login:hover{opacity:.9;transform:translateY(-1px);}
+
+/* accent per-role via CSS vars */
+body[data-role="admin"]       {--accent:#3b82f6;--accent-grad:linear-gradient(90deg,#1e40af,#3b82f6);}
+body[data-role="doctor"]      {--accent:#10b981;--accent-grad:linear-gradient(90deg,#065f46,#10b981);}
+body[data-role="receptionist"]{--accent:#8b5cf6;--accent-grad:linear-gradient(90deg,#5b21b6,#8b5cf6);}
+body[data-role="pharmacist"]  {--accent:#f59e0b;--accent-grad:linear-gradient(90deg,#92400e,#f59e0b);}
+
+/* error */
+.err-msg{color:#f87171;font-size:.82rem;text-align:center;margin-bottom:.75rem;}
+
+/* password toggle */
+.pw-toggle{
+  position:absolute;
+  right:.75rem;
+  top:50%;
+  transform:translateY(-50%);
+  width:2.1rem;
+  height:2.1rem;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);
+  color:#cbd5e1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+.pw-toggle:hover{border-color:var(--accent,#00d4ff);color:#fff;}
+
+/* messages area */
+.msg-area{
+  min-height:1.6rem;
+  margin-bottom:.85rem;
+}
+
+
+.login-footer{position:fixed;bottom:0;left:0;right:0;text-align:center;color:#1e293b;font-size:.7rem;padding:.6rem;}
+
+@media(max-width:900px){
+  .role-grid{grid-template-columns:repeat(2,1fr);}
+  .login-hero{display:none;}
+  .login-panel{width:100%;min-height:100vh;}
+}
+</style>
+</head>
+<body>
+<div class="bg-orbs"><span></span><span></span><span></span></div>
+
+<!-- ========== SCREEN 1 : ROLE PICKER ========== -->
+<div id="roleScreen">
+
+  <div class="hms-brand">
+    <div class="ring"><img src="{% static 'img/logo.jpeg' %}" alt="ShantiVeer" style="width:100%;height:100%;border-radius:50%;object-fit:cover"></div>
+    <div>
+      <strong>SHANTIVEER HMS</strong>
+      <small>Hospital Management Software</small>
+    </div>
+  </div>
+  <p class="pick-title">Select your role to sign in</p>
+
+    <div class="role-grid">
+    <div class="rc rc-admin" tabindex="0" aria-label="Administrator" role="button" onclick="pick('admin')" onkeydown="if(event.key==='Enter' || event.key===' ') {event.preventDefault(); pick('admin');}">
+
+
+
+
+      <div class="rc-icon"><i class="bi bi-shield-check"></i></div>
+      <h3>Administrator</h3>
+      <p>Full system access — staff, analytics, beds, backups &amp; all modules</p>
+      <span class="rc-pill">FULL ACCESS</span>
+    </div>
+    <div class="rc rc-doctor" tabindex="0" aria-label="Doctor" role="button" onclick="pick('doctor')" onkeydown="if(event.key==='Enter' || event.key===' ') {event.preventDefault(); pick('doctor');}">
+
+
+      <div class="rc-icon"><i class="bi bi-person-badge"></i></div>
+      <h3>Doctor</h3>
+      <p>View &amp; update patient vitals, diagnosis, prescriptions &amp; IPD care</p>
+      <span class="rc-pill">CLINICAL</span>
+    </div>
+    <div class="rc rc-recept" tabindex="0" aria-label="Receptionist" role="button" onclick="pick('receptionist')" onkeydown="if(event.key==='Enter' || event.key===' ') {event.preventDefault(); pick('receptionist');}">
+
+
+      <div class="rc-icon"><i class="bi bi-headset"></i></div>
+      <h3>Receptionist</h3>
+      <p>OPD/IPD registration, bed allocation, appointments &amp; payments</p>
+      <span class="rc-pill">FRONT DESK</span>
+    </div>
+    <div class="rc rc-recept" tabindex="0" aria-label="Accountant" role="button" onclick="pick('accountant')" onkeydown="if(event.key==='Enter' || event.key===' ') {event.preventDefault(); pick('accountant');}">
+      <div class="rc-icon"><i class="bi bi-cash-coin"></i></div>
+      <h3>Accountant</h3>
+      <p>View finance &amp; dues — manage bills &amp; income entries</p>
+      <span class="rc-pill">ACCOUNTS</span>
+    </div>
+
+    {% comment %} <div class="rc rc-pharma" onclick="pick('pharmacist')">
+      <div class="rc-icon"><i class="bi bi-capsule"></i></div>
+      <h3>Pharmacist</h3>
+      <p>Medicine inventory, purchases, sales &amp; low-stock monitoring</p>
+      <span class="rc-pill">PHARMACY</span>
+    </div> {% endcomment %}
+
+  </div>
+</div>
+
+
+<!-- ========== SCREEN 2 : LOGIN FORM ========== -->
+<div id="loginScreen">
+  <div class="login-hero">
+    <div class="hero-inner">
+      <div class="hero-role-icon" id="hIcon"></div>
+      <h2 id="hTitle"></h2>
+      <p id="hDesc"></p>
+      <div class="hero-modules" id="hModules"></div>
+    </div>
+  </div>
+
+  <div class="login-panel">
+    <button class="back-btn" onclick="goBack()"><i class="bi bi-arrow-left"></i> Choose role</button>
+    <div class="panel-badge" id="pBadge"></div>
+    <p class="panel-title">HOSPITAL MANAGEMENT SOFTWARE</p>
+
+     <!-- credential hint box (UI only — no plaintext password) -->
+    <div class="creds-box" aria-label="Demo credentials">
+      <div class="cb-head">Demo login</div>
+      <div class="creds-row"><span>Account</span><span id="hAccount"></span></div>
+      <div class="creds-row"><span>Username</span><span id="hUser"></span></div>
+      <div class="creds-row"><span>Password</span><span id="hPass" style="opacity:.9">••••••••</span></div>
+      <div style="margin-top:.35rem;color:#64748b;font-size:.72rem;line-height:1.4;">
+        Use the demo username above. Password is hidden for safety.
+      </div>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="role_hint" id="roleField" value="">
+
+      <div class="inp-wrap">
+        <i class="bi bi-person"></i>
+        <input type="text" name="username" id="uField" placeholder="Username" required autocomplete="username">
+      </div>
+      <div class="inp-wrap">
+        <i class="bi bi-lock"></i>
+        <input type="password" name="password" id="pwField" placeholder="Password" required autocomplete="current-password" style="padding-right:3.25rem;">
+        <button type="button" class="pw-toggle" id="pwToggle" aria-label="Show password" title="Show password">
+          <i class="bi bi-eye"></i>
+        </button>
+      </div>
+
+      <div class="msg-area" aria-live="polite" aria-atomic="true">
+        {% if locked %}
+        <p class="err-msg"><i class="bi bi-shield-lock"></i> Too many attempts — wait a few minutes.</p>
+        {% endif %}
+        {% if form.errors %}
+        <p class="err-msg"><i class="bi bi-exclamation-circle"></i> Invalid username or password.</p>
+        {% endif %}
+        {% for m in messages %}
+        <p class="err-msg" style="color:{% if m.tags == 'error' %}#f87171{% else %}#86efac{% endif %}">{{ m }}</p>
+        {% endfor %}
+      </div>
+
+      <button type="submit" class="btn-login" id="submitBtn">
+        <span id="btnText">Sign In</span>
+        <span id="btnSpinner" style="display:none;align-items:center;gap:.55rem;">
+          <span class="spinner" aria-hidden="true" style="width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;display:inline-block;animation:spin .8s linear infinite;"></span>
+          Signing in...
+        </span>
+        <i class="bi bi-arrow-right" id="btnArrow"></i>
+      </button>
+
+      <script>
+        (function(){
+          const form = document.querySelector('form');
+          // NOTE: password toggle is handled by the main script below.
+          const pwToggle = document.getElementById('pwToggle');
+          const btnText = document.getElementById('btnText');
+
+          const submitBtn = document.getElementById('submitBtn');
+
+          const btnSpinner = document.getElementById('btnSpinner');
+          const btnArrow = document.getElementById('btnArrow');
+          if(!form || !submitBtn || !btnText || !btnSpinner || !btnArrow) return;
+
+          form.addEventListener('submit', function(){
+            submitBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnSpinner.style.display = 'flex';
+            btnArrow.style.display = 'none';
+          });
+        })();
+      </script>
+      <p style="text-align:center;margin-top:1rem">
+        <a href="{% url 'accounts:forgot_password' %}" style="color:#7dd3fc;font-size:.8rem">Forgot Password?</a>
+      </p>
+    </form>
+  </div>
+</div>
+
+<div class="login-footer">Design By: Amayra Solutions | Contact: 9821235034 | Email: amiralamrana@gmail.com</div>
+
+<script>
+// password show/hide
+(function(){
+  window.addEventListener('DOMContentLoaded', function(){
+    const toggle = document.getElementById('pwToggle');
+    const pwField = document.getElementById('pwField');
+    if(!toggle || !pwField) return;
+
+    toggle.addEventListener('click', function(){
+      const isHidden = pwField.type === 'password';
+      pwField.type = isHidden ? 'text' : 'password';
+      // switch icon
+      toggle.innerHTML = '<i class="bi ' + (isHidden ? 'bi-eye-slash' : 'bi-eye') + '"></i>';
+      toggle.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+      toggle.setAttribute('title', isHidden ? 'Hide password' : 'Show password');
+    });
+  });
+})();
+
+  // role definitions
+const ROLES = {
+
+  admin:{
+
+    user:'admin',
+
+    title:'Administrator Panel',
+    desc:'Full access — staff management, analytics, bed management, data backup and complete system control.',
+    icon:'<i class="bi bi-shield-check" style="font-size:2rem;color:#fff"></i>',
+    ibg:'linear-gradient(135deg,#1e40af,#3b82f6)',ishadow:'rgba(59,130,246,.5)',
+    badgeBg:'rgba(59,130,246,.18)',badgeColor:'#93c5fd',badgeIcon:'bi-shield-check',badgeLabel:'Administrator',
+    mods:[
+      {i:'bi-speedometer2',l:'Dashboard'},{i:'bi-people',l:'Staff'},
+      {i:'bi-grid-3x2-gap',l:'Beds'},{i:'bi-currency-rupee',l:'Finance'},
+      {i:'bi-hospital',l:'IPD'},{i:'bi-person-plus',l:'OPD'},
+      {i:'bi-droplet',l:'Lab'},{i:'bi-shield-check',l:'Backup'},
+    ],
+  },
+  doctor:{
+    user:'doctor', pass:'Doctor@SV2024',
+    title:'Doctor Panel',
+    desc:'Attend OPD queue, update patient vitals, write prescriptions, manage IPD patients and request lab tests.',
+    icon:'<i class="bi bi-person-badge" style="font-size:2rem;color:#fff"></i>',
+    ibg:'linear-gradient(135deg,#065f46,#10b981)',ishadow:'rgba(16,185,129,.5)',
+    badgeBg:'rgba(16,185,129,.18)',badgeColor:'#6ee7b7',badgeIcon:'bi-person-badge',badgeLabel:'Doctor',
+    mods:[
+      {i:'bi-heart-pulse',l:'Vitals'},{i:'bi-clipboard2-pulse',l:'Diagnosis'},
+      {i:'bi-file-medical',l:'Prescribe'},{i:'bi-hospital',l:'IPD Care'},
+      {i:'bi-droplet',l:'Lab Req.'},{i:'bi-people',l:'Patients'},
+      {i:'bi-search',l:'Search'},{i:'bi-clock-history',l:'OPD Queue'},
+    ],
+  },
+  accountant:{
+    user:'accountant',
+    title:'Accountant Panel',
+    desc:'View dues & finance dashboards. Update bills and record accounting income.',
+    icon:'<i class="bi bi-cash-coin" style="font-size:2rem;color:#fff"></i>',
+    ibg:'linear-gradient(135deg,#0f172a,#334155)',
+    isshadow:'rgba(148,163,184,.5)',
+    badgeBg:'rgba(148,163,184,.18)',badgeColor:'#e2e8f0',badgeIcon:'bi-cash-coin',badgeLabel:'Accountant',
+    mods:[
+      {i:'bi-bar-chart-line',l:'Bills & Due'},
+      {i:'bi-receipt',l:'Expenses View'},
+      {i:'bi-journal-text',l:'Income Entry'},
+      {i:'bi-people',l:'Patient List'},
+      {i:'bi-funnel',l:'Referral Filter'},
+    ],
+  },
+
+  receptionist:{
+    user:'receptionist', pass:'Recept@SV2024',
+
+    title:'Receptionist Panel',
+    desc:'Register patients, handle OPD/IPD admissions, allocate beds, schedule appointments and collect payments.',
+    icon:'<i class="bi bi-headset" style="font-size:2rem;color:#fff"></i>',
+    ibg:'linear-gradient(135deg,#5b21b6,#8b5cf6)',ishadow:'rgba(139,92,246,.5)',
+    badgeBg:'rgba(139,92,246,.18)',badgeColor:'#c4b5fd',badgeIcon:'bi-headset',badgeLabel:'Receptionist',
+    mods:[
+      {i:'bi-person-plus',l:'OPD Reg.'},{i:'bi-file-earmark-plus',l:'Admission'},
+      {i:'bi-grid-3x2-gap',l:'Beds'},{i:'bi-credit-card',l:'Payments'},
+      {i:'bi-calendar-check',l:'Appt.'},{i:'bi-receipt',l:'Bills'},
+      {i:'bi-person-badge',l:'UHID'},{i:'bi-box-arrow-right',l:'Discharge'},
+    ],
+  },
+  // pharmacist:{
+   // user:'', pass:'',
+   // title:'Pharmacist Panel',
+   // desc:'Manage medicine inventory, record purchases from suppliers, process sales and monitor low-stock alerts.',
+   // icon:'<i class="bi bi-capsule" style="font-size:2rem;color:#fff"></i>',
+   // ibg:'linear-gradient(135deg,#92400e,#f59e0b)',ishadow:'rgba(245,158,11,.5)',
+   // badgeBg:'rgba(245,158,11,.18)',badgeColor:'#fcd34d',badgeIcon:'bi-capsule',badgeLabel:'Pharmacist',
+   // mods:[
+    //  {i:'bi-boxes',l:'Inventory'},{i:'bi-cart-plus',l:'Purchase'},
+    //  {i:'bi-bag-check',l:'Sell'},{i:'bi-bar-chart-line',l:'Log'},
+    //  {i:'bi-exclamation-triangle',l:'Low Stock'},{i:'bi-file-medical',l:'Rx View'},
+    //  {i:'bi-people',l:'Suppliers'},{i:'bi-clock-history',l:'History'},
+   // ],
+ // }, 
+};
+
+function pick(role){
+  const r = ROLES[role];
+  document.body.setAttribute('data-role', role);
+
+  // reset submit button state (in case of failed login)
+  const submitBtn = document.getElementById('submitBtn');
+  if(submitBtn) submitBtn.disabled = false;
+
+  const btnText = document.getElementById('btnText');
+  const btnSpinner = document.getElementById('btnSpinner');
+  const btnArrow = document.getElementById('btnArrow');
+  if(submitBtn && btnText && btnSpinner && btnArrow){
+    submitBtn.disabled = false;
+    btnText.style.display = '';
+    btnSpinner.style.display = 'none';
+    btnArrow.style.display = '';
+  }
+
+  // hero
+  const icon = document.getElementById('hIcon');
+  icon.style.background   = r.ibg;
+  icon.style.boxShadow    = '0 0 32px '+r.ishadow;
+  icon.innerHTML = r.icon;
+  document.getElementById('hTitle').textContent = r.title;
+  document.getElementById('hDesc').textContent  = r.desc;
+  document.getElementById('hModules').innerHTML = r.mods.map(m=>`
+    <div class="hm-item">
+      <div class="hm-icon"><i class="bi ${m.i}"></i></div>
+      <div class="hm-label">${m.l}</div>
+    </div>`).join('');
+
+  // badge
+  const b = document.getElementById('pBadge');
+  b.style.background = r.badgeBg;
+  b.style.color      = r.badgeColor;
+  b.innerHTML = `<i class="bi ${r.badgeIcon}"></i> ${r.badgeLabel}`;
+
+  // creds (password is never rendered; plaintext demo password must not be shown)
+  document.getElementById('hAccount').textContent = r.user;
+  document.getElementById('hUser').textContent = r.user;
+  document.getElementById('hPass').textContent = '••••••••';
+
+
+  document.getElementById('uField').value      = r.user;
+  document.getElementById('roleField').value   = role;
+
+
+  document.getElementById('roleScreen').classList.add('hidden');
+  document.getElementById('loginScreen').classList.add('active');
+}
+
+function goBack(){
+  document.getElementById('loginScreen').classList.remove('active');
+  document.getElementById('roleScreen').classList.remove('hidden');
+  document.body.removeAttribute('data-role');
+}
+
+// restore role on page reload after failed login
+(function(){
+  const h = '{{ request.POST.role_hint|default:"" }}';
+  if(h && ROLES[h]) pick(h);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+{% extends 'base_cyan.html' %}
+{% block title %}Lab Report{% endblock %}
+{% block page_title %}Lab Report{% endblock %}
+{% block content %}
+<div class="page-container"><div class="form-card">
+    <h2>Lab Test Report</h2>
+
+    <div class="mb-3">
+        <p class="mb-1"><strong>Bill:</strong> {{ report.bill_no }}</p>
+        <p class="mb-1"><strong>Patient:</strong> {{ report.patient }}</p>
+        <p class="mb-1"><strong>Date:</strong> {{ report.date }}</p>
+    </div>
+
+    <h4 class="mb-2">All Patient Tests</h4>
+    <table class="hms-table">
+        <thead>
+            <tr>
+                <th style="width:35%">Test</th>
+                <th>Result</th>
+                <th>Unit</th>
+                <th>Reference</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in report.test_results %}
+                <tr>
+                    <td>{{ t.name }}</td>
+                    <td>{{ t.result }}</td>
+                    <td>{{ t.unit }}</td>
+                    <td>{{ t.ref }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-4">No tests found for this report.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <button class="btn btn-warning mt-3" onclick="window.print()">Print Test Report</button>
+</div></div>
+{% endblock %}

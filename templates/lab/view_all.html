@@ -1,0 +1,20 @@
+{% extends 'base_cyan.html' %}
+{% block title %}View All Lab Reports{% endblock %}
+{% block page_title %}View All Lab Reports{% endblock %}
+{% block content %}
+<div class="page-container">
+    <h2 class="text-center mb-3">View All Lab Reports</h2>
+    <form method="get" class="d-flex gap-2 mb-3"><input name="q" class="form-control" placeholder="Search UHID / Name / Bill No" value="{{ q }}"><button class="btn btn-primary">Search</button></form>
+    <table class="hms-table green-head">
+        <thead><tr><th>#</th><th>Bill No</th><th>Patient</th><th>Tests</th><th>Amount</th><th>Due</th><th>Date</th><th>Action</th></tr></thead>
+        <tbody>{% for r in reports %}
+        <tr><td>{{ forloop.counter }}</td><td>{{ r.bill_no }}</td><td>{{ r.patient }}</td><td>{{ r.tests }}</td><td>₹{{ r.amount }}</td><td>₹{{ r.due }}</td><td>{{ r.date }}</td>
+        <td>
+            <a href="{% url 'lab:view_report' r.id %}" class="btn-action btn-receipt">View</a>
+            <a href="{% url 'lab:view_report_print' r.id %}" class="btn-action btn-print">ViewPrint</a>
+        </td></tr>
+        {% endfor %}</tbody>
+
+    </table>
+</div>
+{% endblock %}

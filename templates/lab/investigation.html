@@ -1,0 +1,324 @@
+{% extends 'base_cyan.html' %}
+{% block title %}Lab Investigation{% endblock %}
+{% block page_title %}Lab Investigation{% endblock %}
+{% block content %}
+<div class="p-2">
+    <div class="d-flex justify-content-end mb-2">
+        <div class="search-bar-row" style="width:auto">
+            <label class="me-1">OPD No:</label>
+            <input type="text" class="form-control form-control-sm" id="labOpdNo" style="width:120px" placeholder="OPD123">
+
+            <label class="ms-3 me-1">IPD No:</label>
+            <input type="text" class="form-control form-control-sm" id="labIpdNo" style="width:120px" placeholder="IPD100">
+
+            <label class="ms-3 me-1">UHID:</label>
+            <input type="text" class="form-control form-control-sm" id="labUhid" name="uhid" style="width:120px">
+
+            <button type="button" class="btn btn-primary btn-sm" id="labPatientLookupBtn">Fetch</button>
+        </div>
+    </div>
+
+
+    <form method="post" id="labForm">
+        {% csrf_token %}
+
+        <div class="lab-layout">
+            <div>
+                <div class="form-card mb-0">
+                    <div class="section-title" style="background:#ddd;margin:-1.5rem -1.5rem 1rem;padding:0.5rem 1rem">Patient's Details</div>
+                    <div class="row g-2">
+                        <div class="col-md-2"><label class="small">Bill No</label><input name="bill_no" class="form-control form-control-sm"></div>
+                        <div class="col-md-2"><label class="small">Mobile</label><input name="mobile" class="form-control form-control-sm" placeholder="Mobile Number"></div>
+                        <div class="col-md-4"><label class="small">Patient Name</label><div class="input-group input-group-sm"><select class="form-select" style="max-width:60px"><option>Mr.</option><option>Mrs.</option><option>Ms.</option></select><input name="patient_name" class="form-control"></div></div>
+                        <div class="col-md-4"><label class="small">Relation</label><div class="input-group input-group-sm"><select class="form-select" style="max-width:60px"><option>S/o</option><option>W/o</option><option>D/o</option></select><input name="guardian" class="form-control"></div></div>
+                        <div class="col-md-3"><label class="small">Age</label><div class="input-group input-group-sm"><input name="age_y" class="form-control" placeholder="Y"></div></div>
+                        <div class="col-md-5"><label class="small">Address</label><input name="address" class="form-control form-control-sm"></div>
+
+                        <div class="col-md-2"><label class="small">Consultant</label><select name="consultant" class="form-select form-select-sm"><option>-- Self --</option></select></div>
+                        <div class="col-md-2"><label class="small">Referred By</label><input name="referred" class="form-control form-control-sm" value="SELF"></div>
+                        <div class="col-md-6"><label class="small">Remarks</label><input name="remarks" class="form-control form-control-sm" placeholder="Note"></div>
+                        <div class="col-md-3"><label class="small">Ayushman No</label><input name="ayushman" class="form-control form-control-sm" placeholder="12-1234-1234-1234"></div>
+                        <div class="col-md-3"><label class="small">ID Proof</label><div class="input-group input-group-sm"><select class="form-select"><option>Aadhar</option></select><input class="form-control" placeholder="ID Number"></div></div>
+                        <div class="col-md-2"><label class="small">Time</label><input type="time" name="time" class="form-control form-control-sm"></div>
+                        <div class="col-md-2"><label class="small">Date</label><input type="date" name="date" class="form-control form-control-sm" value="{{ today }}"></div>
+                    </div>
+
+                    <table class="hms-table mt-3">
+                        <thead>
+                            <tr>
+                                <th>Test Name</th>
+                                <th>Rate</th>
+                                <th>Qty</th>
+                                <th>Amount</th>
+                                <th>Remove</th>
+                            </tr>
+                        </thead>
+                        <tbody id="selectedTestsBody"></tbody>
+                    </table>
+
+                    <div class="mt-2 small">
+                        Total: Rs.<span id="labTotal">0</span> |
+                        Discount: Rs.<input type="number" id="labDiscount" name="discount" style="width:80px" value="0">
+                    </div>
+                </div>
+
+                <div class="lab-footer-bar">
+                    <strong>Total</strong> <span class="badge bg-success fs-6" id="labTotalBadge">0</span>
+                    <label class="small mb-0">Discount</label><input type="number" class="form-control form-control-sm" style="width:80px" id="labDiscount2" value="0">
+                    <label class="small mb-0">Waive Off</label><input type="number" class="form-control form-control-sm" style="width:80px" id="labWaiveOff" value="0">
+                    <label class="small mb-0">Deposit</label><input type="number" class="form-control form-control-sm" style="width:80px" id="labDeposit" value="0">
+                    <label class="small mb-0">Due</label><input type="number" class="form-control form-control-sm" style="width:80px" id="labDue" readonly>
+                    <label class="small mb-0">Mode</label>
+                    <select name="payment_mode" class="form-select form-select-sm" style="width:100px">
+                        <option>Cash</option>
+                        <option>UPI</option>
+                        <option>Card</option>
+                    </select>
+
+                    <button type="button" class="btn btn-outline-warning ms-auto me-2" id="printLabBtn">Print Test Bill</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </div>
+
+            <div class="test-panel">
+                <div class="p-2 border-bottom d-flex gap-2 align-items-center">
+                    <input type="text" class="form-control form-control-sm" placeholder="SEARCH TEST" id="testSearch" style="flex:1">
+                    <a href="{% url 'lab:test_list' %}" class="btn btn-sm btn-outline-primary text-nowrap" title="Manage Tests &amp; Fees">
+                        <i class="bi bi-flask"></i>
+                        Tests &amp; Fees
+                    </a>
+                </div>
+
+                <div class="small text-muted px-2">Select to Enter Quantity</div>
+
+                {% for t in tests %}
+                <label class="test-item">
+                    <input type="checkbox" class="test-checkbox" name="tests" value="{{ t.id }}" data-name="{{ t.name }}" data-rate="{{ t.rate }}">
+                    <span>{{ t.name }}</span>
+                    <input type="number" class="test-qty" value="1" class="form-control form-control-sm" style="width:50px" disabled>
+                    <span>Rs {{ t.rate }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+(function(){
+    const selectedBody = document.getElementById('selectedTestsBody');
+    const totalEl = document.getElementById('labTotal');
+    const totalBadge = document.getElementById('labTotalBadge');
+
+    const discountEl = document.getElementById('labDiscount');
+    const discount2El = document.getElementById('labDiscount2');
+    const waiveOffEl = document.getElementById('labWaiveOff');
+    const depositEl = document.getElementById('labDeposit');
+    const dueEl = document.getElementById('labDue');
+
+    // Keep labDiscount2 in sync with labDiscount input used by backend.
+    function syncDiscount(){
+        const v = Number(discount2El?.value || 0);
+        discountEl.value = isNaN(v) ? 0 : v;
+    }
+    discount2El?.addEventListener('input', syncDiscount);
+    syncDiscount();
+
+    // Qty + total update helpers
+    function money(n){
+        return (Math.round(n * 100) / 100).toFixed(2);
+    }
+
+    function computeTotals(){
+        let sum = 0;
+        selectedBody.querySelectorAll('tr[data-test-id]').forEach(tr => {
+            const amount = Number(tr.querySelector('.row-amount')?.dataset?.amount || 0);
+            sum += amount;
+        });
+
+        const total = sum;
+        totalEl.textContent = money(total);
+        totalBadge.textContent = `₹${money(total)}`;
+
+        const discount = Number(discountEl?.value || 0);
+        const waiveOff = Number(waiveOffEl?.value || 0);
+        const deposit = Number(depositEl?.value || 0);
+
+        const payable = total - (isNaN(discount)?0:discount) - (isNaN(waiveOff)?0:waiveOff);
+        const due = payable - (isNaN(deposit)?0:deposit);
+        dueEl.value = money(Math.max(0, due));
+
+        return total;
+    }
+
+    function ensureRow(testId, name, rate){
+        let tr = selectedBody.querySelector(`tr[data-test-id="${testId}"]`);
+        if(tr) return tr;
+
+        tr = document.createElement('tr');
+        tr.setAttribute('data-test-id', testId);
+        tr.innerHTML = `
+            <td>
+                <input type="hidden" name="tests" value="${testId}">
+                <span class="row-name">${name}</span>
+            </td>
+            <td>
+                <span>${money(Number(rate))}</span>
+            </td>
+            <td>
+                <input type="number" min="1" value="1" step="1" class="form-control form-control-sm row-qty" name="qty_${testId}">
+            </td>
+            <td>
+                ₹<span class="row-amount" data-amount="0">0.00</span>
+            </td>
+            <td>
+                <button type="button" class="btn btn-sm btn-outline-danger row-remove" aria-label="Remove">Remove</button>
+            </td>
+        `;
+        selectedBody.appendChild(tr);
+
+        const qtyInput = tr.querySelector('.row-qty');
+        const amountEl = tr.querySelector('.row-amount');
+        function recalc(){
+            const qty = Number(qtyInput.value || 0);
+            const amt = Number(rate) * qty;
+            amountEl.dataset.amount = amt;
+            amountEl.textContent = money(amt);
+            computeTotals();
+        }
+        qtyInput.addEventListener('input', recalc);
+
+        tr.querySelector('.row-remove').addEventListener('click', function(){
+            // uncheck checkbox
+            const cb = document.querySelector(`.test-checkbox[value="${testId}"]`);
+            if(cb) cb.checked = false;
+            // remove row
+            tr.remove();
+            computeTotals();
+        });
+
+        // initial amount
+        qtyInput.value = 1;
+        tr.querySelector('.row-qty').dispatchEvent(new Event('input'));
+
+        return tr;
+    }
+
+    function removeRow(testId){
+        const tr = selectedBody.querySelector(`tr[data-test-id="${testId}"]`);
+        if(tr) tr.remove();
+        computeTotals();
+    }
+
+    // Checkbox toggling
+    document.querySelectorAll('.test-checkbox').forEach(cb => {
+        const testId = cb.value;
+        const name = cb.dataset.name;
+        const rate = cb.dataset.rate;
+
+        // enable qty textbox inside list (previously disabled)
+        const label = cb.closest('.test-item');
+        const qtyInList = label ? label.querySelector('.test-qty, input[type="number"]') : null;
+        if(qtyInList) {
+            qtyInList.value = 1;
+            qtyInList.disabled = true;
+            qtyInList.addEventListener('input', ()=>{
+                if(!cb.checked) return;
+                const tr = selectedBody.querySelector(`tr[data-test-id="${testId}"]`);
+                if(!tr) return;
+                const qtyRow = tr.querySelector('.row-qty');
+                qtyRow.value = qtyInList.value || 1;
+                qtyRow.dispatchEvent(new Event('input'));
+            });
+        }
+
+        cb.addEventListener('change', function(){
+            if(cb.checked){
+                if(qtyInList) qtyInList.disabled = false;
+                const tr = ensureRow(testId, name, rate);
+                // sync qty from list input if available
+                if(qtyInList){
+                    const qtyRow = tr.querySelector('.row-qty');
+                    qtyRow.value = qtyInList.value || 1;
+                    qtyRow.dispatchEvent(new Event('input'));
+                }
+            } else {
+                if(qtyInList) qtyInList.disabled = true;
+                removeRow(testId);
+            }
+        });
+    });
+
+    // Search tests in the right panel
+    const testSearch = document.getElementById('testSearch');
+    if(testSearch){
+        testSearch.addEventListener('input', function(){
+            const q = this.value.toLowerCase();
+            document.querySelectorAll('.test-item').forEach(item => {
+                const name = item.querySelector('span')?.textContent?.toLowerCase() || '';
+                item.style.display = name.includes(q) ? '' : 'none';
+            });
+        });
+    }
+
+    // Print button: submit-less print uses browser print of current report.
+    // Since bill is created on submit, this prints current selected list as a "draft".
+    // (You can also print from View All -> View -> Print Report)
+    document.getElementById('printLabBtn').addEventListener('click', function(){
+        window.print();
+    });
+
+    // Ensure totals start correct
+    computeTotals();
+    [discountEl, waiveOffEl, depositEl].forEach(el => el?.addEventListener('input', computeTotals));
+
+    // Auto-fill patient details by OPD/IPD No
+    async function lookupPatient(){
+        const opd_no = document.getElementById('labOpdNo')?.value?.trim() || '';
+        const ipd_no = document.getElementById('labIpdNo')?.value?.trim() || '';
+        if(!opd_no && !ipd_no) return;
+
+        const url = `{% url 'lab:patient_lookup' %}?` + new URLSearchParams({opd_no, ipd_no});
+
+        try {
+            const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const data = await resp.json();
+            if(!data || !data.ok){
+                alert(data?.error || 'Unable to fetch patient details');
+                return;
+            }
+
+            // fill bill form fields (names must match backend POST expects)
+            const patientNameEl = document.querySelector('input[name="patient_name"]');
+            const mobileEl = document.querySelector('input[name="mobile"]');
+            const guardianEl = document.querySelector('input[name="guardian"]');
+            const addressEl = document.querySelector('input[name="address"]');
+            const ageYearsEl = document.querySelector('input[name="age_y"]');
+            const uhidEl = document.getElementById('labUhid');
+
+            if(patientNameEl) patientNameEl.value = data.patient_name || '';
+            if(mobileEl) mobileEl.value = data.mobile || '';
+            if(guardianEl) guardianEl.value = data.guardian || '';
+            if(addressEl) addressEl.value = data.address || '';
+            if(ageYearsEl) ageYearsEl.value = data.age_years || '';
+            if(uhidEl) uhidEl.value = data.uhid || '';
+        } catch(e){
+            console.error(e);
+            alert('Unable to fetch patient details');
+        }
+    }
+
+    document.getElementById('labPatientLookupBtn')?.addEventListener('click', lookupPatient);
+    ['labOpdNo','labIpdNo'].forEach(id => {
+        document.getElementById(id)?.addEventListener('keydown', (e)=>{
+            if(e.key === 'Enter'){
+                e.preventDefault();
+                lookupPatient();
+            }
+        });
+    });
+})();
+</script>
+
+{% endblock %}
+
