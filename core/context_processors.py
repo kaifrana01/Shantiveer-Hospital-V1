@@ -5,9 +5,10 @@ from core import rbac
 
 def hospital_info(request):
     ctx = {
-        'hospital_name': settings.HOSPITAL_NAME,
+        'hospital_name':    settings.HOSPITAL_NAME,
         'hospital_address': settings.HOSPITAL_ADDRESS,
-        'hospital_phone': settings.HOSPITAL_PHONE,
+        'hospital_phone':   settings.HOSPITAL_PHONE,
+        'hospital_upi_id':  getattr(settings, 'HOSPITAL_UPI_ID', ''),
     }
     if request.user.is_authenticated:
         ctx['unread_notifications'] = services.get_unread_notifications(request.user, limit=5)

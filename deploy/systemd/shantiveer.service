@@ -1,0 +1,44 @@
+# =============================================================================
+# systemd service for ShantiVeer HMS (Gunicorn)
+# Location on server: /etc/systemd/system/shantiveer.service
+#
+# After copying:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable shantiveer
+#   sudo systemctl start shantiveer
+# =============================================================================
+
+[Unit]
+Description=ShantiVeer HMS — Gunicorn WSGI Server
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+# Run as a non-root user (create with: sudo useradd -m -s /bin/bash deploy)
+User=deploy
+Group=deploy
+
+WorkingDirectory=/var/www/shantiveer
+
+# Load production .env
+EnvironmentFile=/var/www/shantiveer/.env
+
+ExecStart=/var/www/shantiveer/venv/bin/gunicorn \
+    ShantiVeer_hms.wsgi:application \
+    --workers 3 \
+    --bind 127.0.0.1:8000 \
+    --timeout 120 \
+    --access-logfile /var/www/shantiveer/logs/gunicorn_access.log \
+    --error-logfile  /var/www/shantiveer/logs/gunicorn_error.log \
+    --log-level warning
+
+# Restart automatically if it crashes
+Restart=on-failure
+RestartSec=5s
+
+# Hardening
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

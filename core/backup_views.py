@@ -6,18 +6,15 @@ import logging
 from pathlib import Path
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.http import FileResponse, Http404
 from django.conf import settings
+from django.views.decorators.http import require_POST
 
+from core.rbac import require_module
 from .backup_models import BackupSchedule, BackupRecord
 
 logger = logging.getLogger(__name__)
-
-
-def admin_only(user):
-    return user.is_staff or user.is_superuser
 
 
 def _dump_database(dump_path: Path) -> str:
@@ -182,13 +179,11 @@ def _do_backup(user, backup_type='manual'):
     return record
 
 
-@login_required
-@user_passes_test(admin_only, login_url='core:dashboard')
+@require_module('backup', level='full')
 def backup_dashboard(request):
     """Main backup management page."""
     schedule = BackupSchedule.objects.first()
     backups = BackupRecord.objects.all()[:20]
-
     return render(request, 'core/backup.html', {
         'active_sidebar': 'dashboard',
         'schedule': schedule,
@@ -196,21 +191,19 @@ def backup_dashboard(request):
     })
 
 
-@login_required
-@user_passes_test(admin_only, login_url='core:dashboard')
+@require_module('backup', level='full')
+@require_POST
 def backup_now(request):
     """Trigger an immediate manual backup."""
-    if request.method == 'POST':
-        record = _do_backup(request.user, backup_type='manual')
-        if record.status == 'success':
-            messages.success(request, f'Backup created: {record.filename} ({record.size_display})')
-        else:
-            messages.error(request, f'Backup failed: {record.error_message}')
+    record = _do_backup(request.user, backup_type='manual')
+    if record.status == 'success':
+        messages.success(request, f'Backup created: {record.filename} ({record.size_display})')
+    else:
+        messages.error(request, f'Backup failed: {record.error_message}')
     return redirect('core:backup')
 
 
-@login_required
-@user_passes_test(admin_only, login_url='core:dashboard')
+@require_module('backup', level='full')
 def backup_schedule_save(request):
     """Save or update the backup schedule preference."""
     if request.method == 'POST':
@@ -219,51 +212,37 @@ def backup_schedule_save(request):
         if frequency not in valid:
             messages.error(request, 'Invalid frequency selected.')
             return redirect('core:backup')
-
         is_active = frequency != 'manual'
-
         schedule, _ = BackupSchedule.objects.get_or_create(pk=1)
         schedule.frequency = frequency
         schedule.is_active = is_active
         schedule.created_by = request.user
         schedule.save()
-
         label = dict(BackupSchedule.FREQUENCY_CHOICES).get(frequency, frequency)
         messages.success(request, f'Backup schedule set to: {label}')
     return redirect('core:backup')
 
 
-@login_required
-@user_passes_test(admin_only, login_url='core:dashboard')
+@require_module('backup', level='full')
 def backup_download(request, pk):
     """Stream a backup zip file to the browser — path traversal protected."""
     record = get_object_or_404(BackupRecord, pk=pk, status='success')
     path = Path(record.filepath).resolve()
     backup_dir = (Path(settings.BASE_DIR) / 'backups').resolve()
-
-    # Prevent path traversal: ensure file is inside our backup directory
     if not str(path).startswith(str(backup_dir)):
         raise Http404('Invalid backup path.')
-
     if not path.exists() or not path.is_file():
         raise Http404('Backup file no longer exists on disk.')
-
-    return FileResponse(
-        open(path, 'rb'),
-        as_attachment=True,
-        filename=record.filename,
-    )
+    return FileResponse(open(path, 'rb'), as_attachment=True, filename=record.filename)
 
 
-@login_required
-@user_passes_test(admin_only, login_url='core:dashboard')
+@require_module('backup', level='full')
 def backup_delete(request, pk):
     """Delete a backup record and its file."""
     if request.method == 'POST':
         record = get_object_or_404(BackupRecord, pk=pk)
         path = Path(record.filepath).resolve()
         backup_dir = (Path(settings.BASE_DIR) / 'backups').resolve()
-
         if str(path).startswith(str(backup_dir)) and path.exists():
             path.unlink()
         record.delete()

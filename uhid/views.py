@@ -15,7 +15,7 @@ def update(request):
         patient = Patient.objects.filter(uhid=search_uhid).first()
 
     if request.method == 'POST':
-        if request.is_view_only:
+        if getattr(request, 'is_view_only', False):
             raise PermissionDenied("Your role has view-only access to UHID records.")
         uhid = request.POST.get('uhid') or search_uhid
         p, _ = Patient.objects.get_or_create(uhid=uhid, defaults={'name': request.POST.get('patient_name', ''), 'mobile': request.POST.get('mobile', '')})

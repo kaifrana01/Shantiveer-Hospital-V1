@@ -19,7 +19,7 @@ from masterdata.models import Doctor
 
 
 def _post_opd_visit_to_ledger(visit):
-    """Mirror an OPD visit into the central patient ledger."""
+    """Mirror an OPD visit into the central patient ledger and income daybook."""
     if visit.total_amount <= 0:
         return
 
@@ -39,7 +39,19 @@ def _post_opd_visit_to_ledger(visit):
         payer_type=LedgerEntry.PayerType.PATIENT,
         payment_mode=visit.payment_mode,
         description=f'OPD visit {visit.opd_no} payment collected at registration',
+        source_app='opd',
+        source_id=visit.opd_no,
         patient=visit.patient,
+    )
+    # Mirror into IncomeEntry so daybook reflects OPD collections
+    from income.models import IncomeEntry
+    IncomeEntry.objects.create(
+        date=visit.date,
+        category='OPD',
+        patient_name=visit.patient.name,
+        description=f'OPD visit {visit.opd_no} ({visit.head})',
+        payment_mode=visit.payment_mode,
+        amount=visit.total_amount,
     )
 
 
@@ -209,6 +221,7 @@ def registration(request):
                 visit_obj.save()
 
                 Prescription.objects.get_or_create(opd_visit=visit_obj)
+                # Post ledger + income inside the same atomic block as the visit
                 _post_opd_visit_to_ledger(visit_obj)
                 messages.success(request, f'OPD {visit_obj.opd_no} saved successfully.')
 
@@ -236,7 +249,29 @@ def registration(request):
 @require_POST
 def delete_opd_visit(request, pk):
     visit = get_object_or_404(OPDVisit, pk=pk)
-    visit.delete()
+    with transaction.atomic():
+        if visit.total_amount > 0:
+            # Post a compensating credit so the patient ledger stays balanced
+            try:
+                LedgerEntry.objects.create(
+                    uhid=visit.patient.uhid,
+                    patient=visit.patient,
+                    tx_type=LedgerEntry.TxType.ADJUSTMENT,
+                    payer_type=LedgerEntry.PayerType.PATIENT,
+                    credit_amount=visit.total_amount,
+                    description=f'OPD visit {visit.opd_no} voided/deleted',
+                    source_app='opd',
+                    source_id=visit.opd_no,
+                )
+            except Exception:
+                pass
+            # Reverse the IncomeEntry posted at registration time
+            from income.models import IncomeEntry
+            IncomeEntry.objects.filter(
+                category='OPD',
+                description__icontains=visit.opd_no,
+            ).order_by('-created_at')[:1].delete()
+        visit.delete()
     messages.success(request, f'OPD {visit.opd_no} deleted successfully.')
     return redirect('prescription:list')
 

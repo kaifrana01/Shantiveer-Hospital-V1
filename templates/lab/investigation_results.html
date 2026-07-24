@@ -1,0 +1,81 @@
+{% extends 'base_cyan.html' %}
+{% block title %}Enter Test Results — {{ inv.bill_no }}{% endblock %}
+{% block page_title %}Enter Test Results — {{ inv.bill_no }}{% endblock %}
+{% block content %}
+<div class="page-container">
+<div class="form-card" style="max-width:760px;margin:auto">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="mb-0" style="color:#1A56A0;font-weight:700">
+            <i class="bi bi-clipboard2-pulse me-2"></i>Test Results — {{ inv.bill_no }}
+        </h5>
+        <a href="{% url 'lab:view_report' inv.pk %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-eye me-1"></i>View Report
+        </a>
+    </div>
+
+    <div class="mb-2 small text-muted">
+        <strong>Patient:</strong> {{ inv.patient_name }} &nbsp;|&nbsp;
+        <strong>Date:</strong> {{ inv.test_date }} &nbsp;|&nbsp;
+        <strong>Referred by:</strong> {{ inv.referred_by }}
+    </div>
+
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show py-2">
+          {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post">
+    {% csrf_token %}
+    <table class="hms-table">
+        <thead>
+            <tr>
+                <th style="width:30%">Test Name</th>
+                <th style="width:25%">Result</th>
+                <th style="width:15%">Unit</th>
+                <th style="width:30%">Reference Range</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for ti in test_items %}
+        <tr>
+            <td class="fw-semibold">{{ ti.test_name }}</td>
+            <td>
+                <input type="text" name="result_{{ ti.item.id }}"
+                    class="form-control form-control-sm"
+                    value="{{ ti.result_value }}"
+                    placeholder="e.g. 120">
+            </td>
+            <td>
+                <input type="text" name="unit_{{ ti.item.id }}"
+                    class="form-control form-control-sm"
+                    value="{{ ti.unit }}"
+                    placeholder="mg/dL">
+            </td>
+            <td>
+                <input type="text" name="ref_{{ ti.item.id }}"
+                    class="form-control form-control-sm"
+                    value="{{ ti.reference_range }}"
+                    placeholder="70–110">
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center text-muted py-3">No test items found.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-success px-4">
+            <i class="bi bi-check-lg me-1"></i>Save Results
+        </button>
+        <a href="{% url 'lab:view_all' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+    </div>
+    </form>
+
+</div>
+</div>
+{% endblock %}

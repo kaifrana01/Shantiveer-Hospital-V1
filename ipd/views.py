@@ -1,27 +1,35 @@
 from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Q, Sum
+from django.http import JsonResponse
 from django.utils import timezone
+from django.views.decorators.http import require_POST
+
 from uhid.models import Patient
-from income.models import LedgerEntry
+from income.models import LedgerEntry, validate_payment_amount, validate_payment_mode, PAYMENT_MODES_ALL
 from .models import IPDAdmission, IPDPayment, IPDMedicineLine, DischargeSummary
 from core.models import Bed
 from core.rbac import require_module
 
 
 def _cap_text(s):
-    """Capitalize text: first letter of each word to uppercase, rest lowercase.
-
-    Example: "john smith" -> "John Smith"
-    """
     if s is None:
         return ''
-    s = str(s).strip()
-    return s.title()
+    return str(s).strip().title()
 
 
+def _normalize_category(raw):
+    """Map raw category input to a consistent stored value."""
+    norm = (raw or '').strip().lower()
+    if norm in {'icu', 'emergency', 'emerg', 'er', 'emergency/icu', 'icu ward', 'emergency ward'}:
+        return 'ICU'
+    if 'private' in norm:
+        return 'Private Ward'
+    if 'general' in norm:
+        return 'General Ward'
+    return _cap_text(raw) if raw else 'General Ward'
 
 
 def _ipd_dict(a):
@@ -41,10 +49,35 @@ def _ipd_dict(a):
     }
 
 
+def _compute_ipd_bill_total(adm):
+    """Compute total IPD bill based on bed_charge field + medicines.
+    
+    Uses admission.bed_charge if set, otherwise falls back to ward-based defaults.
+    """
+    # Use bed_charge if explicitly set, else fall back to ward-based defaults
+    if adm.bed_charge and adm.bed_charge > 0:
+        room_amount = adm.bed_charge
+    else:
+        ward = (adm.category or '').strip().lower()
+        ward_map = {
+            'general ward': Decimal('2500'),
+            'private ward': Decimal('3500'),
+            'emergency ward': Decimal('2000'),
+            'icu': Decimal('4000'),
+        }
+        room_amount = ward_map.get(ward, Decimal('1500'))
+    
+    # Doctor fees: fixed at 2000 for now (could be made configurable later)
+    doctor_fees = Decimal('2000')
+    
+    med_total = sum(m.amount for m in adm.medicine_lines.all()) or Decimal('0.00')
+    return room_amount + doctor_fees + med_total
+
 
 @require_module('ipd_list', level='view')
 def patient_list(request):
     q = request.GET.get('q', '').strip()
+    referral = request.GET.get('referral', '').strip()
 
     qs = IPDAdmission.objects.select_related('patient').filter(status='Admitted')
     if q:
@@ -53,19 +86,25 @@ def patient_list(request):
             | Q(ipd_no__icontains=q)
             | Q(patient__uhid__icontains=q)
         )
+    if referral:
+        qs = qs.filter(referral__icontains=referral)
 
-    # Pre-compute advance/paid summary in one query.
-    qs = qs.annotate(
-        advance_paid=Sum('payments__amount')
+    qs = qs.annotate(advance_paid=Sum('payments__amount'))
+
+    # Distinct referral doctors for filter dropdown
+    referral_doctors = (
+        IPDAdmission.objects.filter(status='Admitted', referral__isnull=False)
+        .exclude(referral='')
+        .values_list('referral', flat=True)
+        .distinct()
+        .order_by('referral')
     )
 
     patients = []
-
     for a in qs:
         total_amount = _compute_ipd_bill_total(a)
         advance_paid = a.advance_paid or Decimal('0.00')
         due_amount = total_amount - advance_paid
-
         d = _ipd_dict(a)
         d.update({
             'total_amount': total_amount,
@@ -74,194 +113,164 @@ def patient_list(request):
         })
         patients.append(d)
 
-    return render(
-        request,
-        'ipd/patient_list.html',
-        {'active_sidebar': 'ipd', 'patients': patients},
-    )
+    return render(request, 'ipd/patient_list.html', {
+        'active_sidebar': 'ipd',
+        'patients': patients,
+        'referral_doctors': referral_doctors,
+        'selected_referral': referral,
+    })
 
 
 @require_module('ipd_admission', level='full')
 def admission(request):
     edit_id = request.GET.get('edit') or request.POST.get('edit_id')
-
     admission_obj = None
     if edit_id:
         admission_obj = IPDAdmission.objects.select_related('patient').filter(pk=edit_id).first()
 
     if request.method == 'POST':
-        uhid = request.POST.get('uhid')
-        patient = Patient.objects.filter(uhid=uhid).first() if uhid else None
+        with transaction.atomic():
+            uhid = (request.POST.get('uhid') or '').strip()
+            patient = Patient.objects.filter(uhid=uhid).first() if uhid else None
 
-        # When editing: update existing admission + patient record if provided.
-        if not patient:
-            patient = Patient.objects.create(
-                name=_cap_text(request.POST.get('patient_name', '')),
-                mobile=request.POST.get('contact', ''),
-                gender=_cap_text(request.POST.get('gender', 'Male')),
-                age_years=int(request.POST.get('age') or 0),
-                address=_cap_text(request.POST.get('address', '')),
-            )
+            # Determine category once, cleanly
+            raw_category = request.POST.get('room_category') or request.POST.get('category') or ''
+            category = _normalize_category(raw_category)
 
-
-        if admission_obj:
-
-            # update patient
-            if request.POST.get('patient_name') is not None:
-                patient.name = _cap_text(request.POST.get('patient_name', ''))
-                patient.mobile = request.POST.get('contact', '')
-                patient.gender = _cap_text(request.POST.get('gender', 'Male'))
-                patient.age_years = int(request.POST.get('age') or 0)
-                patient.address = _cap_text(request.POST.get('address', ''))
-
+            if patient:
+                # Update existing patient demographics
+                patient.name = _cap_text(request.POST.get('patient_name', patient.name))
+                patient.mobile = request.POST.get('contact', patient.mobile)
+                patient.gender = _cap_text(request.POST.get('gender', patient.gender))
+                patient.age_years = int(request.POST.get('age') or patient.age_years)
+                patient.address = _cap_text(request.POST.get('address', patient.address))
                 patient.save()
+            else:
+                patient = Patient.objects.create(
+                    name=_cap_text(request.POST.get('patient_name', '')),
+                    mobile=request.POST.get('contact', ''),
+                    gender=_cap_text(request.POST.get('gender', 'Male')),
+                    age_years=int(request.POST.get('age') or 0),
+                    address=_cap_text(request.POST.get('address', '')),
+                )
 
-            # update admission
-            admission_obj.patient = patient
-            admission_obj.date = request.POST.get('date') or timezone.localdate()
-            admission_obj.time = request.POST.get('time') or None
-            admission_obj.guardian = _cap_text(request.POST.get('guardian', ''))
-            admission_obj.category = _cap_text(request.POST.get('category', 'General'))
-            admission_obj.consultant = _cap_text(request.POST.get('consultant', ''))
-
-            admission_obj.kyc_type = request.POST.get('kyc_type', '')
-            admission_obj.kyc_no = request.POST.get('kyc_no', '')
-            admission_obj.room_category = request.POST.get('room_category', '')
-            admission_obj.room_no = request.POST.get('room_no', '')
-            admission_obj.diagnosis = _cap_text(request.POST.get('diagnosis', ''))
-            admission_obj.tpa = _cap_text(request.POST.get('tpa', ''))
-            admission_obj.policy_no = _cap_text(request.POST.get('policy_no', ''))
-            admission_obj.insurance_co = _cap_text(request.POST.get('insurance', ''))
-            admission_obj.referral = _cap_text(request.POST.get('referral', ''))
-
-            admission_obj.status = request.POST.get('status', 'Admitted')
-            admission_obj.save()
-            messages.success(request, 'IPD admission updated.')
-        else:
-            IPDAdmission.objects.create(
+            common_fields = dict(
                 patient=patient,
                 date=request.POST.get('date') or timezone.localdate(),
                 time=request.POST.get('time') or None,
                 guardian=_cap_text(request.POST.get('guardian', '')),
-                category=_cap_text(request.POST.get('category', 'General')),
+                category=category,
                 consultant=_cap_text(request.POST.get('consultant', '')),
-
                 kyc_type=request.POST.get('kyc_type', ''),
                 kyc_no=_cap_text(request.POST.get('kyc_no', '')),
-                room_category=_cap_text(request.POST.get('room_category', '')),
-                room_no=_cap_text(request.POST.get('room_no', '')),
+                room_category=_cap_text(raw_category),
+                room_no=request.POST.get('room_no', ''),
                 diagnosis=_cap_text(request.POST.get('diagnosis', '')),
                 tpa=_cap_text(request.POST.get('tpa', '')),
                 policy_no=_cap_text(request.POST.get('policy_no', '')),
                 insurance_co=_cap_text(request.POST.get('insurance', '')),
                 referral=_cap_text(request.POST.get('referral', '')),
-
                 status=request.POST.get('status', 'Admitted'),
             )
-            messages.success(request, 'IPD admission saved.')
 
-        # Map Emergency/ICU inputs to ICU before bed allocation + before saving alerts.
-        try:
-            raw_cat = (request.POST.get('category') or '').strip()
-            norm = raw_cat.lower()
-            if admission_obj and norm:
-                if norm in {'icu', 'emergency', 'emerg', 'er', 'emergency/icu'}:
-                    admission_obj.category = 'ICU'
-        except Exception:
-            pass
+            is_new_admission = admission_obj is None
 
-
-
-        # Auto-allocate a vacant bed when admitting
-        room_no = admission_obj.room_no if admission_obj else (request.POST.get('room_no') or '').strip()
-        if room_no and admission_obj and admission_obj.status == 'Admitted':
-            vacant_bed = (Bed.objects
-                .filter(room_no=room_no, status='Vacant')
-                .order_by('bed_no')
-                .first())
-
-            if vacant_bed:
-                vacant_bed.status = 'Occupied'
-                vacant_bed.patient = patient
-                vacant_bed.save(update_fields=['status', 'patient'])
-            else:
-                messages.warning(request, f'No vacant bed available in Room {room_no}.')
-
-        # Ensure category used for billing matches ward type input
-        try:
             if admission_obj:
-                raw = request.POST.get('room_category', '') or request.POST.get('category', '')
-                raw_norm = (raw or '').strip()
-                if raw_norm:
-                    # Store ward type/category like 'General Ward' etc.
-                    admission_obj.category = _cap_text(raw_norm)
-                    admission_obj.save(update_fields=['category'])
-        except Exception:
-            pass
+                for field, val in common_fields.items():
+                    setattr(admission_obj, field, val)
+                admission_obj.save()
+                messages.success(request, 'IPD admission updated.')
+            else:
+                admission_obj = IPDAdmission.objects.create(**common_fields)
+                messages.success(request, 'IPD admission saved.')
 
-        # Persist category mapping if modified
-        if admission_obj and admission_obj.category:
-            try:
-                admission_obj.save(update_fields=['category'])
-            except Exception:
-                pass
-
-        # --- Advance payment from admission screen ---
-        # IPD patient list uses Sum('payments__amount'), so we must save
-        # this advance into IPDPayment (and ledger if applicable).
-        try:
-            adv_raw = (request.POST.get('advance_payment') or '').strip()
-            # Support formats like "1,000" or "1000.50"
-            adv_raw = adv_raw.replace(',', '')
-            adv = Decimal(adv_raw) if adv_raw else Decimal('0.00')
-
-            if admission_obj and adv > 0:
-                # Avoid double-charging when user edits admission: if there
-                # is already at least one payment and UI provides 0, we won't
-                # create anything. If UI provides advance again, it will add.
-                IPDPayment.objects.create(
-                    admission=admission_obj,
-                    amount=adv,
-                    payment_mode='Cash',
-                    upi_id='',
-                    remarks=f'Advance payment ({admission_obj.ipd_no})',
+            # Auto-allocate a vacant bed — only on new admissions
+            room_no = (request.POST.get('room_no') or '').strip()
+            if is_new_admission and room_no and admission_obj.status == 'Admitted':
+                vacant_bed = (
+                    Bed.objects
+                    .filter(room_no=room_no, status='Vacant')
+                    .order_by('bed_no')
+                    .first()
                 )
+                if vacant_bed:
+                    vacant_bed.status = 'Occupied'
+                    vacant_bed.patient = patient
+                    vacant_bed.save(update_fields=['status', 'patient'])
+                else:
+                    messages.warning(request, f'No vacant bed available in Room {room_no}.')
 
-                # Mirror into patient ledger to keep accounting consistent.
-                LedgerEntry.record_payment(
-                    uhid=admission_obj.patient.uhid,
-                    amount=adv,
-                    payer_type=LedgerEntry.PayerType.PATIENT,
-                    payment_mode='Cash',
-                    description=f'IPD advance payment ({admission_obj.ipd_no})',
-                    patient=admission_obj.patient,
-                    ipd_admission=admission_obj,
-                )
-        except Exception:
-            # Don't block admission save if advance parsing/ledger fails.
-            pass
+            # Advance payment — only record on NEW admissions to prevent
+            # duplicate payments when editing.
+            if is_new_admission:
+                adv_raw = (request.POST.get('advance_payment') or '').strip().replace(',', '')
+                try:
+                    adv = Decimal(adv_raw) if adv_raw else Decimal('0.00')
+                except Exception:
+                    adv = Decimal('0.00')
+
+                adv_mode = request.POST.get('advance_payment_mode', 'Cash') or 'Cash'
+                try:
+                    adv_mode = validate_payment_mode(adv_mode, allowed=['Cash', 'UPI', 'Card', 'Cheque'])
+                except ValueError:
+                    adv_mode = 'Cash'
+                adv_upi_id = ''
+                if adv_mode == 'UPI':
+                    adv_upi_id = (request.POST.get('advance_upi_id') or '').strip()[:200]
+
+                if adv > 0:
+                    IPDPayment.objects.create(
+                        admission=admission_obj,
+                        amount=adv,
+                        payment_mode=adv_mode,
+                        upi_id=adv_upi_id,
+                        remarks=f'Advance payment ({admission_obj.ipd_no})',
+                    )
+                    LedgerEntry.record_payment(
+                        uhid=admission_obj.patient.uhid,
+                        amount=adv,
+                        payer_type=LedgerEntry.PayerType.PATIENT,
+                        payment_mode=adv_mode,
+                        description=f'IPD advance payment ({admission_obj.ipd_no})',
+                        patient=admission_obj.patient,
+                        ipd_admission=admission_obj,
+                        source_app='ipd',
+                        source_id=admission_obj.ipd_no,
+                    )
+                    # Mirror advance into IncomeEntry for daybook
+                    from income.models import IncomeEntry as _IE
+                    _IE.objects.create(
+                        date=admission_obj.date,
+                        category='IPD',
+                        patient_name=admission_obj.patient.name,
+                        description=f'IPD advance payment ({admission_obj.ipd_no})',
+                        payment_mode=adv_mode,
+                        amount=adv,
+                    )
 
         return redirect('ipd:patient_list')
 
     present = IPDAdmission.objects.filter(status='Admitted').select_related('patient')
-
-    present_list = [{'name': a.patient.name, 'room': a.room_no, 'ipd_no': a.ipd_no, 'category': a.category} for a in present]
+    present_list = [
+        {'name': a.patient.name, 'room': a.room_no, 'ipd_no': a.ipd_no, 'category': a.category}
+        for a in present
+    ]
 
     from masterdata.models import Doctor
     doctors = Doctor.objects.filter(is_active=True).order_by('name')
 
+    # Bed dropdown — vacant beds only
+    bed_options = list(
+        Bed.objects.filter(status='Vacant').order_by('room_no', 'bed_no').values('room_no', 'bed_no')
+    )
 
-    # Pre-fill form when editing.
     ctx = {
         'active_sidebar': 'ipd',
         'today': timezone.localdate().isoformat(),
         'present_patients': present_list,
-
         'ipd_no': admission_obj.ipd_no if admission_obj else f'IPD{IPDAdmission.objects.count() + 101}',
         'form_ipd_no': admission_obj.ipd_no if admission_obj else '',
         'form_bed_charge': getattr(admission_obj, 'bed_charge', None) if admission_obj else '',
-
-
         'edit_id': admission_obj.id if admission_obj else '',
         'form_uhid': admission_obj.patient.uhid if admission_obj else '',
         'form_patient_name': admission_obj.patient.name if admission_obj else '',
@@ -272,70 +281,22 @@ def admission(request):
         'form_date': str(admission_obj.date) if admission_obj else '',
         'form_time': admission_obj.time.strftime('%H:%M') if admission_obj and admission_obj.time else '',
         'form_guardian': admission_obj.guardian if admission_obj else '',
-        'form_category': admission_obj.category if admission_obj else 'General',
+        'form_category': admission_obj.category if admission_obj else 'General Ward',
         'form_consultant': admission_obj.consultant if admission_obj else '',
         'form_kyc_type': admission_obj.kyc_type if admission_obj else 'Aadhar',
         'form_kyc_no': admission_obj.kyc_no if admission_obj else '',
         'form_room_category': admission_obj.room_category if admission_obj else '',
-'form_room_no': admission_obj.room_no if admission_obj else '',
-        
-        'doctors': doctors,
-
-        # Bed dropdown options (from Bed Manager)
-
-        # Bed dropdown options (Vacant only)
-        # Filter by ward type using room_category.
-        'bed_options': (
-            (lambda qs: list(qs.order_by('room_no', 'bed_no').values('room_no', 'bed_no')))(
-                (
-                    (lambda bed_qs, ward_cat_lower: (
-                        bed_qs.filter(room_no__istartswith='P') if 'private' in ward_cat_lower else
-                        bed_qs.filter(room_no__istartswith='E') if 'emergency' in ward_cat_lower else
-                        bed_qs.filter(room_no__istartswith='G')
-                    ))
-                    (Bed.objects.filter(status='Vacant'), (admission_obj.room_category if admission_obj else request.GET.get('room_category', '')).strip().lower())
-                    if (admission_obj.room_category if admission_obj else request.GET.get('room_category', '')).strip().lower() else
-                    Bed.objects.filter(status='Vacant').filter(room_no__istartswith='G')
-                )
-            )
-        ),
-
-
+        'form_room_no': admission_obj.room_no if admission_obj else '',
         'form_diagnosis': admission_obj.diagnosis if admission_obj else '',
         'form_tpa': admission_obj.tpa if admission_obj else '',
         'form_policy_no': admission_obj.policy_no if admission_obj else '',
         'form_insurance': admission_obj.insurance_co if admission_obj else '',
         'form_referral': admission_obj.referral if admission_obj else '',
         'form_status': admission_obj.status if admission_obj else 'Admitted',
+        'doctors': doctors,
+        'bed_options': bed_options,
     }
-
     return render(request, 'ipd/admission.html', ctx)
-
-
-
-from django.http import JsonResponse
-
-
-def _compute_ipd_bill_total(adm):
-    """Compute total IPD bill based on ward type (category) and medicines.
-
-    Bed Charges/Room Charges + Doctor Fees are mapped from admission.category
-    (Ward Type on the admission screen).
-    """
-    ward = (adm.category or '').strip().lower() if adm else ''
-
-    ward_map = {
-        'general ward': (Decimal('2500'), Decimal('2000')),
-        'private ward': (Decimal('3500'), Decimal('2500')),
-        'emergency ward': (Decimal('2000'), Decimal('2200')),
-        'icu': (Decimal('4000'), Decimal('3000')),
-    }
-
-    # Fallback to existing defaults
-    room_amount, doctor_fees = ward_map.get(ward, (Decimal('1500'), Decimal('500')))
-
-    med_total = sum(m.amount for m in adm.medicine_lines.all()) or Decimal('0.00')
-    return room_amount + doctor_fees + med_total
 
 
 @require_module('billing_collect', level='view')
@@ -346,48 +307,40 @@ def payment_total(request):
 
     adm = IPDAdmission.objects.select_related('patient').filter(ipd_no=ipd_no).first()
     total = _compute_ipd_bill_total(adm) if adm else Decimal('0.00')
-    # Provide patient name to support auto-fill on the payment page.
     patient_name = adm.patient.name if adm else ''
     return JsonResponse({'total': str(total), 'patient_name': patient_name})
 
 
 @require_module('billing_collect', level='full')
 def payment(request):
-    """IPD payment screen.
-
-    Important: this view must NOT navigate/open any IPD patient context based
-    on query-string parameters. The payment page is always rendered as-is.
-    """
-    # Ignore any query params (e.g., ipd_no) for safety; they are only used by
-    # the AJAX endpoint /ipd/payment/total/.
-    request.GET = request.GET.copy()
-    request.GET.clear()
-
+    """IPD payment screen."""
     if request.method == 'POST':
         adm = IPDAdmission.objects.filter(ipd_no=request.POST.get('ipd_no')).first()
-        if adm:
-            amount = Decimal(request.POST.get('amount') or 0)
-            mode = request.POST.get('mode', 'Cash')
-            remarks = _cap_text(request.POST.get('remarks', ''))
+        if not adm:
+            messages.error(request, 'IPD number not found.')
+            return redirect('ipd:payment')
 
-            upi_id = ''
-            if mode == 'UPI':
-                upi_id = (request.POST.get('upi_id') or '').strip()
+        try:
+            amount = validate_payment_amount(request.POST.get('amount', ''))
+            mode = validate_payment_mode(request.POST.get('mode', 'Cash'),
+                                         allowed=['Cash', 'UPI', 'Card', 'Cheque'])
+        except ValueError as e:
+            messages.error(request, str(e))
+            return redirect('ipd:payment')
 
-            IPDPayment.objects.create(
+        remarks = _cap_text(request.POST.get('remarks', ''))
+        upi_id = ''
+        if mode == 'UPI':
+            upi_id = (request.POST.get('upi_id') or '').strip()[:200]
+
+        with transaction.atomic():
+            ipd_pay = IPDPayment.objects.create(
                 admission=adm,
                 amount=amount,
                 payment_mode=mode,
                 upi_id=upi_id,
                 remarks=remarks,
             )
-
-
-            # Mirror into the single patient ledger (Phase 2/3 architecture).
-            # Desk collections from the IPD payment screen are always
-            # against the PATIENT side of the ledger; insurance-side
-            # postings happen via the dedicated TPA settlement workflow
-            # (LedgerEntry.settle_insurance_claim).
             LedgerEntry.record_payment(
                 uhid=adm.patient.uhid,
                 amount=amount,
@@ -396,26 +349,50 @@ def payment(request):
                 description=remarks or f'IPD payment for {adm.ipd_no}',
                 patient=adm.patient,
                 ipd_admission=adm,
+                source_app='ipd',
+                source_id=str(ipd_pay.id),
             )
-            messages.success(request, 'Payment recorded.')
-            # After saving payment, redirect to the IPD bill page for the same admission
-            # so the user can immediately see updated balance.
-            from django.urls import reverse
-            return redirect(f"{reverse('ipd:bill')}?ipd_no={adm.ipd_no}")
+            # Mirror into IncomeEntry so daybook reflects IPD payments
+            from income.models import IncomeEntry as _IE
+            _IE.objects.create(
+                date=adm.date,
+                category='IPD',
+                patient_name=adm.patient.name,
+                description=remarks or f'IPD payment ({adm.ipd_no})',
+                payment_mode=mode,
+                amount=amount,
+            )
+        messages.success(request, 'Payment recorded.')
+        from django.urls import reverse
+        return redirect(f"{reverse('ipd:bill')}?ipd_no={adm.ipd_no}")
 
     payments = IPDPayment.objects.select_related('admission__patient').order_by('-paid_at')[:20]
-
-    data = [{'ipd_no': p.admission.ipd_no, 'name': p.admission.patient.name, 'amount': p.amount, 'mode': p.payment_mode, 'date': p.paid_at.date()} for p in payments]
+    data = [
+        {
+            'id':     p.id,
+            'ipd_no': p.admission.ipd_no,
+            'name':   p.admission.patient.name,
+            'amount': p.amount,
+            'mode':   p.payment_mode,
+            'date':   p.paid_at.date(),
+            'remarks': p.remarks,
+        }
+        for p in payments
+    ]
     return render(request, 'ipd/payment.html', {'active_sidebar': 'ipd', 'payments': data})
 
 
 @require_module('patient_bill', level='view')
 def bill(request):
+    """
+    Read-only bill view. Does NOT post any ledger charges.
+    Charges are posted at admission time (advance) and via the payment screen.
+    Refreshing this page is safe and idempotent.
+    """
     bill_data = None
     ipd_no = request.GET.get('ipd_no')
 
     if ipd_no:
-        # Accept input like `ipd123`, `IPD123`, or `123` and match consistently.
         ipd_no_norm = ipd_no.strip().upper()
         if ipd_no_norm and not ipd_no_norm.startswith('IPD'):
             ipd_no_norm = f'IPD{ipd_no_norm}'
@@ -423,60 +400,30 @@ def bill(request):
         adm = IPDAdmission.objects.select_related('patient').filter(ipd_no=ipd_no_norm).first()
 
         if adm:
-            # Bill line items
-            # Room/Bed charge should vary as per admission.bed_charge
-            # (set from Bed Charges input on IPD admission screen).
-            room_amount = getattr(adm, 'bed_charge', None) or Decimal('0.00')
+            items = []
+            # Use the single canonical billing function — keeps bill view,
+            # patient list, and payment_total all in sync.
+            if adm.bed_charge and adm.bed_charge > 0:
+                room_amount = adm.bed_charge
+            else:
+                ward = (adm.category or '').strip().lower()
+                ward_map = {
+                    'general ward': Decimal('2500'),
+                    'private ward': Decimal('3500'),
+                    'emergency ward': Decimal('2000'),
+                    'icu': Decimal('4000'),
+                }
+                room_amount = ward_map.get(ward, Decimal('1500'))
+
             doctor_fees = Decimal('2000')
             med_total = sum(m.amount for m in adm.medicine_lines.all()) or Decimal('0.00')
 
-            items = [
-                {'desc': 'Bed Charges', 'amount': room_amount},
-                {'desc': 'Doctor Fees', 'amount': doctor_fees},
-            ]
+            items = [{'desc': 'Bed / Room Charges', 'amount': room_amount},
+                     {'desc': 'Doctor / Consultation Fees', 'amount': doctor_fees}]
             if med_total:
                 items.append({'desc': 'Medicines', 'amount': med_total})
 
             total = sum((i['amount'] for i in items), Decimal('0.00'))
-
-
-            # Post charges to income ledger automatically
-            # (This mirrors what ipd:medicine does, but for the whole IPD bill.)
-            LedgerEntry.record_charge(
-                uhid=adm.patient.uhid,
-                tx_type=LedgerEntry.TxType.IPD_BILL,
-                amount=room_amount,
-                payer_type=LedgerEntry.PayerType.PATIENT,
-                description=f'IPD Room Charges ({adm.ipd_no})',
-                source_app='ipd',
-                source_id=str(adm.id),
-                patient=adm.patient,
-                ipd_admission=adm,
-            )
-            LedgerEntry.record_charge(
-                uhid=adm.patient.uhid,
-                tx_type=LedgerEntry.TxType.IPD_BILL,
-                amount=doctor_fees,
-                payer_type=LedgerEntry.PayerType.PATIENT,
-                description=f'IPD Doctor Fees ({adm.ipd_no})',
-                source_app='ipd',
-                source_id=str(adm.id),
-                patient=adm.patient,
-                ipd_admission=adm,
-            )
-            if med_total:
-                LedgerEntry.record_charge(
-                    uhid=adm.patient.uhid,
-                    tx_type=LedgerEntry.TxType.IPD_BILL,
-                    amount=med_total,
-                    payer_type=LedgerEntry.PayerType.PATIENT,
-                    description=f'IPD Medicines Total ({adm.ipd_no})',
-                    source_app='ipd',
-                    source_id=str(adm.id),
-                    patient=adm.patient,
-                    ipd_admission=adm,
-                )
-
             paid_total = adm.payments.aggregate(s=Sum('amount'))['s'] or Decimal('0.00')
             due_amount = total - paid_total
 
@@ -494,14 +441,13 @@ def bill(request):
                 'room_category': adm.room_category,
                 'guardian': adm.guardian,
                 'status': adm.status,
-                'items': [{'desc': i['desc'], 'amount': i['amount']} for i in items],
+                'items': items,
                 'total': total,
                 'paid_total': paid_total,
                 'due_amount': due_amount,
             }
 
     return render(request, 'ipd/bill.html', {'active_sidebar': 'ipd', 'bill': bill_data})
-
 
 
 @require_module('ipd_admission', level='view')
@@ -512,12 +458,14 @@ def admission_beds(request):
 
     if 'private' in ward:
         prefix = 'P'
-    elif 'emergency' in ward:
+    elif 'emergency' in ward or 'icu' in ward:
         prefix = 'E'
     else:
         prefix = 'G'
 
-    beds_qs = Bed.objects.filter(status='Vacant', room_no__istartswith=prefix).order_by('room_no', 'bed_no')
+    beds_qs = Bed.objects.filter(
+        status='Vacant', room_no__istartswith=prefix
+    ).order_by('room_no', 'bed_no')
     beds = list(beds_qs.values('room_no', 'bed_no'))
     return JsonResponse({'beds': beds})
 
@@ -527,42 +475,62 @@ def discharge_list(request):
     q = request.GET.get('q', '').strip()
     items = DischargeSummary.objects.select_related('admission__patient')
     if q:
-        items = items.filter(Q(admission__ipd_no__icontains=q) | Q(admission__patient__name__icontains=q))
+        items = items.filter(
+            Q(admission__ipd_no__icontains=q) | Q(admission__patient__name__icontains=q)
+        )
     discharges = [{
-        'id': d.id, 'ipd_no': d.admission.ipd_no, 'name': d.admission.patient.name,
-        'age': d.admission.patient.age_years, 'gender': d.admission.patient.gender,
-        'guardian': d.admission.guardian, 'room': d.admission.room_no,
-        'contact': d.admission.patient.mobile, 'consultant': d.admission.consultant,
+        'id': d.id,
+        'ipd_no': d.admission.ipd_no,
+        'name': d.admission.patient.name,
+        'age': d.admission.patient.age_years,
+        'gender': d.admission.patient.gender,
+        'guardian': d.admission.guardian,
+        'room': d.admission.room_no,
+        'contact': d.admission.patient.mobile,
+        'consultant': d.admission.consultant,
         'discharge_date': str(d.discharge_date),
     } for d in items]
-    return render(request, 'ipd/discharge_list.html', {'active_sidebar': 'ipd', 'discharges': discharges, 'q': q})
+    return render(request, 'ipd/discharge_list.html', {
+        'active_sidebar': 'ipd',
+        'discharges': discharges,
+        'q': q,
+    })
 
 
 @require_module('discharge', level='full')
 def discharge_add(request):
     if request.method == 'POST':
         adm = IPDAdmission.objects.filter(ipd_no=request.POST.get('ipd_no')).first()
+        if not adm:
+            messages.error(request, 'IPD Number not found. Please check and try again.')
+            return redirect('ipd:discharge_list')
+        
         if adm:
-            DischargeSummary.objects.get_or_create(
-                admission=adm,
-                defaults={'discharge_date': request.POST.get('discharge_date') or timezone.localdate()},
-            )
-            adm.status = 'Discharged'
-            adm.save()
+            with transaction.atomic():
+                DischargeSummary.objects.get_or_create(
+                    admission=adm,
+                    defaults={'discharge_date': request.POST.get('discharge_date') or timezone.localdate()},
+                )
+                adm.status = 'Discharged'
+                adm.save()
 
-            # Free up the bed that was occupied by this patient.
-            bed = Bed.objects.filter(room_no=adm.room_no, patient=adm.patient, status='Occupied').first()
-            if bed:
-                bed.status = 'Vacant'
-                bed.patient = None
-                bed.save(update_fields=['status', 'patient'])
+                # Free up the bed occupied by this patient
+                bed = Bed.objects.filter(
+                    room_no=adm.room_no, patient=adm.patient, status='Occupied'
+                ).first()
+                if bed:
+                    bed.status = 'Vacant'
+                    bed.patient = None
+                    bed.save(update_fields=['status', 'patient'])
 
             messages.success(request, 'Discharge added.')
 
-            # If UI provided a next URL (e.g., payment page), redirect there.
+            # Validate next URL to prevent open redirect
             next_url = (request.POST.get('next') or '').strip()
             if next_url:
-                return redirect(next_url)
+                from django.utils.http import url_has_allowed_host_and_scheme
+                if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                    return redirect(next_url)
 
         return redirect('ipd:discharge_list')
     return redirect('ipd:discharge_list')
@@ -570,13 +538,42 @@ def discharge_add(request):
 
 @require_module('discharge', level='view')
 def discharge_print(request, pk):
-    d = get_object_or_404(DischargeSummary.objects.select_related('admission__patient'), pk=pk)
-    return render(request, 'prescription/print.html', {
-        'record': {'name': d.admission.patient.name, 'opd_no': d.admission.ipd_no, 'date': str(d.discharge_date), 'diagnosis': d.admission.diagnosis, 'medicines': 'Follow up in 7 days', 'advice': d.notes},
+    d = get_object_or_404(
+        DischargeSummary.objects.select_related('admission__patient'), pk=pk
+    )
+    adm = d.admission
+    patient = adm.patient
+
+    # Use the canonical billing function to keep all views consistent
+    room_amount = adm.bed_charge if adm.bed_charge and adm.bed_charge > 0 else (
+        {'general ward': Decimal('2500'), 'private ward': Decimal('3500'),
+         'emergency ward': Decimal('2000'), 'icu': Decimal('4000')}.get(
+            (adm.category or '').strip().lower(), Decimal('1500'))
+    )
+    doctor_fees = Decimal('2000')
+    med_total = sum(m.amount for m in adm.medicine_lines.all()) or Decimal('0.00')
+
+    bill_items = [
+        {'desc': 'Bed / Room Charges', 'amount': room_amount},
+        {'desc': 'Doctor / Consultation Fees', 'amount': doctor_fees},
+    ]
+    if med_total:
+        bill_items.append({'desc': 'Medicines', 'amount': med_total})
+
+    bill_total = sum(i['amount'] for i in bill_items)
+    paid_total = adm.payments.aggregate(s=Sum('amount'))['s'] or Decimal('0.00')
+    due_amount = bill_total - paid_total
+
+    return render(request, 'ipd/discharge_print.html', {
+        'discharge': d,
+        'bill_items': bill_items,
+        'bill_total': bill_total,
+        'paid_total': paid_total,
+        'due_amount': due_amount,
     })
 
 
-@require_module('pharmacy', level='view')
+@require_module('pharmacy', level='full')
 def medicine(request):
     if request.method == 'POST':
         adm = IPDAdmission.objects.filter(
@@ -584,65 +581,121 @@ def medicine(request):
         ).first()
 
         if adm:
-            line = IPDMedicineLine.objects.create(
-                admission=adm,
-                medicine_name=_cap_text(request.POST.get('medicine', '')),
+            try:
+                qty = max(1, int(request.POST.get('qty') or 1))
+                rate = Decimal(request.POST.get('rate') or 0)
+                if rate < 0:
+                    raise ValueError('Rate cannot be negative.')
+                if rate > Decimal('99999.99'):
+                    raise ValueError('Rate exceeds maximum allowed value.')
+            except (ValueError, Exception) as e:
+                messages.error(request, str(e) if str(e) else 'Invalid quantity or rate.')
+                return redirect('ipd:medicine')
 
-                quantity=int(request.POST.get('qty') or 1),
-                rate=Decimal(request.POST.get('rate') or 0),
-            )
-            if line.amount > 0:
-                # Medicine dispensed during an IPD stay is a charge
-                # against the patient's stay, not something collected on
-                # the spot — unlike OPD/Lab/Pharmacy counter sales, this
-                # is just a DEBIT. It adds to the outstanding balance
-                # until settled at discharge via ipd:payment.
-                LedgerEntry.record_charge(
-                    uhid=adm.patient.uhid,
-                    tx_type=LedgerEntry.TxType.IPD_BILL,
-                    amount=line.amount,
-                    payer_type=LedgerEntry.PayerType.PATIENT,
-                    description=f'IPD medicine: {line.medicine_name} x{line.quantity} ({adm.ipd_no})',
-                    source_app='ipd',
-                    source_id=str(line.id),
-                    patient=adm.patient,
-                    ipd_admission=adm,
+            with transaction.atomic():
+                line = IPDMedicineLine.objects.create(
+                    admission=adm,
+                    medicine_name=_cap_text(request.POST.get('medicine', '')),
+                    quantity=qty,
+                    rate=rate,
                 )
+                if line.amount > 0:
+                    LedgerEntry.record_charge(
+                        uhid=adm.patient.uhid,
+                        tx_type=LedgerEntry.TxType.IPD_BILL,
+                        amount=line.amount,
+                        payer_type=LedgerEntry.PayerType.PATIENT,
+                        description=f'IPD medicine: {line.medicine_name} x{line.quantity} ({adm.ipd_no})',
+                        source_app='ipd',
+                        source_id=str(line.id),
+                        patient=adm.patient,
+                        ipd_admission=adm,
+                    )
             messages.success(request, 'Medicine added.')
 
-    lines = IPDMedicineLine.objects.select_related(
-        'admission'
-    ).order_by('-id')[:20]
-
+    lines = IPDMedicineLine.objects.select_related('admission').order_by('-id')[:20]
     medicines = [
-        {
-            'name': m.medicine_name,
-            'qty': m.quantity,
-            'rate': m.rate,
-            'amount': m.amount
-        }
+        {'name': m.medicine_name, 'qty': m.quantity, 'rate': m.rate, 'amount': m.amount}
         for m in lines
     ]
-
-    return render(
-        request,
-        'ipd/medicine.html',
-        {
-            'active_sidebar': 'ipd',
-            'medicines': medicines
-        }
-    )
+    return render(request, 'ipd/medicine.html', {
+        'active_sidebar': 'ipd',
+        'medicines': medicines,
+    })
 
 
 @require_module('ipd_list', level='full')
+@require_POST
 def delete_patient(request, pk):
     admission = get_object_or_404(IPDAdmission, pk=pk)
-
-    if request.method == "POST":
-        admission.delete()
-        messages.success(
-            request,
-            "Patient deleted successfully."
-        )
-
+    admission.delete()
+    messages.success(request, 'Patient deleted successfully.')
     return redirect('ipd:patient_list')
+
+
+
+@require_module('billing_collect', level='full')
+@require_POST
+def payment_delete(request, pk):
+    """Delete an IPD payment and reverse its ledger entry."""
+    payment = get_object_or_404(IPDPayment, pk=pk)
+    admission = payment.admission
+
+    with transaction.atomic():
+        # Reverse the exact ledger credit row that was created for this payment.
+        # We match on source_app + source_id (payment PK) which is set reliably
+        # by the payment view. Fall back to amount+admission matching for older
+        # rows created before source_id was stamped.
+        if admission.patient:
+            deleted, _ = LedgerEntry.objects.filter(
+                patient=admission.patient,
+                ipd_admission=admission,
+                source_app='ipd',
+                source_id=str(payment.id),
+                credit_amount=payment.amount,
+            ).delete()
+
+            # Fallback for pre-migration rows without source_id
+            if not deleted:
+                LedgerEntry.objects.filter(
+                    patient=admission.patient,
+                    ipd_admission=admission,
+                    credit_amount=payment.amount,
+                    tx_type=LedgerEntry.TxType.PATIENT_PAYMENT,
+                ).order_by('created_at')[:1].delete()
+
+        # Reverse IncomeEntry mirror posted at payment time
+        from income.models import IncomeEntry as _IE
+        _IE.objects.filter(
+            category='IPD',
+            patient_name=admission.patient.name if admission.patient else '',
+            payment_mode=payment.payment_mode,
+            amount=payment.amount,
+        ).order_by('-created_at')[:1].delete()
+
+        payment.delete()
+
+    messages.success(request, f'Payment of ₹{payment.amount} deleted.')
+    return redirect('ipd:payment')
+
+
+@require_module('pharmacy', level='full')
+@require_POST
+def medicine_delete(request, pk):
+    """Delete an IPD medicine line and reverse ledger charge."""
+    line = get_object_or_404(IPDMedicineLine, pk=pk)
+    admission = line.admission
+    
+    with transaction.atomic():
+        # Reverse ledger charge
+        if admission.patient:
+            LedgerEntry.objects.filter(
+                patient=admission.patient,
+                source_app='ipd',
+                source_id=str(line.id)
+            ).delete()
+        
+        line.delete()
+    
+    messages.success(request, f'Medicine {line.medicine_name} removed from bill.')
+    return redirect('ipd:medicine')

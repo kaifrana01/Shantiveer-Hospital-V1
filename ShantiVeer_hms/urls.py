@@ -3,13 +3,48 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-from django.views.generic import RedirectView
+from django.views.generic import RedirectView, TemplateView
+from django.http import HttpResponse
 from django.contrib import admin
 
 import core.admin_site
 from core.admin_api import admin_stats, admin_logs, admin_users, admin_tests
 
+
+def robots_txt(request):
+    lines = [
+        "User-agent: *",
+        "Disallow: /admin/",
+        "Disallow: /api/",
+        "Disallow: /opd/",
+        "Disallow: /ipd/",
+        "Disallow: /lab/",
+        "Disallow: /pharmacy/",
+        "Disallow: /prescription/",
+        "Disallow: /uhid/",
+        "Disallow: /master/",
+        "Disallow: /income/",
+        "Disallow: /expenses/",
+        "Disallow: /history/",
+        "Disallow: /backup/",
+        "Disallow: /ultrasound/",
+        "",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")
+
+
+def security_txt(request):
+    content = (
+        "Contact: mailto:admin@shantiveer.in\n"
+        "Preferred-Languages: en\n"
+        "Policy: Please report security vulnerabilities responsibly.\n"
+    )
+    return HttpResponse(content, content_type="text/plain")
+
+
 urlpatterns = [
+    path('robots.txt', robots_txt),
+    path('.well-known/security.txt', security_txt),
     path('admin/', admin.site.urls),
     # Admin dashboard JSON widgets
     path('admin/hms-stats/', admin_stats, name='admin_hms_stats'),
@@ -30,7 +65,7 @@ urlpatterns = [
     path('income/', include('income.urls')),
     path('expenses/', include('expenses.urls')),
     path('history/', include('history.urls')),
-    path('api/', include('core.api_urls')),
+    path('api/', include(('core.api_urls', 'api'), namespace='api')),
 ]
 
 if settings.DEBUG:

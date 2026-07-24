@@ -39,7 +39,7 @@
                 <td>{{ r.amount }}</td>
                 <td>{{ r.date }}</td>
                 <td>
-                  <a class="btn btn-sm btn-outline-primary" href="{% url 'lab:ultrasound_view_report' r.id %}">View</a>
+                  <a class="btn btn-sm btn-outline-primary" href="{% url 'ultrasound:ultrasound_view_report' r.id %}">View</a>
                 </td>
               </tr>
             {% empty %}

@@ -1,5 +1,5 @@
 {% extends 'base_module.html' %}
-
+{% load static %}
 
 {% block title %}OPD Registration{% endblock %}
 {% block page_title %}OPD Registration{% endblock %}
@@ -7,7 +7,7 @@
 <div class="page-container">
     <div class="form-card">
         <h2>Hospital OPD Registration</h2>
-        <form method="post" id="opdForm" onsubmit="return showPaymentReceived();">
+        <form method="post" id="opdForm">
 
 
             {% csrf_token %}
@@ -94,18 +94,18 @@
                 <div class="col-md-2"><label class="form-label small">Total Amount</label><input type="number" name="total" class="form-control" id="opdTotal" value="500" readonly></div>
                 <div class="col-md-1"><label class="form-label small">Payment Mode</label><select name="payment_mode" class="form-select" id="opdPaymentMode"><option>Cash</option><option>UPI</option><option>Card</option><option>Cheque</option></select></div>
                 <div class="col-md-2"><label class="form-label small">Reference Info</label><input type="text" name="reference" class="form-control" placeholder="UPI Ref No."></div>
-                <input type="hidden" name="upi_id" id="opdUpiId" value="kaif.rajput@ptsbi">
+                <input type="hidden" name="upi_id" id="opdUpiId" value="{{ hospital_upi_id }}">
 
                 <!-- Temporary UPI QR (client-side) -->
                 <div class="row g-2 mt-2" id="opdUpiQrWrap" style="display:none;">
                     <div class="col-md-6">
                         <label class="form-label small">UPI QR</label>
-                        <div id="opdUpiQrBox" class="p-2 border rounded" style="text-align:center;"></div>
+                        <div id="opdUpiQrBox" class="p-2 border rounded" style="text-align:center;" data-qr-url="{% static 'img/QR code.png' %}"></div>
                         <div class="small text-muted mt-1" id="opdUpiQrHint"></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small">UPI ID</label>
-                        <input type="text" class="form-control" name="upi_id_display" id="opdUpiIdField" value="kaif.rajput@ptsbi" readonly>
+                        <input type="text" class="form-control" name="upi_id_display" id="opdUpiIdField" value="{{ hospital_upi_id }}" readonly>
                     </div>
                 </div>
 
@@ -113,7 +113,7 @@
 
             <div class="text-center mt-4 gap-2">
                 <button type="submit" class="btn-save"><i class="bi bi-save"></i> Save / Update</button>
-                <a href="#" class="btn-view ms-2" onclick="return false;"><i class="bi bi-list"></i> OPD Patient History</a>
+                <a href="{% url 'opd:registration' %}" class="btn-view ms-2"><i class="bi bi-list"></i> OPD Patient History</a>
 
 
             </div>
@@ -175,10 +175,6 @@ function computeSelectedTestsTotal(){
     return sum;
 }
 
-
-// NOTE: This UI currently adds empty test rows; backend wiring is required to save selections & compute fees.
-let testIndex = 0;
-
 // bind checkbox+qty events after DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof bindOPDTestTotalEvents === 'function') {
@@ -186,39 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
         calcOpd();
     }
 });
-function addTestRow(){
-    const container = document.getElementById('testsContainer');
-
-    if(!container) return;
-
-    // UPI QR (client-side) + auto set amount is handled by backend ledger posting.
-
-    const row = document.createElement('div');
-    row.className = 'row g-2 mb-2 align-items-end';
-    row.innerHTML = `
-        <div class="col-md-6">
-            <label class="form-label small">Test</label>
-            <input type="text" class="form-control" name="test_name_${testIndex}" placeholder="Type test name" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label small">Fees</label>
-            <input type="number" class="form-control" name="test_fees_${testIndex}" placeholder="0" />
-        </div>
-        <div class="col-md-1">
-            <button type="button" class="btn btn-danger" onclick="this.closest('.row').remove()">X</button>
-        </div>
-    `;
-    container.appendChild(row);
-    testIndex += 1;
-}
 </script>
 
 <script>
-function showPaymentReceived() {
-        try { alert('Payment received.'); } catch (e) {}
-        return true;
-    }
-
     // Show textbox when Doctor Name = Other
     function toggleOPDDoctorOther() {
         const select = document.getElementById('opdDoctorSelect');
@@ -232,7 +198,7 @@ function showPaymentReceived() {
         if (!select) return;
 
         const otherInput = document.getElementById('opdDoctorOther');
-        const existingDoctor = '{{ initial.visit.doctor_name|default:'' }}';
+        const existingDoctor = '{{ initial.visit.doctor_name|default:""|escapejs }}';
 
         toggleOPDDoctorOther();
 
@@ -243,22 +209,18 @@ function showPaymentReceived() {
         select.addEventListener('change', toggleOPDDoctorOther);
     });
 
-
-
         // Build temporary UPI QR (temporary placeholder QR image).
         function buildOPDUPIQR() {
         const mode = document.getElementById('opdPaymentMode')?.value;
-        const upiId = document.getElementById('opdUpiIdField')?.value || document.getElementById('opdUpiId')?.value || 'kaif.rajput@ptsbi';
+        const upiId = document.getElementById('opdUpiIdField')?.value || document.getElementById('opdUpiId')?.value || '{{ hospital_upi_id }}';
         const amount = (document.getElementById('opdTotal')?.value || '').trim();
 
         const wrap = document.getElementById('opdUpiQrWrap');
         if (wrap) wrap.style.display = (mode === 'UPI') ? 'block' : 'none';
         if (mode !== 'UPI') return;
 
-        // QR payload is not encoded because we use a static placeholder QR image.
-        // (Keep hint text showing the intended UPI and amount.)
-        // Use existing static placeholder QR image (temporary QR).
-        const qrImgUrl = `/static/img/QR%20code.png`;
+        // Use static QR image via data attribute to respect Django STATIC_URL
+        const qrImgUrl = document.getElementById('opdUpiQrBox').dataset.qrUrl || '{% static "img/QR code.png" %}';
 
         const box = document.getElementById('opdUpiQrBox');
         if (box) box.innerHTML = `<img src="${qrImgUrl}" alt="UPI QR" width="200" height="200"/>`;

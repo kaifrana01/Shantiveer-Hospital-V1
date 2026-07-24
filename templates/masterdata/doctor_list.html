@@ -8,8 +8,24 @@
         <a href="{% url 'masterdata:doctor_list' %}" class="active">list-doctor</a>
     </div>
     <div class="flex-grow-1">
-        <table class="hms-table green-head"><thead><tr><th>#</th><th>Name</th><th>Department</th><th>Specialization</th><th>Phone</th><th>Action</th></tr></thead>
-        <tbody>{% for d in doctors %}<tr><td>{{ forloop.counter }}</td><td>{{ d.name }}</td><td>{{ d.department }}</td><td>{{ d.specialization }}</td><td>{{ d.phone }}</td><td><a href="#">Edit</a></td></tr>{% endfor %}</tbody></table>
+        <table class="hms-table green-head"><thead><tr><th>#</th><th>Name</th><th>Department</th><th>Specialization</th><th>Phone</th><th>Active</th><th>Action</th></tr></thead>
+        <tbody>{% for d in doctors %}<tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ d.name }}</td>
+          <td>{{ d.department }}</td>
+          <td>{{ d.specialization }}</td>
+          <td>{{ d.phone }}</td>
+          <td>{% if d.is_active %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</td>
+          <td class="text-nowrap">
+            <a href="{% url 'masterdata:doctor_edit' d.pk %}" class="btn btn-warning btn-sm py-0 px-2"><i class="bi bi-pencil"></i> Edit</a>
+            <form method="post" action="{% url 'masterdata:doctor_toggle' d.pk %}" style="display:inline" onsubmit="return confirm('Toggle active status for {{ d.name }}?')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm py-0 px-2 {% if d.is_active %}btn-outline-secondary{% else %}btn-outline-success{% endif %}">
+                {% if d.is_active %}<i class="bi bi-toggle-on"></i>{% else %}<i class="bi bi-toggle-off"></i>{% endif %}
+              </button>
+            </form>
+          </td>
+        </tr>{% endfor %}</tbody></table>
     </div>
 </div>
 {% endblock %}

@@ -5,9 +5,15 @@ djangorestframework>=3.14.0
 # Image handling
 Pillow>=10.0.0
 
-# PostgreSQL — required (Neon / Vercel)
+# PostgreSQL (optional — only needed if using PostgreSQL instead of MySQL)
 psycopg2-binary>=2.9.9
 dj-database-url>=2.1.0
+
+# MySQL support (Hostinger VPS deployment)
+mysqlclient>=2.2.0
+
+# Date/time utilities (used for DOB-based age calculation in uhid/views.py)
+python-dateutil>=2.8.2
 
 # Static files serving
 whitenoise>=6.6.0

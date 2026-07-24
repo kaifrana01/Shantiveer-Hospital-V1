@@ -15,7 +15,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 
 from uhid.models import Patient
-from income.models import LedgerEntry, IncomeEntry
+from income.models import LedgerEntry, IncomeEntry, validate_payment_mode
 
 from .models import (
     UltrasoundTestMaster,
@@ -199,6 +199,21 @@ def ultrasound_investigation(request):
             return render(request, 'ultrasound/ultrasound_form.html', ctx)
 
         with transaction.atomic():
+            # Validate payment fields before writing
+            raw_discount = request.POST.get('discount') or '0'
+            try:
+                discount_val = Decimal(raw_discount)
+                if discount_val < 0:
+                    discount_val = Decimal('0')
+            except Exception:
+                discount_val = Decimal('0')
+
+            raw_mode = request.POST.get('payment_mode', 'Cash')
+            try:
+                payment_mode_val = validate_payment_mode(raw_mode, allowed=['Cash', 'UPI', 'Card'])
+            except ValueError:
+                payment_mode_val = 'Cash'
+
             inv = UltrasoundInvestigation.objects.create(
                 patient=patient,
                 patient_name=patient_name,
@@ -209,8 +224,8 @@ def ultrasound_investigation(request):
                 consultant=request.POST.get('consultant', '-- Self --'),
                 referred_by=request.POST.get('referred', 'SELF'),
                 remarks=request.POST.get('remarks', ''),
-                discount=Decimal(request.POST.get('discount') or 0),
-                payment_mode=request.POST.get('payment_mode', 'Cash'),
+                discount=discount_val,
+                payment_mode=payment_mode_val,
                 test_date=request.POST.get('date') or timezone.localdate(),
             )
 
@@ -261,6 +276,8 @@ def ultrasound_investigation(request):
                     payer_type=LedgerEntry.PayerType.PATIENT,
                     payment_mode=inv.payment_mode,
                     description=f'Ultrasound bill {inv.bill_no} payment collected',
+                    source_app='ultrasound',
+                    source_id=inv.bill_no,
                     patient=patient,
                 )
 
@@ -285,6 +302,7 @@ def patient_list(request):
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
     payment_filter = request.GET.get('payment', '')
+    referral = request.GET.get('referral', '').strip()
 
     qs = UltrasoundInvestigation.objects.prefetch_related('items__test')
 
@@ -300,8 +318,19 @@ def patient_list(request):
         qs = qs.filter(test_date__lte=date_to)
     if payment_filter:
         qs = qs.filter(payment_mode=payment_filter)
+    if referral:
+        qs = qs.filter(referred_by__icontains=referral)
 
     total_amount = qs.aggregate(s=Sum('total'))['s'] or Decimal('0')
+
+    # Distinct referral doctors for filter dropdown
+    referral_doctors = (
+        UltrasoundInvestigation.objects.exclude(referred_by='')
+        .exclude(referred_by='SELF')
+        .values_list('referred_by', flat=True)
+        .distinct()
+        .order_by('referred_by')
+    )
 
     return render(request, 'ultrasound/patient_list.html', {
         'active_sidebar': 'ultrasound',
@@ -312,6 +341,8 @@ def patient_list(request):
         'payment_filter': payment_filter,
         'total_amount': total_amount,
         'total_count': qs.count(),
+        'referral_doctors': referral_doctors,
+        'selected_referral': referral,
     })
 
 
@@ -415,7 +446,7 @@ def test_toggle(request, pk):
 
 @require_module('ultrasound', level='view')
 def expenses(request):
-    if request.method == 'POST' and not request.is_view_only:
+    if request.method == 'POST' and not getattr(request, 'is_view_only', False):
         date_val = request.POST.get('date') or timezone.localdate()
         cat = request.POST.get('category', 'other')
         desc = request.POST.get('description', '').strip()

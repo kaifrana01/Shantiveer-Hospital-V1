@@ -1,17 +1,26 @@
 from collections import defaultdict
+import datetime
 from decimal import Decimal
 
 from django.contrib import messages
-
-# NOTE: date-wise table + chart needs date range filter inputs (date_from/date_to)
-from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from .forms import AdvanceExpensesForm, BasicExpensesForm
 from .models import Expense
 from core.rbac import require_module
+
+
+def _parse_date(raw):
+    """Safely parse an ISO date string. Returns None if invalid."""
+    if not raw:
+        return None
+    try:
+        return datetime.date.fromisoformat(raw.strip())
+    except (ValueError, AttributeError):
+        return None
 
 
 @require_module('expenses', level='full')
@@ -19,13 +28,9 @@ def expenses_page(request):
     today = timezone.localdate()
     selected_date = request.GET.get('date')
     if selected_date:
-        try:
-            # keep simple: assume ISO date input from querystring
-            from datetime import date as _date
-            y, m, d = selected_date.split('-')
-            today = _date(int(y), int(m), int(d))
-        except Exception:
-            today = timezone.localdate()
+        parsed = _parse_date(selected_date)
+        if parsed:
+            today = parsed
 
     filter_category = request.GET.get('category')
 
@@ -213,8 +218,8 @@ def expenses_page(request):
         })
 
     # Apply optional date filter for date-wise table + chart
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
+    date_from = _parse_date(request.GET.get('date_from'))
+    date_to = _parse_date(request.GET.get('date_to'))
 
     def _apply_date_range(qs):
         if date_from:
@@ -280,8 +285,18 @@ def expenses_page(request):
         'advance_month_values': advance_month_values2,
         'advance_year_labels': advance_year_labels2,
         'advance_year_values': advance_year_values2,
-        'date_from': date_from,
-        'date_to': date_to,
+        'date_from': date_from.isoformat() if date_from else '',
+        'date_to': date_to.isoformat() if date_to else '',
     })
 
 
+
+
+@require_module('expenses', level='full')
+@require_POST
+def expense_delete(request, pk):
+    """Delete a single expense row by primary key (POST only)."""
+    expense = get_object_or_404(Expense, pk=pk)
+    expense.delete()
+    messages.success(request, 'Expense entry deleted.')
+    return redirect('expenses:page')

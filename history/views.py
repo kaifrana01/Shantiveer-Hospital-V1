@@ -12,6 +12,7 @@ historical tables across every app and renders a single, searchable,
 human-readable "who changed what, and when" timeline.
 """
 from django.apps import apps as django_apps
+import datetime
 from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.utils import timezone
@@ -87,8 +88,19 @@ def activity_log(request):
     model_filter = request.GET.get('model', '').strip()
     user_filter = request.GET.get('user', '').strip()
     action_filter = request.GET.get('action', '').strip()
-    date_from = request.GET.get('date_from', '').strip()
-    date_to = request.GET.get('date_to', '').strip()
+
+    # Validate date inputs — invalid strings would cause ORM exceptions
+    def _safe_date(raw):
+        if not raw:
+            return ''
+        try:
+            datetime.date.fromisoformat(raw.strip())
+            return raw.strip()
+        except (ValueError, AttributeError):
+            return ''
+
+    date_from = _safe_date(request.GET.get('date_from', ''))
+    date_to = _safe_date(request.GET.get('date_to', ''))
 
     historical_models = _get_historical_models()
     model_choices = sorted(

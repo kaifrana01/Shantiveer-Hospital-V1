@@ -7,9 +7,18 @@
     <div class="form-card">
         <h2 class="text-center mb-3">Lab Patient List</h2>
 
-        <form method="get" class="d-flex gap-2 mb-3">
-            <input name="q" class="form-control" placeholder="Search UHID / Name / Bill No" value="{{ q }}">
+        <form method="get" class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+            <input name="q" class="form-control" style="max-width:280px" placeholder="Search UHID / Name / Bill No" value="{{ q }}">
+            <select name="referral" class="form-select" style="max-width:200px">
+                <option value="">— All Referral Doctors —</option>
+                {% for doc in referral_doctors %}
+                <option value="{{ doc }}" {% if doc == selected_referral %}selected{% endif %}>{{ doc }}</option>
+                {% endfor %}
+            </select>
             <button class="btn btn-primary">Search</button>
+            {% if q or selected_referral %}
+            <a href="{% url 'lab:patient_list' %}" class="btn btn-outline-secondary">Clear</a>
+            {% endif %}
         </form>
 
         <div class="lab-patient-list-wrapper">
@@ -27,10 +36,9 @@
                     <th>Consultant</th>
                     <th>Referred By</th>
                     <th>Amount</th>
-
                     <th>Ayushman Card No</th>
                     <th>ID Proof</th>
-
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -47,14 +55,21 @@
                     <td>{{ r.consultant }}</td>
                     <td>{{ r.referred_by }}</td>
                     <td>{{ r.amount }}</td>
-
                     <td>{{ r.ayushman_card_no }}</td>
                     <td>{{ r.id_proof }}</td>
-
+                    <td class="text-nowrap">
+                        <a href="{% url 'lab:view_report' r.id %}" class="btn btn-outline-info btn-sm py-0 px-2" title="View Report"><i class="bi bi-eye"></i></a>
+                        <a href="{% url 'lab:view_report_print' r.id %}" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Print" target="_blank"><i class="bi bi-printer"></i></a>
+                        <a href="{% url 'lab:investigation_results' r.id %}" class="btn btn-outline-success btn-sm py-0 px-2" title="Enter Results"><i class="bi bi-clipboard2-pulse"></i></a>
+                        {% if not request.is_view_only %}
+                        <a href="{% url 'lab:investigation_edit' r.id %}" class="btn btn-outline-warning btn-sm py-0 px-2" title="Edit"><i class="bi bi-pencil"></i></a>
+                        <form method="post" action="{% url 'lab:investigation_delete' r.id %}" style="display:inline" onsubmit="return confirm('Delete bill {{ r.bill_no }}?')">{% csrf_token %}<button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Delete"><i class="bi bi-trash"></i></button></form>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="13" class="text-center text-muted py-4">No lab records found.</td>
+                    <td colspan="14" class="text-center text-muted py-4">No lab records found.</td>
                 </tr>
                 {% endfor %}
             </tbody>

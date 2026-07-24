@@ -12,13 +12,13 @@ class Prescription(models.Model):
 
     history = HistoricalRecords()
 
-def __str__(self):
-    if self.opd_visit_id:
-        try:
-            return f"Prescription for {self.opd_visit.opd_no}"
-        except Exception:
-            return f"Prescription #{self.pk} (Missing OPD)"
-    return f"Prescription #{self.pk}"
+    def __str__(self):
+        if self.opd_visit_id:
+            try:
+                return f"Prescription for {self.opd_visit.opd_no}"
+            except Exception:
+                return f"Prescription #{self.pk} (Missing OPD)"
+        return f"Prescription #{self.pk}"
 
     @property
     def patient(self):

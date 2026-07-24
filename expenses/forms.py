@@ -61,7 +61,7 @@ class _BaseExpenseForm(forms.Form):
             name = (self.cleaned_data.get(f'{field_name}_name') or '').strip()
             if amt and amt != Decimal('0'):
                 rows.append(
-                    Expense(category=choice, amount=amt, paid_to=name, **base_kwargs)
+                    Expense(category=choice.value, amount=amt, paid_to=name, **base_kwargs)
                 )
 
         created = Expense.objects.bulk_create(rows) if rows else []

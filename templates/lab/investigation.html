@@ -16,6 +16,7 @@
 
             <button type="button" class="btn btn-primary btn-sm" id="labPatientLookupBtn">Fetch</button>
         </div>
+        <div id="labLookupError" class="alert alert-danger alert-sm py-1 px-2 mt-1" style="display:none;font-size:0.82rem;"></div>
     </div>
 
 
@@ -284,9 +285,14 @@
             const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
             const data = await resp.json();
             if(!data || !data.ok){
-                alert(data?.error || 'Unable to fetch patient details');
+                const msg = data?.error || 'Unable to fetch patient details';
+                const errEl = document.getElementById('labLookupError');
+                if(errEl){ errEl.textContent = msg; errEl.style.display='block'; }
                 return;
             }
+
+            const errEl = document.getElementById('labLookupError');
+            if(errEl) errEl.style.display = 'none';
 
             // fill bill form fields (names must match backend POST expects)
             const patientNameEl = document.querySelector('input[name="patient_name"]');
@@ -304,7 +310,8 @@
             if(uhidEl) uhidEl.value = data.uhid || '';
         } catch(e){
             console.error(e);
-            alert('Unable to fetch patient details');
+            const errEl = document.getElementById('labLookupError');
+            if(errEl){ errEl.textContent = 'Unable to fetch patient details'; errEl.style.display='block'; }
         }
     }
 

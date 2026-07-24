@@ -1,1 +1,1 @@
-web: gunicorn ShantiVeer_hms.wsgi:application --workers 3 --bind 0.0.0.0:$PORT --timeout 120 --access-logfile logs/access.log --error-logfile logs/error.log
+web: gunicorn ShantiVeer_hms.wsgi:application --workers 3 --bind 127.0.0.1:8000 --timeout 120 --access-logfile - --error-logfile -

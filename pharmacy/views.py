@@ -29,8 +29,9 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import redirect, render
+from django.views.decorators.http import require_POST
 
-from income.models import LedgerEntry
+from income.models import LedgerEntry, IncomeEntry, validate_payment_mode
 from uhid.models import Patient
 from .models import PharmacyItem, PharmacyPurchase, PharmacySale
 from .services import sync_pharmacy_stock_notifications
@@ -181,7 +182,18 @@ def sale(request):
                     uhid=patient.uhid, amount=amount, payer_type=LedgerEntry.PayerType.PATIENT,
                     payment_mode=sale_obj.payment_mode,
                     description=f'Pharmacy sale #{sale_obj.id} payment',
+                    source_app='pharmacy', source_id=str(sale_obj.id),
                     patient=patient,
+                )
+            # Mirror into IncomeEntry for daybook
+            if amount > 0:
+                IncomeEntry.objects.create(
+                    date=sale_obj.sold_at.date(),
+                    category='Pharmacy',
+                    patient_name=sale_obj.patient_ref or 'Walk-in',
+                    description=f'Pharmacy sale: {item_locked.name} x{qty} (#{sale_obj.id})',
+                    payment_mode=sale_obj.payment_mode,
+                    amount=amount,
                 )
 
         sync_pharmacy_stock_notifications()
@@ -212,3 +224,112 @@ def sale_purchase(request):
     return render(request, 'pharmacy/sale_purchase.html', {
         'active_sidebar': 'pharmacy', 'records': records,
     })
+
+
+# ── item_edit ─────────────────────────────────────────────────────────────────
+@require_module('pharmacy', level='full')
+@require_POST
+def item_edit(request, pk):
+    """
+    Edit an existing pharmacy item.
+    """
+    item = PharmacyItem.objects.filter(pk=pk).first()
+    if not item:
+        messages.error(request, 'Item not found.')
+        return redirect('pharmacy:items')
+
+    item.name = request.POST.get('name', item.name)
+    item.drug = request.POST.get('drug', item.drug)
+    item.unit_type = request.POST.get('unit', item.unit_type)
+    item.buffer = int(request.POST.get('buffer') or item.buffer)
+    item.schedule = request.POST.get('schedules', item.schedule)
+    item.packing = int(request.POST.get('packing') or item.packing)
+    item.discount_on_sale = 'discount' in request.POST
+    item.save()
+
+    sync_pharmacy_stock_notifications()
+    messages.success(request, 'Item updated.')
+    return redirect('pharmacy:items')
+
+
+# ── item_toggle ───────────────────────────────────────────────────────────────
+@require_module('pharmacy', level='full')
+@require_POST
+def item_toggle(request, pk):
+    """
+    Toggle active/inactive status for a pharmacy item.
+    """
+    item = PharmacyItem.objects.filter(pk=pk).first()
+    if not item:
+        messages.error(request, 'Item not found.')
+        return redirect('pharmacy:items')
+
+    item.is_active = not item.is_active
+    item.save(update_fields=['is_active'])
+    
+    status = 'activated' if item.is_active else 'deactivated'
+    messages.success(request, f'Item {status}.')
+    return redirect('pharmacy:items')
+
+
+# ── purchase_delete ───────────────────────────────────────────────────────────
+@require_module('pharmacy', level='full')
+@require_POST
+def purchase_delete(request, pk):
+    """
+    Delete a purchase record and reverse the stock addition.
+    """
+    purchase = PharmacyPurchase.objects.select_related('item').filter(pk=pk).first()
+    if not purchase:
+        messages.error(request, 'Purchase record not found.')
+        return redirect('pharmacy:purchase')
+
+    with transaction.atomic():
+        item = PharmacyItem.objects.select_for_update().get(pk=purchase.item.pk)
+        item.stock = max(0, item.stock - purchase.quantity)
+        item.save(update_fields=['stock'])
+        purchase.delete()
+
+    sync_pharmacy_stock_notifications()
+    messages.success(request, 'Purchase deleted and stock adjusted.')
+    return redirect('pharmacy:purchase')
+
+
+# ── sale_delete ───────────────────────────────────────────────────────────────
+@require_module('pharmacy', level='full')
+@require_POST
+def sale_delete(request, pk):
+    """
+    Delete a sale record, restore stock, and reverse ledger entries.
+    """
+    sale = PharmacySale.objects.select_related('item').filter(pk=pk).first()
+    if not sale:
+        messages.error(request, 'Sale record not found.')
+        return redirect('pharmacy:sale')
+
+    with transaction.atomic():
+        # Restore stock
+        item = PharmacyItem.objects.select_for_update().get(pk=sale.item.pk)
+        item.stock = item.stock + sale.quantity
+        item.save(update_fields=['stock'])
+
+        # Reverse ledger entries if they exist
+        patient = Patient.objects.filter(uhid=sale.patient_ref.strip()).first() if sale.patient_ref else None
+        if patient:
+            LedgerEntry.objects.filter(
+                patient=patient,
+                source_app='pharmacy',
+                source_id=str(sale.id)
+            ).delete()
+
+        # Reverse IncomeEntry mirror
+        IncomeEntry.objects.filter(
+            category='Pharmacy',
+            description__icontains=f'#{sale.id})',
+        ).order_by('-created_at')[:1].delete()
+
+        sale.delete()
+
+    sync_pharmacy_stock_notifications()
+    messages.success(request, 'Sale deleted and stock restored.')
+    return redirect('pharmacy:sale')

@@ -162,10 +162,35 @@
                 <button type="submit" class="btn btn-secondary">Save</button>
                 <button type="reset" class="btn-cyan ms-2">New</button>
                 <div class="d-flex flex-column">
-                    <label class="small">Advance Payment</label>
-                    <input type="text" name="advance_payment" class="form-control form-control-sm" id="advancePaymentText" value="{{ form_advance_payment|default:'' }}" inputmode="decimal" style="max-width:170px;">
+                    <label class="small">Advance Payment (₹)</label>
+                    <input type="text" name="advance_payment" class="form-control form-control-sm" id="advancePaymentText" value="{{ form_advance_payment|default:'' }}" inputmode="decimal" style="max-width:130px;">
+                </div>
+                <div class="d-flex flex-column">
+                    <label class="small">Advance Mode</label>
+                    <select name="advance_payment_mode" id="advanceModeSelect" class="form-select form-select-sm" style="max-width:110px;">
+                        <option value="Cash">Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Card">Card</option>
+                        <option value="Cheque">Cheque</option>
+                    </select>
+                </div>
+                <div class="d-flex flex-column" id="advanceUpiRow" style="display:none!important">
+                    <label class="small">UPI Ref / ID</label>
+                    <input type="text" name="advance_upi_id" id="advanceUpiId" class="form-control form-control-sm" placeholder="UTR / UPI ID" style="max-width:160px;">
                 </div>
             </div>
+            <script>
+            (function(){
+                var sel = document.getElementById('advanceModeSelect');
+                var upiRow = document.getElementById('advanceUpiRow');
+                function toggleUpi(){
+                    if(sel && upiRow){
+                        upiRow.style.display = (sel.value === 'UPI') ? 'flex' : 'none';
+                    }
+                }
+                if(sel){ sel.addEventListener('change', toggleUpi); toggleUpi(); }
+            })();
+            </script>
         </form>
 
     </div>

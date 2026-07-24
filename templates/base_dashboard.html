@@ -37,6 +37,14 @@
           <span class="topbar-role-chip chip-recept"><i class="bi bi-headset"></i> Receptionist</span>
         {% elif user|has_group:'Pharmacist' %}
           <span class="topbar-role-chip chip-pharma"><i class="bi bi-capsule"></i> Pharmacist</span>
+        {% elif user|has_group:'Accountant' %}
+          <span class="topbar-role-chip chip-admin"><i class="bi bi-calculator"></i> Accountant</span>
+        {% elif user|has_group:'Nurse' %}
+          <span class="topbar-role-chip chip-recept"><i class="bi bi-heart-pulse"></i> Nurse</span>
+        {% elif user|has_group:'LabTech' %}
+          <span class="topbar-role-chip chip-pharma"><i class="bi bi-droplet"></i> Lab Tech</span>
+        {% elif user|has_group:'BillingClerk' %}
+          <span class="topbar-role-chip chip-pharma"><i class="bi bi-cash-coin"></i> Billing</span>
         {% endif %}
         {# notification bell disabled by request #}
         
@@ -77,7 +85,7 @@
           <ul class="dropdown-menu dropdown-menu-end shadow">
             <li><a class="dropdown-item" href="{% url 'accounts:change_password' %}"><i class="bi bi-key"></i> Change Password</a></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+            <li><form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="dropdown-item text-danger" style="background:none;border:none;cursor:pointer;width:100%;text-align:left;"><i class="bi bi-box-arrow-right"></i> Logout</button></form></li>
           </ul>
         </div>
 
@@ -102,8 +110,9 @@
 <script src="{% static 'js/dashboard.js' %}"></script>
 <script src="{% static 'js/notification_audio.js' %}"></script>
 <script>
-/* real-time alert polling */
-{% comment %} (function(){
+/* real-time alert polling — disabled; uncomment and restore to re-enable */
+/*
+(function(){
   if(typeof window==='undefined') return;
   var lastNotifPk=0, lastIcuAt=0;
   if(window.__HMS_LAST_NOTIFICATION_PK__) lastNotifPk=window.__HMS_LAST_NOTIFICATION_PK__;
@@ -128,10 +137,11 @@
         }
       }
     }catch(e){}
-  } {% endcomment %}
+  }
   setInterval(poll,8000);
   setTimeout(poll,1500);
 })();
+*/
 </script>
 </body>
 </html>

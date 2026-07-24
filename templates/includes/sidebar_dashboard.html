@@ -47,6 +47,12 @@
       {% if module_access.prescription == 'view' %}<span class="badge-view">View</span>{% endif %}
     </a>
     {% endif %}
+    {% elif module_access.opd_list != 'none' and module_access.prescription != 'none' %}
+    {# Accountant / roles with opd_list but not opd_registration — show list only #}
+    <a href="{% url 'prescription:list' %}" class="{% if active_sidebar == 'prescription' %}active{% endif %}">
+      <i class="bi bi-file-medical"></i> OPD Patient List
+      <span class="badge-view">View</span>
+    </a>
     {% endif %}
 
 
@@ -101,10 +107,10 @@
       {% if module_access.lab == 'view' %}<span class="badge-view">View</span>{% endif %}
     </a>
 
-    {% if module_access.lab_list != 'none' or module_access.lab != 'none' %}
+    {% if module_access.lab != 'none' %}
     <a href="{% url 'lab:patient_list' %}" class="sidebar-sub {% if active_sidebar == 'lab_patient_list' %}active{% endif %}">
       <i class="bi bi-people"></i> Lab Patient List
-      {% if module_access.lab_list == 'view' or module_access.lab == 'view' %}<span class="badge-view">View</span>{% endif %}
+      {% if module_access.lab == 'view' %}<span class="badge-view">View</span>{% endif %}
     </a>
     {% endif %}
     {% endif %}
@@ -150,6 +156,11 @@
     <a href="{% url 'income:daybook' %}" class="{% if active_sidebar == 'income' %}active{% endif %}">
       <i class="bi bi-currency-rupee"></i> Income / Daybook
     </a>
+    {% if module_access.income == 'full' %}
+    <a href="{% url 'income:add' %}" class="sidebar-sub {% if active_sidebar == 'income_add' %}active{% endif %}">
+      <i class="bi bi-plus-circle"></i> Add Income Entry
+    </a>
+    {% endif %}
     {% endif %}
 
     {% if module_access.expenses != 'none' %}
@@ -182,9 +193,9 @@
       <a href="{% url 'accounts:change_password' %}" class="{% if active_sidebar == 'password' %}active{% endif %}">
         <i class="bi bi-key"></i> Change Password
       </a>
-      <a href="{% url 'accounts:logout' %}" style="color:#f87171">
+      <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">{% csrf_token %}<button type="submit" style="background:none;border:none;cursor:pointer;color:#f87171;padding:0;font-size:inherit;">
         <i class="bi bi-box-arrow-right"></i> Logout
-      </a>
+      </button></form>
     </div>
 
   </nav>

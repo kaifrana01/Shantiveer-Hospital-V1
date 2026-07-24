@@ -14,8 +14,14 @@ urlpatterns = [
     path('report/<int:pk>/print/', views.view_report_print, name='view_report_print'),
     path('patient-list/', views.patient_list, name='patient_list'),
 
-    path('tests/', views.test_list, name='test_list'),
+    # Investigation edit/delete
+    path('investigation/<int:pk>/edit/', views.investigation_edit, name='investigation_edit'),
+    path('investigation/<int:pk>/delete/', views.investigation_delete, name='investigation_delete'),
+    
+    # Test results entry/edit
+    path('investigation/<int:pk>/results/', views.investigation_results, name='investigation_results'),
 
+    path('tests/', views.test_list, name='test_list'),
     path('tests/add/', views.test_add, name='test_add'),
     path('tests/<int:pk>/edit/', views.test_edit, name='test_edit'),
     path('tests/<int:pk>/toggle/', views.test_toggle, name='test_toggle'),

@@ -740,3 +740,259 @@ django.core.exceptions.PermissionDenied: Your role does not have access to this 
 [2026-07-22 12:48:38,318] WARNING django.request Not Found: /favicon.ico
 [2026-07-22 12:48:39,024] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 11576
 [2026-07-22 12:48:38,907] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11256
+[2026-07-23 22:53:30,289] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-23 22:53:30,297] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-23 22:53:34,102] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-23 22:53:34,104] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11576
+[2026-07-23 22:53:37,665] WARNING django.request Not Found: /favicon.ico
+[2026-07-23 22:53:37,678] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 11896
+[2026-07-23 22:53:39,608] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-23 22:53:39,628] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11576
+[2026-07-23 22:53:40,444] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-23 22:53:40,483] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11573
+[2026-07-23 22:53:40,911] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-23 22:53:40,912] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11576
+[2026-07-24 10:56:09,751] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 10:56:09,760] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 10:56:11,447] WARNING django.request Not Found: /favicon.ico
+[2026-07-24 10:56:11,447] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 11896
+[2026-07-24 10:56:16,474] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 10:56:16,477] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:14:17,675] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:14:17,679] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:14:18,965] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-24 11:14:18,968] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11576
+[2026-07-24 11:14:20,525] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-24 11:14:20,527] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11573
+[2026-07-24 11:14:20,599] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-24 11:14:20,599] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11576
+[2026-07-24 11:14:20,691] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-24 11:14:20,691] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11576
+[2026-07-24 11:14:31,789] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:14:31,794] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:15:35,994] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:15:35,996] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:15:56,942] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:15:56,945] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:16:09,367] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:16:09,369] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:16:10,976] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-24 11:22:40,295] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:22:40,300] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:22:41,518] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-24 11:22:41,520] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11576
+[2026-07-24 11:22:42,755] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-24 11:22:42,757] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11576
+[2026-07-24 11:22:42,822] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-24 11:22:42,822] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11576
+[2026-07-24 11:22:42,938] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-24 11:22:42,939] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11573
+[2026-07-24 11:22:57,372] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:22:57,375] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:23:50,380] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:23:50,382] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:25:21,451] ERROR django.request Internal Server Error: /opd/registration/
+Traceback (most recent call last):
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 511, in parse
+    compile_func = self.tags[command]
+                   ~~~~~~~~~^^^^^^^^^
+KeyError: 'static'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\Desktop\New-Shantiveer-Project\core\rbac.py", line 136, in _wrapped
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\Desktop\New-Shantiveer-Project\opd\views.py", line 224, in registration
+    return render(request, 'opd/registration.html', {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+           ^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 155, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 197, in compile_nodelist
+    nodelist = parser.parse()
+               ^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 519, in parse
+    raise self.error(token, e)
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+               ^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 519, in parse
+    raise self.error(token, e)
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 513, in parse
+    self.invalid_block_tag(token, command, parse_until)
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 568, in invalid_block_tag
+    raise self.error(
+django.template.exceptions.TemplateSyntaxError: Invalid block tag on line 103: 'static', expected 'endblock'. Did you forget to register or load this tag?
+[2026-07-24 11:25:21,469] ERROR django.server "GET /opd/registration/ HTTP/1.1" 500 231867
+[2026-07-24 11:25:21,803] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:25:21,806] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:25:32,212] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:25:32,215] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:25:59,556] ERROR django.request Internal Server Error: /opd/registration/
+Traceback (most recent call last):
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 511, in parse
+    compile_func = self.tags[command]
+                   ~~~~~~~~~^^^^^^^^^
+KeyError: 'static'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\Desktop\New-Shantiveer-Project\core\rbac.py", line 136, in _wrapped
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\Desktop\New-Shantiveer-Project\opd\views.py", line 224, in registration
+    return render(request, 'opd/registration.html', {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+           ^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 155, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 197, in compile_nodelist
+    nodelist = parser.parse()
+               ^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 519, in parse
+    raise self.error(token, e)
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+               ^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 519, in parse
+    raise self.error(token, e)
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 513, in parse
+    self.invalid_block_tag(token, command, parse_until)
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\template\base.py", line 568, in invalid_block_tag
+    raise self.error(
+django.template.exceptions.TemplateSyntaxError: Invalid block tag on line 103: 'static', expected 'endblock'. Did you forget to register or load this tag?
+[2026-07-24 11:25:59,561] ERROR django.server "GET /opd/registration/ HTTP/1.1" 500 230308
+[2026-07-24 11:26:02,381] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:26:02,383] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:33:53,431] WARNING django.request Forbidden (Permission denied): /ipd/discharge/add/
+Traceback (most recent call last):
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\Desktop\New-Shantiveer-Project\core\rbac.py", line 133, in _wrapped
+    raise PermissionDenied(
+django.core.exceptions.PermissionDenied: Your role does not have access to this module.
+[2026-07-24 11:33:53,766] WARNING django.server "POST /ipd/discharge/add/ HTTP/1.1" 403 135
+[2026-07-24 11:33:54,322] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 11:33:54,325] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 19:48:38,218] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 19:48:38,224] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 19:48:39,991] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-24 19:48:39,993] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11576
+[2026-07-24 19:48:42,270] WARNING django.request Not Found: /favicon.ico
+[2026-07-24 19:48:42,270] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 11896
+[2026-07-24 19:48:42,395] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-24 19:48:42,403] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11576
+[2026-07-24 19:48:42,618] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-24 19:48:42,618] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11573
+[2026-07-24 19:48:42,960] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-24 19:48:42,960] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11576
+[2026-07-24 19:49:01,410] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 19:49:01,412] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 19:49:16,387] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 19:49:16,387] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 19:49:37,509] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 19:49:37,512] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 19:49:38,991] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-24 19:49:38,991] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 11576
+[2026-07-24 19:49:43,405] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-24 19:49:43,405] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 11576
+[2026-07-24 19:49:43,569] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-24 19:49:43,570] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 11576
+[2026-07-24 19:49:43,654] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-24 19:49:43,655] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 11573
+[2026-07-24 19:49:46,676] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-24 19:49:46,679] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.

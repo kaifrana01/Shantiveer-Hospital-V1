@@ -1,3 +1,4 @@
+{% load static %}
 {% extends 'base_ipd.html' %}
 {% block title %}IPD Payment{% endblock %}
 {% block page_title %}IPD Payment{% endblock %}
@@ -315,19 +316,19 @@
         <!-- UPI panel (shown only when UPI mode selected) -->
         <div class="upi-panel" id="upiPanel">
           <div class="upi-qr-box" id="upiQrBox">
-            <img src="/static/img/QR%20code.png" alt="UPI QR Code">
+            <img src="{% static 'img/QR code.png' %}" alt="UPI QR Code">
           </div>
           <div class="upi-info">
             <div class="upi-id-badge">
               <i class="bi bi-upc-scan"></i>
-              <span id="upiIdDisplay">kaif.rajput@ptsbi</span>
+              <span id="upiIdDisplay">{{ hospital_upi_id }}</span>
             </div>
             <div class="upi-amount-display" id="upiAmountDisplay">
               ₹<span id="upiAmountVal">—</span>
               <span>to pay</span>
             </div>
             <div class="upi-hint">Ask patient to scan the QR or use the UPI ID above.<br>Confirm payment before clicking Save.</div>
-            <input type="hidden" name="upi_id" id="upiIdHidden" value="kaif.rajput@ptsbi">
+            <input type="hidden" name="upi_id" id="upiIdHidden" value="{{ hospital_upi_id }}">
           </div>
         </div>
 
@@ -347,7 +348,9 @@
             <th>Patient</th>
             <th class="text-end">Amount</th>
             <th>Mode</th>
+            <th>Remarks</th>
             <th>Date</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -359,10 +362,23 @@
             <td>
               <span class="mode-chip mode-{{ p.mode|lower }}">{{ p.mode }}</span>
             </td>
+            <td class="text-muted" style="font-size:.8rem;">{{ p.remarks|default:"—" }}</td>
             <td class="text-muted">{{ p.date }}</td>
+            <td>
+              {% if not request.is_view_only %}
+              <form method="post" action="{% url 'ipd:payment_delete' p.id %}"
+                    onsubmit="return confirm('Reverse payment of ₹{{ p.amount }} for {{ p.name }}?');"
+                    style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Reverse / Delete">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+              {% endif %}
+            </td>
           </tr>
           {% empty %}
-          <tr class="empty-row"><td colspan="5">No payments recorded yet.</td></tr>
+          <tr class="empty-row"><td colspan="7">No payments recorded yet.</td></tr>
           {% endfor %}
         </tbody>
       </table>

@@ -299,9 +299,9 @@
     <a href="{% url 'accounts:change_password' %}" class="topbar-btn">
       <i class="bi bi-key"></i> Change Password
     </a>
-    <a href="{% url 'accounts:logout' %}" class="topbar-btn danger">
+    <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">{% csrf_token %}<button type="submit" class="topbar-btn danger" style="background:none;border:none;cursor:pointer;">
       <i class="bi bi-box-arrow-right"></i> Logout
-    </a>
+    </button></form>
   </div>
 </header>
 
@@ -386,18 +386,18 @@
           <div class="data-table-head"><h3><i class="bi bi-lightning-charge" style="color:var(--accent-amber)"></i> Quick Actions</h3></div>
           <div style="padding:14px;">
             <div class="quick-actions">
-              <a class="quick-btn" onclick="showToast('CRUD endpoints not wired in this UI yet')">
+              <button type="button" class="quick-btn" onclick="showToast('CRUD endpoints not wired in this UI yet')">
                 <i class="bi bi-person-plus" style="color:var(--accent-purple)"></i>
                 <span>Add User</span>
-              </a>
-              <a class="quick-btn" onclick="showToast('CRUD endpoints not wired in this UI yet')">
+              </button>
+              <button type="button" class="quick-btn" onclick="showToast('CRUD endpoints not wired in this UI yet')">
                 <i class="bi bi-plus-circle" style="color:var(--accent-green)"></i>
                 <span>Add Lab Test</span>
-              </a>
-              <a class="quick-btn" onclick="showPage('logs')">
+              </button>
+              <button type="button" class="quick-btn" onclick="showPage('logs')">
                 <i class="bi bi-journal-text" style="color:var(--accent-cyan)"></i>
                 <span>View Logs</span>
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -572,18 +572,8 @@
   }
 
   function renderUsers(data) {
-    const tbody = document.getElementById('users-tbody');
-    tbody.innerHTML = (data || []).map(u => `
-      <tr>
-        <td class="td-mono">${u.username}</td>
-        <td style="font-weight:700;">${u.full_name || ''}</td>
-        <td style="color:var(--muted)">${u.email || ''}</td>
-        <td>${roleBadge(u.role || 'No Role')}</td>
-        <td>${u.is_active ? '<span class="status-active">● Active</span>' : '<span class="status-inactive">● Inactive</span>'}</td>
-        <td style="color:var(--muted);font-size:0.8rem">—</td>
-        <td style="color:var(--muted);font-size:0.8rem">${u.date_joined || ''}</td>
-      </tr>
-    `).join('');
+    /* safe version defined below in second script block — forward reference only */
+    _renderUsersImpl(data);
   }
 
   function filterUsers(q) {
@@ -601,32 +591,13 @@
   }
 
   function renderTests(data) {
-    const tbody = document.getElementById('tests-tbody');
-    tbody.innerHTML = (data || []).map((t,i) => `
-      <tr>
-        <td style="color:var(--muted)">${i+1}</td>
-        <td style="font-weight:700;">${t.name}</td>
-        <td style="font-weight:900;color:var(--accent-green);">₹${t.rate}</td>
-        <td>${t.is_active ? '<span class="status-active">● Active</span>' : '<span class="status-inactive">● Inactive</span>'}</td>
-        <td style="color:var(--muted);font-size:0.8rem">—</td>
-        <td style="color:var(--muted);font-size:0.8rem">—</td>
-      </tr>
-    `).join('');
+    /* safe version defined below — forward reference only */
+    _renderTestsImpl(data);
   }
 
   function renderLogs(data) {
-    const tbody = document.getElementById('logs-tbody');
-    tbody.innerHTML = (data || []).map(l => `
-      <tr>
-        <td class="td-mono" style="color:var(--muted);font-size:0.78rem">${l.date} ${l.time}</td>
-        <td style="font-weight:800">${l.user_name || l.username || ''}</td>
-        <td>${roleBadge(l.role || 'Admin')}</td>
-        <td>${actionBadge(l.action_flag || 'Edit')}</td>
-        <td style="font-size:0.85rem">${l.object_repr || ''}</td>
-        <td class="td-mono" style="color:var(--muted);font-size:0.78rem">—</td>
-        <td><span style="font-size:0.78rem;color:var(--muted);font-weight:700">${l.model || ''}</span></td>
-      </tr>
-    `).join('');
+    /* safe version defined below — forward reference only */
+    _renderLogsImpl(data);
   }
 
   function showToast(msg) {
@@ -641,3 +612,888 @@
     const items = (data || []).slice(0,5);
     box.innerHTML = items.map(l => `
       <div class="log-row">
+        <div class="log-time" id="la-time"></div>
+        <div class="log-icon" id="la-icon"></div>
+        <div class="log-body">
+          <div class="log-title" id="la-title"></div>
+          <div class="log-meta" id="la-meta"></div>
+        </div>
+      </div>
+    `).join('');
+
+    // Now populate using safe textContent (never innerHTML for user data)
+    const rows = box.querySelectorAll('.log-row');
+    items.forEach((l, idx) => {
+      const row = rows[idx];
+      if (!row) return;
+      row.querySelector('#la-time').textContent = `${l.date || ''} ${l.time || ''}`;
+      const iconEl = row.querySelector('#la-icon');
+      const actionMap = {1: {cls:'action-create', icon:'bi-plus'}, 2: {cls:'action-edit', icon:'bi-pencil'}, 3: {cls:'action-delete', icon:'bi-trash'}};
+      const a = actionMap[l.action_flag] || {cls:'', icon:'bi-circle'};
+      iconEl.className = `log-icon badge-action ${a.cls}`;
+      const i = document.createElement('i');
+      i.className = `bi ${a.icon}`;
+      iconEl.appendChild(i);
+      row.querySelector('#la-title').textContent = l.object_repr || '';
+      row.querySelector('#la-meta').textContent = `${l.user_name || l.username || ''} · ${l.model || ''} · ${l.change_message || ''}`;
+    });
+  }
+
+  // ── Safe HTML escape utility (for any dynamic content in innerHTML) ──
+  function esc(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // ── Safe render implementations (called by wrapper functions in first script block) ──
+  function _renderUsersImpl(data) {
+    const tbody = document.getElementById('users-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    (data || []).forEach(u => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="td-mono">${esc(u.username)}</td>
+        <td style="font-weight:700">${esc(u.full_name)}</td>
+        <td style="color:var(--muted)">${esc(u.email)}</td>
+        <td>${roleBadge(esc(u.role || 'No Role'))}</td>
+        <td>${u.is_active ? '<span class="status-active">● Active</span>' : '<span class="status-inactive">● Inactive</span>'}</td>
+        <td style="color:var(--muted);font-size:.8rem">—</td>
+        <td style="color:var(--muted);font-size:.8rem">${esc(u.date_joined)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function _renderTestsImpl(data) {
+    const tbody = document.getElementById('tests-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    (data || []).forEach((t, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="color:var(--muted)">${i + 1}</td>
+        <td style="font-weight:700">${esc(t.name)}</td>
+        <td style="font-weight:900;color:var(--accent-green)">₹${esc(t.rate)}</td>
+        <td>${t.is_active ? '<span class="status-active">● Active</span>' : '<span class="status-inactive">● Inactive</span>'}</td>
+        <td style="color:var(--muted);font-size:.8rem">—</td>
+        <td style="color:var(--muted);font-size:.8rem">—</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function _renderLogsImpl(data) {
+    const tbody = document.getElementById('logs-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    (data || []).forEach(l => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="td-mono" style="color:var(--muted);font-size:.78rem">${esc(l.date)} ${esc(l.time)}</td>
+        <td style="font-weight:800">${esc(l.user_name || l.username)}</td>
+        <td>${roleBadge(esc(l.role || 'Admin'))}</td>
+        <td>${actionBadge(l.action_flag || 0)}</td>
+        <td style="font-size:.85rem">${esc(l.object_repr)}</td>
+        <td class="td-mono" style="color:var(--muted);font-size:.78rem">—</td>
+        <td><span style="font-size:.78rem;color:var(--muted);font-weight:700">${esc(l.model)}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function roleBadge(role) {
+    const safeRole = esc(role);
+    const map = {Admin:'badge-admin',Doctor:'badge-doctor',Receptionist:'badge-reception',Nurse:'badge-nurse',LabTech:'badge-lab',Pharmacist:'badge-pharma',Accountant:'badge-billing','No Role':''};
+    const icon = {Admin:'🛡️',Doctor:'👨‍⚕️',Receptionist:'🎧',Nurse:'❤️',LabTech:'🔬',Pharmacist:'💊',Accountant:'🧾'};
+    const cls = map[role] || '';
+    const ico = icon[role] || '';
+    return `<span class="badge-role ${cls}">${ico} ${safeRole}</span>`;
+  }
+
+  function actionBadge(flag) {
+    const flagMap = {1:{cls:'action-create',label:'Create'}, 2:{cls:'action-edit',label:'Edit'}, 3:{cls:'action-delete',label:'Delete'}};
+    const a = flagMap[flag] || {cls:'', label: esc(String(flag))};
+    return `<span class="badge-action ${a.cls}">${a.label}</span>`;
+  }
+
+  // ── API fetch ──
+  async function loadStats() {
+    try {
+      const r = await fetch('{% url "admin_hms_stats" %}');
+      if (!r.ok) return;
+      const d = await r.json();
+      document.getElementById('stat-users').textContent  = d.users  ?? 0;
+      document.getElementById('stat-tests').textContent  = d.tests  ?? 0;
+      document.getElementById('stat-logs').textContent   = d.logs_today ?? 0;
+      document.getElementById('stat-groups').textContent = d.groups ?? 0;
+    } catch(e) { console.warn('Stats load failed', e); }
+  }
+
+  async function loadUsers() {
+    try {
+      const r = await fetch('{% url "admin_hms_users" %}');
+      if (!r.ok) return;
+      users = await r.json();
+      renderUsers(users);
+      renderUsersByRole(users);
+    } catch(e) { console.warn('Users load failed', e); }
+  }
+
+  async function loadLogs() {
+    try {
+      const r = await fetch('{% url "admin_hms_logs" %}');
+      if (!r.ok) return;
+      logs = await r.json();
+      renderActivityList(logs);
+    } catch(e) { console.warn('Logs load failed', e); }
+  }
+
+  async function loadTests() {
+    try {
+      const r = await fetch('{% url "admin_hms_tests" %}');
+      if (!r.ok) return;
+      tests = await r.json();
+    } catch(e) { console.warn('Tests load failed', e); }
+  }
+
+  function renderUsersByRole(data) {
+    const box = document.getElementById('users-by-role');
+    if (!box) return;
+    const counts = {};
+    (data || []).forEach(u => { counts[u.role || 'No Role'] = (counts[u.role || 'No Role'] || 0) + 1; });
+    box.innerHTML = '';
+    Object.entries(counts).forEach(([role, count]) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 20px;border-bottom:1px solid rgba(255,255,255,.04);font-size:.875rem;';
+      const left = document.createElement('span');
+      left.innerHTML = roleBadge(role);
+      const right = document.createElement('span');
+      right.style.cssText = 'font-weight:800;color:var(--text)';
+      right.textContent = count;
+      row.appendChild(left);
+      row.appendChild(right);
+      box.appendChild(row);
+    });
+  }
+
+  // ── Init ──
+  (async function init() {
+    await Promise.all([loadStats(), loadUsers(), loadLogs(), loadTests()]);
+  })();
+
+</script>
+</body>
+</html>
+    .sidebar-label {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 4px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 9px 16px;
+      border-radius: 10px; margin: 1px 8px; text-decoration: none;
+      color: var(--muted); font-size: 0.875rem; font-weight: 600;
+      cursor: pointer; transition: background 0.12s, color 0.12s; border: none;
+      background: transparent; width: calc(100% - 16px); text-align: left;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+    .nav-item.active { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.25); }
+    .nav-item i { font-size: 1rem; flex-shrink: 0; }
+    .nav-badge {
+      margin-left: auto; font-size: 0.7rem; font-weight: 800;
+      background: rgba(239,68,68,0.2); color: #fca5a5;
+      padding: 1px 7px; border-radius: 999px;
+    }
+
+    /* ── MAIN ── */
+    .main { margin-left: var(--sidebar-w); padding-top: 60px; min-height: 100vh; }
+    .page { display: none; padding: 28px; }
+    .page.active { display: block; }
+
+    /* ── SECTION HEADER ── */
+    .page-header { margin-bottom: 24px; }
+    .page-title { font-size: 1.5rem; font-weight: 900; margin: 0; }
+    .page-sub { color: var(--muted); font-size: 0.875rem; margin-top: 4px; }
+
+    /* ── STAT CARDS ── */
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+    .stat-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 18px 20px; position: relative; overflow: hidden;
+    }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .stat-card.blue::before { background: var(--accent-blue); }
+    .stat-card.green::before { background: var(--accent-green); }
+    .stat-card.purple::before { background: var(--accent-purple); }
+    .stat-card.amber::before { background: var(--accent-amber); }
+    .stat-card.red::before { background: var(--accent-red); }
+    .stat-card.cyan::before { background: var(--accent-cyan); }
+    .stat-num { font-size: 2rem; font-weight: 900; line-height: 1; }
+    .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-icon { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 2.2rem; opacity: 0.12; }
+
+    /* ── TABLE ── */
+    .data-table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .data-table-head { padding: 16px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
+    .data-table-head h3 { margin: 0; font-size: 0.95rem; font-weight: 800; }
+    .data-table-head .ms-auto { margin-left: auto; display: flex; gap: 8px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 11px 16px; text-align: left; font-size: 0.73rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.1s; }
+    tbody tr:hover { background: rgba(255,255,255,0.03); }
+    tbody tr:last-child { border-bottom: none; }
+    td { padding: 12px 16px; font-size: 0.865rem; }
+    .td-mono { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 0.8rem; }
+
+    /* ── BADGES ── */
+    .badge-role { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 0.73rem; font-weight: 700; }
+    .badge-admin { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.25); }
+    .badge-doctor { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.25); }
+    .badge-reception { background: rgba(139,92,246,0.15); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.25); }
+    .badge-pharma { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.25); }
+    .badge-lab { background: rgba(6,182,212,0.15); color: #67e8f9; border: 1px solid rgba(6,182,212,0.25); }
+    .badge-nurse { background: rgba(236,72,153,0.15); color: #f9a8d4; border: 1px solid rgba(236,72,153,0.25); }
+    .badge-billing { background: rgba(245,158,11,0.12); color: #fde68a; border: 1px solid rgba(245,158,11,0.2); }
+
+    .badge-action { display: inline-block; padding: 2px 9px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; }
+    .action-create { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+    .action-edit { background: rgba(59,130,246,0.15); color: #93c5fd; }
+    .action-delete { background: rgba(239,68,68,0.15); color: #fca5a5; }
+    .action-login { background: rgba(139,92,246,0.15); color: #c4b5fd; }
+    .action-logout { background: rgba(107,114,128,0.2); color: #9ca3af; }
+
+    .status-active { color: #6ee7b7; }
+    .status-inactive { color: #9ca3af; }
+
+    /* ── BUTTONS ── */
+    .btn-xs {
+      padding: 4px 10px; font-size: 0.73rem; font-weight: 700; border-radius: 7px;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.05);
+      color: var(--text); cursor: pointer; transition: all 0.12s;
+    }
+    .btn-xs:hover { background: rgba(255,255,255,0.1); }
+    .btn-xs.blue { border-color: rgba(59,130,246,0.35); color: #93c5fd; background: rgba(59,130,246,0.1); }
+    .btn-xs.red { border-color: rgba(239,68,68,0.3); color: #fca5a5; background: rgba(239,68,68,0.08); }
+    .btn-xs.green { border-color: rgba(16,185,129,0.3); color: #6ee7b7; background: rgba(16,185,129,0.08); }
+
+    .btn-primary {
+      padding: 8px 16px; font-size: 0.85rem; font-weight: 700; border-radius: 10px;
+      background: var(--accent-blue); color: #fff; border: none; cursor: pointer;
+      transition: opacity 0.15s; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-outline {
+      padding: 7px 14px; font-size: 0.82rem; font-weight: 700; border-radius: 10px;
+      border: 1px solid var(--border); background: transparent; color: var(--muted);
+      cursor: pointer; transition: all 0.12s;
+    }
+    .btn-outline:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+
+    /* ── SEARCH / FILTER BAR ── */
+    .filter-bar { display: flex; gap: 10px; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); }
+    .filter-search {
+      flex: 1; padding: 8px 14px; border-radius: 10px; font-size: 0.85rem;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      color: var(--text); outline: none;
+    }
+    .filter-search:focus { border-color: rgba(59,130,246,0.5); }
+    .filter-select {
+      padding: 8px 12px; border-radius: 10px; font-size: 0.82rem;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      color: var(--text); outline: none; cursor: pointer;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #0f1520; border: 1px solid var(--border); border-radius: 20px;
+      width: 520px; max-width: 92vw; max-height: 90vh; overflow-y: auto;
+      padding: 28px;
+    }
+    .modal-box h3 { margin: 0 0 20px; font-size: 1.1rem; font-weight: 900; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-input {
+      width: 100%; padding: 10px 14px; border-radius: 10px; font-size: 0.875rem;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      color: var(--text); outline: none; transition: border-color 0.12s;
+    }
+    .form-input:focus { border-color: rgba(59,130,246,0.5); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+    /* ── ROLE CHECKBOXES ── */
+    .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .role-chip {
+      display: flex; align-items: center; gap: 8px; padding: 9px 12px;
+      border-radius: 10px; border: 1px solid var(--border); cursor: pointer;
+      transition: all 0.12s; font-size: 0.82rem; font-weight: 600;
+    }
+    .role-chip input { display: none; }
+    .role-chip.checked { border-color: rgba(59,130,246,0.4); background: rgba(59,130,246,0.1); color: #93c5fd; }
+    .role-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+    /* ── LOG TIMELINE ── */
+    .log-row { display: flex; gap: 14px; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); align-items: flex-start; }
+    .log-row:hover { background: rgba(255,255,255,0.02); }
+    .log-time { font-size: 0.75rem; color: var(--muted); white-space: nowrap; flex-shrink: 0; width: 120px; }
+    .log-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.82rem; flex-shrink: 0; }
+    .log-body { flex: 1; }
+    .log-title { font-size: 0.875rem; font-weight: 700; }
+    .log-meta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    .log-user { font-weight: 700; color: var(--text); }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 999;
+      background: #1e2a3a; border: 1px solid rgba(59,130,246,0.35);
+      border-radius: 12px; padding: 14px 18px; font-size: 0.875rem; font-weight: 700;
+      transform: translateY(80px); opacity: 0; transition: all 0.3s; pointer-events: none;
+      display: flex; align-items: center; gap: 10px;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast i { color: var(--accent-green); }
+
+    /* ── DASHBOARD WIDGETS ── */
+    .dash-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+    .activity-list { max-height: 380px; overflow-y: auto; }
+    .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .quick-btn {
+      padding: 14px; border-radius: 14px; border: 1px solid var(--border);
+      background: var(--bg-card); cursor: pointer; text-align: center;
+      transition: all 0.15s; text-decoration: none; display: block; color: var(--text);
+    }
+    .quick-btn:hover { background: var(--bg-card-hover); border-color: rgba(255,255,255,0.18); transform: translateY(-2px); }
+    .quick-btn i { font-size: 1.5rem; display: block; margin-bottom: 6px; }
+    .quick-btn span { font-size: 0.8rem; font-weight: 700; }
+
+    @media (max-width: 1100px) {
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .main { margin-left: 0; }
+      .page { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <a class="topbar-brand" href="#" onclick="showPage('dashboard')">
+    <div class="brand-icon">🏥</div>
+    ShantiVeer HMS
+  </a>
+  <span style="font-size:0.75rem;color:var(--muted);padding:3px 10px;border-radius:6px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#fca5a5;font-weight:700;">ADMIN CONSOLE</span>
+  <div class="topbar-right">
+    <div class="user-chip">
+      <i class="bi bi-shield-check" style="color:var(--accent-blue)"></i>
+      <span>{{ request.user.username }}</span>
+      <span class="role-badge">{% if request.user.is_superuser %}Administrator{% else %}Staff{% endif %}</span>
+    </div>
+    <a href="{% url 'accounts:change_password' %}" class="topbar-btn">
+      <i class="bi bi-key"></i> Change Password
+    </a>
+    <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">{% csrf_token %}<button type="submit" class="topbar-btn danger" style="background:none;border:none;cursor:pointer;">
+      <i class="bi bi-box-arrow-right"></i> Logout
+    </button></form>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-section">
+    <span class="sidebar-label">Overview</span>
+    <button class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+      <i class="bi bi-speedometer2" style="color:var(--accent-blue)"></i> Dashboard
+    </button>
+  </div>
+  <div class="sidebar-section">
+    <span class="sidebar-label">Administration</span>
+    <button class="nav-item" onclick="showPage('users')" id="nav-users">
+      <i class="bi bi-people" style="color:var(--accent-purple)"></i> User Management
+      <span class="nav-badge">{{ initial_user_count|default:0 }}</span>
+    </button>
+    <button class="nav-item" onclick="showPage('roles')" id="nav-roles">
+      <i class="bi bi-shield-lock" style="color:var(--accent-amber)"></i> Role Groups
+    </button>
+    <button class="nav-item" onclick="showPage('logs')" id="nav-logs">
+      <i class="bi bi-journal-text" style="color:var(--accent-cyan)"></i> Activity Logs
+      <span class="nav-badge">New</span>
+    </button>
+  </div>
+  <div class="sidebar-section">
+    <span class="sidebar-label">Medical Data</span>
+    <button class="nav-item" onclick="showPage('tests')" id="nav-tests">
+      <i class="bi bi-droplet" style="color:var(--accent-green)"></i> Lab Tests
+    </button>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <div class="page active" id="page-dashboard">
+    <div class="page-header">
+      <h1 class="page-title">Admin Dashboard</h1>
+      <p class="page-sub">Role-aware console — users, lab tests, and audit logs.</p>
+    </div>
+
+    <div class="stat-grid" id="stats-grid">
+      <div class="stat-card blue">
+        <div class="stat-num" id="stat-users">0</div>
+        <div class="stat-label">Total Users</div>
+        <div class="stat-icon"><i class="bi bi-people"></i></div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-num" id="stat-tests">0</div>
+        <div class="stat-label">Active Tests</div>
+        <div class="stat-icon"><i class="bi bi-droplet"></i></div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-num" id="stat-logs">0</div>
+        <div class="stat-label">Logs Today</div>
+        <div class="stat-icon"><i class="bi bi-journal-text"></i></div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-num" id="stat-groups">0</div>
+        <div class="stat-label">Groups</div>
+        <div class="stat-icon"><i class="bi bi-shield-lock"></i></div>
+      </div>
+    </div>
+
+    <div class="dash-grid">
+      <div>
+        <div class="data-table-wrap">
+          <div class="data-table-head">
+            <h3><i class="bi bi-clock-history" style="color:var(--accent-cyan)"></i> Recent Activity</h3>
+            <div class="ms-auto">
+              <button class="btn-outline" onclick="showPage('logs')">View All Logs →</button>
+            </div>
+          </div>
+          <div class="activity-list" id="activity-list">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="data-table-wrap" style="margin-bottom:14px;">
+          <div class="data-table-head"><h3><i class="bi bi-lightning-charge" style="color:var(--accent-amber)"></i> Quick Actions</h3></div>
+          <div style="padding:14px;">
+            <div class="quick-actions">
+              <button type="button" class="quick-btn" onclick="showToast('CRUD endpoints not wired in this UI yet')">
+                <i class="bi bi-person-plus" style="color:var(--accent-purple)"></i>
+                <span>Add User</span>
+              </button>
+              <button type="button" class="quick-btn" onclick="showToast('CRUD endpoints not wired in this UI yet')">
+                <i class="bi bi-plus-circle" style="color:var(--accent-green)"></i>
+                <span>Add Lab Test</span>
+              </button>
+              <button type="button" class="quick-btn" onclick="showPage('logs')">
+                <i class="bi bi-journal-text" style="color:var(--accent-cyan)"></i>
+                <span>View Logs</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="data-table-wrap">
+          <div class="data-table-head"><h3><i class="bi bi-people" style="color:var(--accent-purple)"></i> Users by Role</h3></div>
+          <div style="padding:6px 20px 16px; color: var(--muted); font-size:0.9rem;">
+            Populated from /admin/hms-users/ JSON.
+          </div>
+          <div id="users-by-role">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page-users">
+    <div class="page-header">
+      <h1 class="page-title">User Management</h1>
+      <p class="page-sub">Read-only view with client-side filtering (CRUD not wired yet).</p>
+    </div>
+
+    <div class="data-table-wrap">
+      <div class="data-table-head">
+        <h3><i class="bi bi-people"></i> All Users</h3>
+      </div>
+      <div class="filter-bar">
+        <input class="filter-search" placeholder="Search by name, username, email…" oninput="filterUsers(this.value)" />
+        <select class="filter-select" onchange="filterByRole(this.value)">
+          <option value="">All Roles</option>
+          <option>Admin</option>
+          <option>Doctor</option>
+          <option>Receptionist</option>
+          <option>Nurse</option>
+          <option>LabTech</option>
+          <option>Pharmacist</option>
+          <option>Accountant</option>
+        </select>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Role Group</th>
+            <th>Status</th>
+            <th>Last Login</th>
+            <th>Date Joined</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="page" id="page-roles">
+    <div class="page-header">
+      <h1 class="page-title">Role Groups</h1>
+      <p class="page-sub">Static matrix placeholder (RBAC is enforced server-side).</p>
+    </div>
+
+    <div class="data-table-wrap">
+      <div class="data-table-head">
+        <h3><i class="bi bi-table"></i> Permissions Matrix</h3>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Module</th>
+              <th>Admin</th>
+              <th>Doctor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight:700;">UHID</td>
+              <td><span style="color:#6ee7b7">● Full</span></td>
+              <td><span style="color:#93c5fd">◐ View</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page-logs">
+    <div class="page-header">
+      <h1 class="page-title">Activity Logs</h1>
+      <p class="page-sub">Uses Django admin LogEntry JSON.</p>
+    </div>
+
+    <div class="data-table-wrap">
+      <div class="data-table-head">
+        <h3><i class="bi bi-journal-text" style="color:var(--accent-cyan)"></i> Full Audit Log</h3>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date & Time</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Action</th>
+            <th>Object / Description</th>
+            <th>IP Address</th>
+            <th>Module</th>
+          </tr>
+        </thead>
+        <tbody id="logs-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="page" id="page-tests">
+    <div class="page-header">
+      <h1 class="page-title">Lab Tests Catalog</h1>
+      <p class="page-sub">Read-only view of LabTestMaster (CRUD not wired yet).</p>
+    </div>
+
+    <div class="data-table-wrap">
+      <div class="data-table-head">
+        <h3><i class="bi bi-droplet" style="color:var(--accent-green)"></i> All Lab Tests</h3>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Test Name</th>
+            <th>Rate (₹)</th>
+            <th>Status</th>
+            <th>Last Modified</th>
+            <th>Modified By</th>
+          </tr>
+        </thead>
+        <tbody id="tests-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast"><i class="bi bi-check-circle-fill"></i> <span id="toast-msg">Done!</span></div>
+
+<script>
+  const CSRF_TOKEN = '{{ csrf_token }}';
+
+  let users = [];
+  let tests = [];
+  let logs = [];
+
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    const navEl = document.getElementById('nav-' + id);
+    if (navEl) navEl.classList.add('active');
+    if (id === 'users') renderUsers(users);
+    if (id === 'logs') renderLogs(logs);
+    if (id === 'tests') renderTests(tests);
+  }
+
+  function roleBadge(role) {
+    const map = {Admin:'badge-admin',Doctor:'badge-doctor',Receptionist:'badge-reception',Nurse:'badge-nurse',LabTech:'badge-lab',Pharmacist:'badge-pharma',Accountant:'badge-billing'};
+    const icon = {Admin:'🛡️',Doctor:'👨‍⚕️',Receptionist:'🎧',Nurse:'❤️',LabTech:'🔬',Pharmacist:'💊',Accountant:'🧾'};
+    return `<span class="badge-role ${map[role]||''}">${icon[role]||''} ${role}</span>`;
+  }
+
+  function actionBadge(action) {
+    const map = {Create:'action-create',Edit:'action-edit','Edit / Update':'action-edit',Delete:'action-delete',Login:'action-login',Logout:'action-logout'};
+    return `<span class="badge-action ${map[action]||''}">${action}</span>`;
+  }
+
+  function renderUsers(data) {
+    /* safe version defined below in second script block — forward reference only */
+    _renderUsersImpl(data);
+  }
+
+  function filterUsers(q) {
+    const qq = (q||'').trim().toLowerCase();
+    const filtered = users.filter(u => {
+      const s = `${u.username} ${u.full_name} ${u.email}`.toLowerCase();
+      return s.includes(qq);
+    });
+    renderUsers(filtered);
+  }
+
+  function filterByRole(r) {
+    if (!r) return renderUsers(users);
+    renderUsers(users.filter(u => u.role === r));
+  }
+
+  function renderTests(data) {
+    /* safe version defined below — forward reference only */
+    _renderTestsImpl(data);
+  }
+
+  function renderLogs(data) {
+    /* safe version defined below — forward reference only */
+    _renderLogsImpl(data);
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function renderActivityList(data) {
+    const box = document.getElementById('activity-list');
+    const items = (data || []).slice(0,5);
+    box.innerHTML = items.map(l => `
+      <div class="log-row">
+        <div class="log-time" id="la-time"></div>
+        <div class="log-icon" id="la-icon"></div>
+        <div class="log-body">
+          <div class="log-title" id="la-title"></div>
+          <div class="log-meta" id="la-meta"></div>
+        </div>
+      </div>
+    `).join('');
+
+    // Now populate using safe textContent (never innerHTML for user data)
+    const rows = box.querySelectorAll('.log-row');
+    items.forEach((l, idx) => {
+      const row = rows[idx];
+      if (!row) return;
+      row.querySelector('#la-time').textContent = `${l.date || ''} ${l.time || ''}`;
+      const iconEl = row.querySelector('#la-icon');
+      const actionMap = {1: {cls:'action-create', icon:'bi-plus'}, 2: {cls:'action-edit', icon:'bi-pencil'}, 3: {cls:'action-delete', icon:'bi-trash'}};
+      const a = actionMap[l.action_flag] || {cls:'', icon:'bi-circle'};
+      iconEl.className = `log-icon badge-action ${a.cls}`;
+      const i = document.createElement('i');
+      i.className = `bi ${a.icon}`;
+      iconEl.appendChild(i);
+      row.querySelector('#la-title').textContent = l.object_repr || '';
+      row.querySelector('#la-meta').textContent = `${l.user_name || l.username || ''} · ${l.model || ''} · ${l.change_message || ''}`;
+    });
+  }
+
+  // ── Safe HTML escape utility (for any dynamic content in innerHTML) ──
+  function esc(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // ── Safe render implementations (called by wrapper functions in first script block) ──
+  function _renderUsersImpl(data) {
+    const tbody = document.getElementById('users-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    (data || []).forEach(u => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="td-mono">${esc(u.username)}</td>
+        <td style="font-weight:700">${esc(u.full_name)}</td>
+        <td style="color:var(--muted)">${esc(u.email)}</td>
+        <td>${roleBadge(esc(u.role || 'No Role'))}</td>
+        <td>${u.is_active ? '<span class="status-active">● Active</span>' : '<span class="status-inactive">● Inactive</span>'}</td>
+        <td style="color:var(--muted);font-size:.8rem">—</td>
+        <td style="color:var(--muted);font-size:.8rem">${esc(u.date_joined)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function _renderTestsImpl(data) {
+    const tbody = document.getElementById('tests-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    (data || []).forEach((t, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="color:var(--muted)">${i + 1}</td>
+        <td style="font-weight:700">${esc(t.name)}</td>
+        <td style="font-weight:900;color:var(--accent-green)">₹${esc(t.rate)}</td>
+        <td>${t.is_active ? '<span class="status-active">● Active</span>' : '<span class="status-inactive">● Inactive</span>'}</td>
+        <td style="color:var(--muted);font-size:.8rem">—</td>
+        <td style="color:var(--muted);font-size:.8rem">—</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function _renderLogsImpl(data) {
+    const tbody = document.getElementById('logs-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    (data || []).forEach(l => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="td-mono" style="color:var(--muted);font-size:.78rem">${esc(l.date)} ${esc(l.time)}</td>
+        <td style="font-weight:800">${esc(l.user_name || l.username)}</td>
+        <td>${roleBadge(esc(l.role || 'Admin'))}</td>
+        <td>${actionBadge(l.action_flag || 0)}</td>
+        <td style="font-size:.85rem">${esc(l.object_repr)}</td>
+        <td class="td-mono" style="color:var(--muted);font-size:.78rem">—</td>
+        <td><span style="font-size:.78rem;color:var(--muted);font-weight:700">${esc(l.model)}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function roleBadge(role) {
+    const safeRole = esc(role);
+    const map = {Admin:'badge-admin',Doctor:'badge-doctor',Receptionist:'badge-reception',Nurse:'badge-nurse',LabTech:'badge-lab',Pharmacist:'badge-pharma',Accountant:'badge-billing','No Role':''};
+    const icon = {Admin:'🛡️',Doctor:'👨‍⚕️',Receptionist:'🎧',Nurse:'❤️',LabTech:'🔬',Pharmacist:'💊',Accountant:'🧾'};
+    const cls = map[role] || '';
+    const ico = icon[role] || '';
+    return `<span class="badge-role ${cls}">${ico} ${safeRole}</span>`;
+  }
+
+  function actionBadge(flag) {
+    const flagMap = {1:{cls:'action-create',label:'Create'}, 2:{cls:'action-edit',label:'Edit'}, 3:{cls:'action-delete',label:'Delete'}};
+    const a = flagMap[flag] || {cls:'', label: esc(String(flag))};
+    return `<span class="badge-action ${a.cls}">${a.label}</span>`;
+  }
+
+  // ── API fetch ──
+  async function loadStats() {
+    try {
+      const r = await fetch('{% url "admin_hms_stats" %}');
+      if (!r.ok) return;
+      const d = await r.json();
+      document.getElementById('stat-users').textContent  = d.users  ?? 0;
+      document.getElementById('stat-tests').textContent  = d.tests  ?? 0;
+      document.getElementById('stat-logs').textContent   = d.logs_today ?? 0;
+      document.getElementById('stat-groups').textContent = d.groups ?? 0;
+    } catch(e) { console.warn('Stats load failed', e); }
+  }
+
+  async function loadUsers() {
+    try {
+      const r = await fetch('{% url "admin_hms_users" %}');
+      if (!r.ok) return;
+      users = await r.json();
+      renderUsers(users);
+      renderUsersByRole(users);
+    } catch(e) { console.warn('Users load failed', e); }
+  }
+
+  async function loadLogs() {
+    try {
+      const r = await fetch('{% url "admin_hms_logs" %}');
+      if (!r.ok) return;
+      logs = await r.json();
+      renderActivityList(logs);
+    } catch(e) { console.warn('Logs load failed', e); }
+  }
+
+  async function loadTests() {
+    try {
+      const r = await fetch('{% url "admin_hms_tests" %}');
+      if (!r.ok) return;
+      tests = await r.json();
+    } catch(e) { console.warn('Tests load failed', e); }
+  }
+
+  function renderUsersByRole(data) {
+    const box = document.getElementById('users-by-role');
+    if (!box) return;
+    const counts = {};
+    (data || []).forEach(u => { counts[u.role || 'No Role'] = (counts[u.role || 'No Role'] || 0) + 1; });
+    box.innerHTML = '';
+    Object.entries(counts).forEach(([role, count]) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 20px;border-bottom:1px solid rgba(255,255,255,.04);font-size:.875rem;';
+      const left = document.createElement('span');
+      left.innerHTML = roleBadge(role);
+      const right = document.createElement('span');
+      right.style.cssText = 'font-weight:800;color:var(--text)';
+      right.textContent = count;
+      row.appendChild(left);
+      row.appendChild(right);
+      box.appendChild(row);
+    });
+  }
+
+  // ── Init ──
+  (async function init() {
+    await Promise.all([loadStats(), loadUsers(), loadLogs(), loadTests()]);
+  })();
+
+</script>
+</body>
+</html>

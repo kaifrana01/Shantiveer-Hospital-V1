@@ -101,7 +101,8 @@
               <span style="color:var(--usg-muted);">₹{{ exp.total|floatformat:0 }}</span>
             </div>
             <div style="height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;">
-              <div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#0d9488,#4f46e5);width:{% widthratio exp.total month_expenses 100 %}%;"></div>
+              <div class="usg-exp-bar" style="height:100%;border-radius:3px;background:linear-gradient(90deg,#0d9488,#4f46e5);"
+                   data-total="{{ exp.total|floatformat:0 }}" data-max="{{ month_expenses|floatformat:0 }}"></div>
             </div>
           </div>
         {% endfor %}
@@ -314,6 +315,13 @@
       }
     }
   });
+  // ── Expense bar widths (computed by JS to avoid CSS linter errors) ──
+  document.querySelectorAll('.usg-exp-bar').forEach(function(bar) {
+    var total = parseFloat(bar.dataset.total) || 0;
+    var max   = parseFloat(bar.dataset.max)   || 1;
+    bar.style.width = Math.min(100, Math.round((total / max) * 100)) + '%';
+  });
+
 })();
 </script>
 {% endblock %}

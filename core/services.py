@@ -420,6 +420,21 @@ def patient_to_dict(p):
     }
 
 
+def _opd_due(visit):
+    """Compute outstanding OPD due for a specific visit. Returns formatted string."""
+    try:
+        from income.models import LedgerEntry
+        # OPD posts charge + payment simultaneously, so due is normally zero.
+        # If there's any manual adjustment/reversal, the balance could be non-zero.
+        balance = LedgerEntry.balance_for(
+            uhid=visit.patient.uhid,
+            payer_type=LedgerEntry.PayerType.PATIENT
+        )
+        return f'{balance:.2f}' if balance != 0 else '0.00'
+    except Exception:
+        return '--'
+
+
 def opd_to_dict(v):
     from prescription.models import Prescription
     pres = Prescription.objects.filter(opd_visit=v).first()
@@ -480,9 +495,8 @@ def opd_to_dict(v):
         'diagnosis': pres.diagnosis if pres else '',
         'medicines': pres.medicines if pres else '',
         'advice': pres.advice if pres else '',
-        # OPD registration posts charge+payment immediately into LedgerEntry,
-        # so current due/outstanding is not tracked as a separate pending row.
-        # Show placeholder until outstanding aggregation is added.
-        'due': '--',
+        # For OPD visits, we post charge + payment simultaneously at registration,
+        # so due is normally zero. Use ledger balance to catch any real outstanding.
+        'due': _opd_due(v),
     }
 

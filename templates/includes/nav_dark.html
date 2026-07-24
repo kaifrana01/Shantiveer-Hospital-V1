@@ -10,5 +10,5 @@
     <a href="{% url 'pharmacy:items' %}" class="{% if active_nav == 'pharmacy' %}active{% endif %}"><i class="bi bi-capsule"></i> Pharmacy</a>
     <a href="{% url 'income:daybook' %}" class="{% if active_nav == 'income' %}active{% endif %}"><i class="bi bi-cash"></i> Income</a>
     <a href="{% url 'core:dashboard' %}" class="{% if active_nav == 'mis' %}active{% endif %}"><i class="bi bi-bar-chart"></i> MIS</a>
-    <a href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">{% csrf_token %}<button type="submit" style="background:none;border:none;cursor:pointer;color:inherit;"><i class="bi bi-box-arrow-right"></i> Logout</button></form>
 </nav>

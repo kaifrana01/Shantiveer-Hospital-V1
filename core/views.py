@@ -69,11 +69,23 @@ def notifications_list(request):
 
 @login_required
 def mark_notification_read(request, pk):
-    notif = get_object_or_404(Notification, pk=pk)
+    # Scope to the requesting user — prevents one user from marking
+    # another user's private notification as read (IDOR).
+    notif = get_object_or_404(
+        Notification,
+        pk=pk,
+    )
+    # Allow global (user=None) notifications and user's own only
+    if notif.user is not None and notif.user != request.user:
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied
     notif.is_read = True
     notif.save()
     if notif.link:
-        return redirect(notif.link)
+        # Validate the link is a safe internal path before redirecting
+        from django.utils.http import url_has_allowed_host_and_scheme
+        if url_has_allowed_host_and_scheme(notif.link, allowed_hosts={request.get_host()}):
+            return redirect(notif.link)
     return redirect('core:notifications')
 
 

@@ -37,18 +37,21 @@ class Patient(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.uhid:
-            # Use database MAX to avoid race condition from count()
-            from django.db.models import Max
-            max_val = Patient.objects.aggregate(m=Max('uhid'))['m']
-            if max_val and str(max_val).isdigit():
-                self.uhid = str(int(max_val) + 1)
-            else:
-                self.uhid = str(Patient.objects.count() + 3490)
+            # Use select_for_update inside a transaction to prevent race conditions
+            # when two patients are registered simultaneously.
+            from django.db import transaction as _tx
+            with _tx.atomic():
+                from django.db.models import Max
+                max_val = Patient.objects.select_for_update().aggregate(m=Max('uhid'))['m']
+                if max_val and str(max_val).isdigit():
+                    self.uhid = str(int(max_val) + 1)
+                else:
+                    self.uhid = str(Patient.objects.count() + 3490)
         super().save(*args, **kwargs)
 
     @property
     def age_display(self):
-        if self.age_years:
+        if self.age_years > 0:
             return str(self.age_years)
         return f'{self.age_years}Y {self.age_months}M {self.age_days}D'
 

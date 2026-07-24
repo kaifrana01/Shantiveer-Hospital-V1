@@ -13,12 +13,13 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.core.cache import cache
 from django.contrib.auth.views import PasswordResetConfirmView
+from django.views.decorators.http import require_POST
 
 from .forms import StyledLoginForm, ForgotPasswordForm, StyledPasswordChangeForm, StyledSetPasswordForm, ChangeEmailForm
 
 logger = logging.getLogger(__name__)
-_MAX_ATTEMPTS   = getattr(settings, 'LOGIN_ATTEMPTS_LIMIT', 5)
-_LOCKOUT_SECS   = getattr(settings, 'LOGIN_LOCKOUT_DURATION', 300)
+_MAX_ATTEMPTS = getattr(settings, 'LOGIN_ATTEMPTS_LIMIT', 5)
+_LOCKOUT_SECS = getattr(settings, 'LOGIN_LOCKOUT_DURATION', 300)
 
 
 def _ip(request):
@@ -130,7 +131,9 @@ def login_view(request):
 
 
 
+@require_POST
 def logout_view(request):
+    """Logout requires POST to prevent CSRF-based forced logout via GET links."""
     logout(request)
     return redirect('accounts:login')
 
@@ -138,8 +141,17 @@ def logout_view(request):
 def forgot_password_view(request):
     if request.user.is_authenticated:
         return redirect('core:home')
+
+    # Rate-limit by IP — same mechanism as login brute-force protection.
+    # 5 requests per lockout window prevents email enumeration via timing.
+    ip = _ip(request)
+    if _locked(ip):
+        messages.error(request, 'Too many requests. Please try again in a few minutes.')
+        return render(request, 'accounts/forgot_password.html', {'form': ForgotPasswordForm(), 'locked': True})
+
     form = ForgotPasswordForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
+        _fail(ip)   # count every submission, even valid ones, to prevent enumeration
         email = form.cleaned_data['email']
         for user in User.objects.filter(email__iexact=email):
             uid   = urlsafe_base64_encode(force_bytes(user.pk))
@@ -153,6 +165,7 @@ def forgot_password_view(request):
                           settings.DEFAULT_FROM_EMAIL, [user.email])
             except Exception as e:
                 logger.error('Reset mail failed: %s', e)
+        # Always show the same message whether email exists or not
         messages.success(request, 'If that email is registered, a reset link has been sent.')
         return redirect('accounts:password_reset_done')
     return render(request, 'accounts/forgot_password.html', {'form': form})
@@ -168,9 +181,14 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
 def change_email_view(request):
     form = ChangeEmailForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
+        # Use form.cleaned_data — validated and sanitized by the form
+        current_password = form.cleaned_data['current_password']
+        if not request.user.check_password(current_password):
+            messages.error(request, 'Current password is incorrect.')
+            return render(request, 'accounts/change_email.html', {'form': form})
         request.user.email = form.cleaned_data['new_email']
         request.user.save()
-        messages.success(request, 'Email updated.')
+        messages.success(request, 'Email updated successfully.')
         return redirect('accounts:change_password')
     return render(request, 'accounts/change_email.html', {'form': form})
 

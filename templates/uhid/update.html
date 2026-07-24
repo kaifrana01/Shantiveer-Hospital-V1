@@ -42,7 +42,15 @@
         </form>
     </div>
     <table class="hms-table"><thead><tr><th>UHID</th><th>Patient Name</th><th>Gender</th><th>Age</th><th>Mobile</th></tr></thead>
-    <tbody>{% for p in patients %}<tr><td><a href="?uhid={{ p.uhid }}">{{ p.uhid }}</a></td><td>{{ p.name }}</td><td>{{ p.gender }}</td><td>{{ p.age }}</td><td>{{ p.mobile }}</td></tr>{% endfor %}</tbody></table>
-    <nav class="mt-3"><ul class="pagination justify-content-center">{% for i in "123456" %}<li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>{% endfor %}<li class="page-item"><a class="page-link" href="#">Next →</a></li></ul></nav>
+    <tbody>{% for p in patients %}<tr><td><a href="?uhid={{ p.uhid }}">{{ p.uhid }}</a></td><td>{{ p.name }}</td><td>{{ p.gender }}</td><td>{{ p.age_display }}</td><td>{{ p.mobile }}</td></tr>{% endfor %}</tbody></table>
+    {% if patients.has_other_pages %}
+    <nav class="mt-3"><ul class="pagination justify-content-center">
+      {% if patients.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ patients.previous_page_number }}{% if search_uhid %}&uhid={{ search_uhid }}{% endif %}">← Previous</a></li>{% endif %}
+      {% for num in patients.paginator.page_range %}
+        <li class="page-item {% if patients.number == num %}active{% endif %}"><a class="page-link" href="?page={{ num }}{% if search_uhid %}&uhid={{ search_uhid }}{% endif %}">{{ num }}</a></li>
+      {% endfor %}
+      {% if patients.has_next %}<li class="page-item"><a class="page-link" href="?page={{ patients.next_page_number }}{% if search_uhid %}&uhid={{ search_uhid }}{% endif %}">Next →</a></li>{% endif %}
+    </ul></nav>
+    {% endif %}
 </div>
 {% endblock %}

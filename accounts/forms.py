@@ -33,6 +33,13 @@ class StyledPasswordChangeForm(PasswordChangeForm):
 
 
 class ChangeEmailForm(forms.Form):
+    current_password = forms.CharField(
+        label='Current Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your current password',
+        })
+    )
     new_email = forms.EmailField(
         label='New Email Address',
         widget=forms.EmailInput(attrs={

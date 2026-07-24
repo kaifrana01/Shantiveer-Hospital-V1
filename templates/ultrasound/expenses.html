@@ -12,7 +12,7 @@
 <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;">
 
 <!-- ── Add Expense Form ── -->
-{% if not request.is_view_only %}
+{% if module_access.ultrasound == 'full' %}
 <div class="usg-card" style="align-self:start;">
   <div class="usg-card-header">
     <div class="usg-card-title"><i class="bi bi-plus-circle"></i> Record Expense</div>

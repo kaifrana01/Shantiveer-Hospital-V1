@@ -29,18 +29,17 @@ class OPDVisit(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.opd_no:
-            from django.db.models import Max
-            import re
-
-            max_row = OPDVisit.objects.aggregate(m=Max('opd_no'))['m']
-            if max_row:
-                nums = re.findall(r'\d+', max_row)
-                n = int(nums[-1]) + 1 if nums else OPDVisit.objects.count() + 1
-            else:
-                n = 1
-            self.opd_no = f'OPD{n:03d}'
-
-        # total_amount is computed by the view from visit fees/discount + test line items.
+            from django.db import transaction as _tx
+            with _tx.atomic():
+                from django.db.models import Max
+                import re
+                max_row = OPDVisit.objects.select_for_update().aggregate(m=Max('opd_no'))['m']
+                if max_row:
+                    nums = re.findall(r'\d+', max_row)
+                    n = int(nums[-1]) + 1 if nums else OPDVisit.objects.count() + 1
+                else:
+                    n = 1
+                self.opd_no = f'OPD{n:03d}'
         super().save(*args, **kwargs)
 
     def __str__(self):

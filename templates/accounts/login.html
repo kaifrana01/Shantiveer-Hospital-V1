@@ -179,6 +179,7 @@ body[data-role="pharmacist"]  {--accent:#f59e0b;--accent-grad:linear-gradient(90
 
 /* error */
 .err-msg{color:#f87171;font-size:.82rem;text-align:center;margin-bottom:.75rem;}
+.err-msg--success{color:#86efac;}
 
 /* password toggle */
 .pw-toggle{
@@ -326,7 +327,7 @@ body[data-role="pharmacist"]  {--accent:#f59e0b;--accent-grad:linear-gradient(90
         <p class="err-msg"><i class="bi bi-exclamation-circle"></i> Invalid username or password.</p>
         {% endif %}
         {% for m in messages %}
-        <p class="err-msg" style="color:{% if m.tags == 'error' %}#f87171{% else %}#86efac{% endif %}">{{ m }}</p>
+        <p class="err-msg {% if m.tags != 'error' %}err-msg--success{% endif %}">{{ m }}</p>
         {% endfor %}
       </div>
 
@@ -367,7 +368,7 @@ body[data-role="pharmacist"]  {--accent:#f59e0b;--accent-grad:linear-gradient(90
   </div>
 </div>
 
-<div class="login-footer">Design By: Amayra Solutions | Contact: 9821235034 | Email: amiralamrana@gmail.com</div>
+<div class="login-footer">{{ hospital_name }} &nbsp;·&nbsp; Hospital Management Software</div>
 
 <script>
 // password show/hide
@@ -528,7 +529,7 @@ function goBack(){
 
 // restore role on page reload after failed login
 (function(){
-  const h = '{{ request.POST.role_hint|default:"" }}';
+  const h = '{{ request.POST.role_hint|default:""|escapejs }}';
   if(h && ROLES[h]) pick(h);
 })();
 </script>

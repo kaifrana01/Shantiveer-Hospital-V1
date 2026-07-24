@@ -82,15 +82,18 @@ class UltrasoundInvestigation(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.bill_no:
-            from django.db.models import Max
+            from django.db import transaction as _tx
             import re
-            max_row = UltrasoundInvestigation.objects.aggregate(m=Max('bill_no'))['m']
-            if max_row:
-                nums = re.findall(r'\d+', max_row)
-                n = int(nums[-1]) + 1 if nums else UltrasoundInvestigation.objects.count() + 1
-            else:
-                n = 1
-            self.bill_no = f'USG{n:04d}'
+            with _tx.atomic():
+                max_row = UltrasoundInvestigation.objects.select_for_update().aggregate(
+                    m=models.Max('bill_no')
+                )['m']
+                if max_row:
+                    nums = re.findall(r'\d+', max_row)
+                    n = int(nums[-1]) + 1 if nums else UltrasoundInvestigation.objects.count() + 1
+                else:
+                    n = 1
+                self.bill_no = f'USG{n:04d}'
         super().save(*args, **kwargs)
 
     def __str__(self):

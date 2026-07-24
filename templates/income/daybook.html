@@ -4,34 +4,58 @@
 {% block content %}
 <div class="page-container">
     <div class="search-bar-row mb-3" style="border-radius:4px">
-        <form method="get" class="d-flex align-items-center gap-2">
+        <form method="get" class="d-flex align-items-center gap-2 flex-wrap">
             <label>Date :</label>
             <input type="date" name="date" class="form-control form-control-sm" style="width:160px" value="{{ selected_date }}">
             <button class="btn btn-primary btn-sm">Submit</button>
             <a href="{% url 'income:daybook' %}" class="btn btn-primary btn-sm">Reset</a>
+            <a href="{% url 'income:add' %}" class="btn btn-success btn-sm ms-auto">
+              <i class="bi bi-plus-lg me-1"></i>Add Entry
+            </a>
         </form>
     </div>
     <div class="form-card">
         <div class="d-flex justify-content-between mb-2">
             <div class="btn-group btn-group-sm">
                 <button type="button" class="btn btn-outline-secondary" id="copyBtn">Copy</button>
-                <a class="btn btn-outline-secondary" href="{% url 'income:daybook_alt' %}?date={{ selected_date }}&export=csv">CSV</a>
-                <a class="btn btn-outline-secondary" href="{% url 'income:daybook_alt' %}?date={{ selected_date }}&export=pdf">PDF</a>
+                <a class="btn btn-outline-secondary" href="{% url 'income:daybook_export' selected_date %}?export=csv">CSV</a>
+                <a class="btn btn-outline-secondary" href="{% url 'income:daybook_export' selected_date %}?export=pdf">PDF</a>
             </div>
-            <div class="d-flex align-items-center gap-2"><label class="small mb-0">Search:</label><input class="form-control form-control-sm" style="width:150px"></div>
+            <div class="d-flex align-items-center gap-2"><label class="small mb-0">Search:</label><input class="form-control form-control-sm" style="width:150px" id="tableSearch"></div>
         </div>
 
         <table class="hms-table">
-            <thead><tr><th>#</th><th>Date</th><th>Category</th><th>Patient Name</th><th>Description</th><th>Payment Mode</th><th>Amount</th></tr></thead>
+            <thead><tr><th>#</th><th>Date</th><th>Category</th><th>Patient Name</th><th>Description</th><th>Payment Mode</th><th>Amount</th><th>Action</th></tr></thead>
             <tbody>{% for e in entries %}
-            <tr><td>{{ forloop.counter }}</td><td>{{ e.date }}</td><td>{{ e.category }}</td><td>{{ e.patient }}</td><td>{{ e.description }}</td><td>{{ e.mode }}</td><td>{{ e.amount }}</td></tr>
-            {% endfor %}</tbody>
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ e.date }}</td>
+              <td>{{ e.category }}</td>
+              <td>{{ e.patient }}</td>
+              <td>{{ e.description }}</td>
+              <td>{{ e.mode }}</td>
+              <td>{{ e.amount }}</td>
+              <td>
+                {% if not request.is_view_only %}
+                <form method="post" action="{% url 'income:delete' e.id %}" onsubmit="return confirm('Delete this income entry?');" style="display:inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="text-center text-muted py-3">No entries for this date.</td></tr>
+            {% endfor %}
+            </tbody>
             <tfoot>
-                <tr class="fw-bold"><td colspan="6" class="text-end">Total Cash</td><td>{{ totals.cash }}</td></tr>
-                <tr class="fw-bold"><td colspan="6" class="text-end">Total Online</td><td>{{ totals.online }}</td></tr>
-                <tr class="fw-bold"><td colspan="6" class="text-end">Total Card Swipe</td><td>{{ totals.card }}</td></tr>
-                <tr class="fw-bold"><td colspan="6" class="text-end">Total Cheque</td><td>{{ totals.cheque }}</td></tr>
-                <tr class="fw-bold table-success"><td colspan="6" class="text-end">Total Income</td><td>{{ totals.income }}</td></tr>
+                <tr class="fw-bold"><td colspan="7" class="text-end">Total Cash</td><td>{{ totals.cash }}</td></tr>
+                <tr class="fw-bold"><td colspan="7" class="text-end">Total Online</td><td>{{ totals.online }}</td></tr>
+                <tr class="fw-bold"><td colspan="7" class="text-end">Total Card Swipe</td><td>{{ totals.card }}</td></tr>
+                <tr class="fw-bold"><td colspan="7" class="text-end">Total Cheque</td><td>{{ totals.cheque }}</td></tr>
+                <tr class="fw-bold table-success"><td colspan="7" class="text-end">Total Income</td><td>{{ totals.income }}</td></tr>
             </tfoot>
         </table>
         <p class="text-center text-muted my-2">-----------Expenses-----------</p>

@@ -491,9 +491,9 @@
       <a href="{% url 'core:dashboard' %}" class="usg-back-btn">
         <i class="bi bi-arrow-left-circle"></i> Back to HMS
       </a>
-      <a href="{% url 'accounts:logout' %}" class="usg-exit-btn">
+      <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">{% csrf_token %}<button type="submit" class="usg-exit-btn" style="background:none;border:none;cursor:pointer;">
         <i class="bi bi-box-arrow-right"></i> Logout
-      </a>
+      </button></form>
     </div>
   </aside>
 

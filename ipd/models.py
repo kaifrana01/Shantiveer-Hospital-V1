@@ -39,15 +39,17 @@ class IPDAdmission(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.ipd_no:
-            from django.db.models import Max
-            import re
-            max_row = IPDAdmission.objects.aggregate(m=Max('ipd_no'))['m']
-            if max_row:
-                nums = re.findall(r'\d+', max_row)
-                n = int(nums[-1]) + 1 if nums else IPDAdmission.objects.count() + 100
-            else:
-                n = 100
-            self.ipd_no = f'IPD{n}'
+            from django.db import transaction as _tx
+            with _tx.atomic():
+                from django.db.models import Max
+                import re
+                max_row = IPDAdmission.objects.select_for_update().aggregate(m=Max('ipd_no'))['m']
+                if max_row:
+                    nums = re.findall(r'\d+', max_row)
+                    n = int(nums[-1]) + 1 if nums else IPDAdmission.objects.count() + 100
+                else:
+                    n = 100
+                self.ipd_no = f'IPD{n}'
         super().save(*args, **kwargs)
 
     def __str__(self):

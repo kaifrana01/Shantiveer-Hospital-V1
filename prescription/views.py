@@ -40,14 +40,32 @@ def _save_medicine_lines(prescription, post_data):
 @require_module('prescription', level='view')
 def list_view(request):
     q = request.GET.get('q', '').strip()
+    referral = request.GET.get('referral', '').strip()
     visits = OPDVisit.objects.select_related('patient').prefetch_related('prescription')
     if q:
         visits = visits.filter(
             Q(opd_no__icontains=q) | Q(patient__name__icontains=q) |
             Q(patient__uhid__icontains=q) | Q(patient__mobile__icontains=q)
         )
+    if referral:
+        visits = visits.filter(referral__icontains=referral)
+
+    # Distinct referral doctors for filter dropdown
+    referral_doctors = (
+        OPDVisit.objects.exclude(referral='')
+        .values_list('referral', flat=True)
+        .distinct()
+        .order_by('referral')
+    )
+
     records = [opd_to_dict(v) for v in visits]
-    return render(request, 'prescription/list.html', {'active_sidebar': 'prescription', 'records': records, 'q': q})
+    return render(request, 'prescription/list.html', {
+        'active_sidebar': 'prescription',
+        'records': records,
+        'q': q,
+        'referral_doctors': referral_doctors,
+        'selected_referral': referral,
+    })
 
 
 @require_module('prescription', level='full')
@@ -89,6 +107,9 @@ def print_view(request, pk):
 def dispense_medicine(request, line_id):
     line = get_object_or_404(PrescriptionMedicine, pk=line_id)
 
+    # Determine where to redirect back — the prescription detail page if possible
+    visit_id = getattr(line.prescription, 'opd_visit_id', None)
+
     if line.pharmacy_item_id:
         qty = int(line.quantity)
         with transaction.atomic():
@@ -100,7 +121,9 @@ def dispense_medicine(request, line_id):
                     request,
                     f'Insufficient stock for {line.medicine_name}. Available: {item_locked.stock}, Required: {qty}.',
                 )
-                return redirect('core:dashboard')
+                if visit_id:
+                    return redirect('prescription:detail', pk=visit_id)
+                return redirect('prescription:list')
 
             item_locked.stock = item_locked.stock - qty
             item_locked.save(update_fields=['stock'])
@@ -114,5 +137,7 @@ def dispense_medicine(request, line_id):
         messages.warning(request, 'Marked dispensed (no pharmacy item linked).')
 
     sync_pharmacy_stock_notifications()
-    return redirect('core:dashboard')
+    if visit_id:
+        return redirect('prescription:detail', pk=visit_id)
+    return redirect('prescription:list')
 

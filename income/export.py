@@ -56,5 +56,7 @@ def resolve_export(request, selected_date: str):
         return export_csv(request, selected_date)
     if export_type == 'pdf':
         return export_pdf(request, selected_date)
-    return None
+    # Fallback: redirect to daybook instead of returning None (which causes a 500)
+    from django.shortcuts import redirect
+    return redirect('income:daybook')
 

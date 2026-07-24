@@ -1,9 +1,39 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from simple_history.models import HistoricalRecords
+
+# ---------------------------------------------------------------------------
+# Shared payment-layer constants — single source of truth for all modules
+# ---------------------------------------------------------------------------
+
+PAYMENT_MODES_ALL = ['Cash', 'UPI', 'Card', 'Cheque', 'NEFT/RTGS']
+AMOUNT_MAX = Decimal('9999999.99')   # ₹99.99 lakh — hard ceiling per transaction
+
+
+def validate_payment_amount(amount, label='Amount'):
+    """Raise ValueError with a user-friendly message if amount is invalid.
+    Returns the cleaned Decimal.  Call this in every payment view.
+    """
+    try:
+        amt = Decimal(str(amount).replace(',', '').strip())
+    except (InvalidOperation, Exception):
+        raise ValueError(f'{label}: enter a valid number.')
+    if amt <= 0:
+        raise ValueError(f'{label} must be greater than zero.')
+    if amt > AMOUNT_MAX:
+        raise ValueError(f'{label} cannot exceed ₹{AMOUNT_MAX:,.2f} per transaction.')
+    return amt
+
+
+def validate_payment_mode(mode, allowed=None):
+    """Return the mode if it is in the allowed list, else raise ValueError."""
+    allowed = allowed or PAYMENT_MODES_ALL
+    if mode not in allowed:
+        raise ValueError(f'Invalid payment mode: {mode!r}.')
+    return mode
 
 
 class IncomeEntry(models.Model):
@@ -12,6 +42,9 @@ class IncomeEntry(models.Model):
         ('OPD', 'OPD'),
         ('IPD', 'IPD'),
         ('Pharmacy', 'Pharmacy'),
+        ('Ultrasound', 'Ultrasound'),
+        ('OT', 'OT'),
+        ('Extra', 'Extra / Miscellaneous'),
     ]
     PAYMENT_MODES = [('Cash', 'Cash'), ('UPI', 'UPI'), ('Card', 'Card'), ('Cheque', 'Cheque')]
 
@@ -177,13 +210,29 @@ class LedgerEntry(models.Model):
     def clean(self):
         # Enforce "one side per row": a row is a debit OR a credit, not both,
         # and not neither — otherwise reconciliation queries silently lie.
-        if self.debit_amount and self.credit_amount:
+        debit = self.debit_amount or Decimal('0.00')
+        credit = self.credit_amount or Decimal('0.00')
+
+        if debit > 0 and credit > 0:
             raise ValidationError(
                 'A ledger entry must be either a debit or a credit, not both. '
                 'Split a combined transaction into two rows instead.'
             )
-        if not self.debit_amount and not self.credit_amount:
+        if debit == 0 and credit == 0:
             raise ValidationError('A ledger entry must have a non-zero debit or credit amount.')
+
+        # Guard against absurdly large amounts that indicate data-entry errors
+        ceiling = Decimal('99999999.99')
+        if debit > ceiling or credit > ceiling:
+            raise ValidationError(
+                f'Amount exceeds maximum allowed value of ₹{ceiling:,.2f}.'
+            )
+
+    def save(self, *args, **kwargs):
+        # Enforce clean() even when called via objects.create() or programmatic
+        # helpers, not just via Django forms.
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         side = f"DR {self.debit_amount}" if self.debit_amount else f"CR {self.credit_amount}"
@@ -241,16 +290,23 @@ class LedgerEntry(models.Model):
 
     @classmethod
     def record_payment(cls, *, uhid, amount, payer_type, payment_mode='Cash',
-                        description='', patient=None, ipd_admission=None, **extra):
+                        description='', patient=None, ipd_admission=None,
+                        source_app='manual', source_id='', **extra):
         """Post a payment (credit) row — from the patient at the desk or
-        from the insurer via TPA settlement."""
+        from the insurer via TPA settlement.
+
+        source_app / source_id are accepted so the caller can stamp
+        traceability (e.g. source_app='ipd', source_id=str(payment.id)).
+        Defaults to 'manual' for backwards compatibility.
+        """
         tx_type = (cls.TxType.INSURANCE_PAYMENT if payer_type == cls.PayerType.INSURANCE
                    else cls.TxType.PATIENT_PAYMENT)
         return cls.objects.create(
             uhid=uhid, patient=patient, ipd_admission=ipd_admission,
             tx_type=tx_type, payer_type=payer_type,
             credit_amount=Decimal(amount), payment_mode=payment_mode,
-            description=description, source_app='manual', **extra,
+            description=description,
+            source_app=source_app, source_id=str(source_id), **extra,
         )
 
     @classmethod
@@ -274,40 +330,40 @@ class LedgerEntry(models.Model):
         entries = []
 
         if paid_amount:
-            entries.append(cls.objects.create(
+            entry = cls(
                 uhid=uhid, patient=patient, ipd_admission=ipd_admission,
                 tx_type=cls.TxType.INSURANCE_PAYMENT, payer_type=cls.PayerType.INSURANCE,
                 credit_amount=paid_amount, claim_no=claim_no,
                 claim_status=cls.ClaimStatus.PARTIALLY_SETTLED if rejected_amount else cls.ClaimStatus.SETTLED,
                 description=f'TPA settlement payment for claim {claim_no}',
                 remarks=remarks, source_app='manual',
-            ))
+            )
+            entry.save()
+            entries.append(entry)
 
         if rejected_amount:
             # First, close out the insurance side of the rejected slice...
-            entries.append(cls.objects.create(
+            disc_entry = cls(
                 uhid=uhid, patient=patient, ipd_admission=ipd_admission,
                 tx_type=cls.TxType.INSURANCE_DISCOUNT, payer_type=cls.PayerType.INSURANCE,
                 credit_amount=rejected_amount, claim_no=claim_no,
                 claim_status=cls.ClaimStatus.PARTIALLY_SETTLED,
                 description=f'Rejected portion of claim {claim_no} removed from insurance balance',
                 remarks=remarks, source_app='manual',
-            ))
+            )
+            disc_entry.save()
+            entries.append(disc_entry)
             # ...then decide where that liability goes.
             if rejection_action == 'SHIFT_TO_PATIENT':
-                entries.append(cls.objects.create(
+                shift_entry = cls(
                     uhid=uhid, patient=patient, ipd_admission=ipd_admission,
                     tx_type=cls.TxType.PATIENT_LIABILITY_SHIFT, payer_type=cls.PayerType.PATIENT,
                     debit_amount=rejected_amount, claim_no=claim_no,
                     description=f'Rejected by insurer on claim {claim_no} — now payable by patient',
                     remarks=remarks, source_app='manual',
-                ))
-            else:  # WRITE_OFF
-                # No extra row needed: the INSURANCE_DISCOUNT credit above
-                # already brings the insurance balance for this claim to
-                # zero, and since rejection_action is WRITE_OFF we
-                # deliberately do NOT create a new PATIENT debit — the
-                # hospital absorbs the shortfall.
-                pass
+                )
+                shift_entry.save()
+                entries.append(shift_entry)
+            # WRITE_OFF: no extra row needed (hospital absorbs the shortfall)
 
         return entries

@@ -11,8 +11,14 @@ except ImportError:
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ─── Security ────────────────────────────────────────────────────────────────
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'ShantiVeer-hms-dev-key-change-in-production')
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '')
+if not SECRET_KEY:
+    raise RuntimeError(
+        'DJANGO_SECRET_KEY environment variable is not set. '
+        'Generate one with: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"'
+    )
+
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
 
 ALLOW_DEMO_SETUP = os.environ.get('ALLOW_DEMO_SETUP', 'false').lower() == 'true'
 
@@ -22,46 +28,40 @@ ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
 if DEBUG:
     ALLOWED_HOSTS = list(dict.fromkeys(ALLOWED_HOSTS + ['127.0.0.1', 'localhost']))
 
-# Allow all Vercel subdomains
-ALLOWED_HOSTS += ['.vercel.app']
-
-# CSRF: trust Vercel HTTPS origins
 CSRF_TRUSTED_ORIGINS = [
     h for h in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if h.strip()
 ]
 if not CSRF_TRUSTED_ORIGINS:
-    CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
+    CSRF_TRUSTED_ORIGINS = ['https://shantiveerhospital.in', 'https://www.shantiveerhospital.in']
 
-# Security headers (production only)
+# Security headers (always set sensible defaults; tighten in production)
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
 if not DEBUG:
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+    # Default True in production — set to False when behind Nginx/reverse proxy
+    # that terminates SSL itself, to avoid redirect loops.
     SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False').lower() == 'true'
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 else:
     X_FRAME_OPTIONS = 'SAMEORIGIN'
+    SECURE_SSL_REDIRECT = False
 
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_AGE = 28800  # 8 hours
-
-# SameSite=Lax blocks the cookie from being sent on cross-site requests
-# (CSRF via third-party forms, malicious iframes, etc.) while still
-# allowing normal top-level navigation within the hospital's own domain.
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
-
-# Defense-in-depth: keep idle sessions fresh and bounded.
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
-# ─── WhiteNoise — always enabled (it's in requirements.txt) ──────────────────
+# ─── WhiteNoise ───────────────────────────────────────────────────────────────
 _WHITENOISE = True
 
 # ─── Apps ────────────────────────────────────────────────────────────────────
@@ -128,78 +128,56 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ShantiVeer_hms.wsgi.application'
 
-# ─── Database — PostgreSQL only (via DATABASE_URL) ───────────────────────────
-# SQLite has been removed. DATABASE_URL must always be set.
-# For local dev: copy the Neon connection string into your .env file.
-# Example: DATABASE_URL=postgresql://user:pass@host/dbname?sslmode=require
+# ─── Database ─────────────────────────────────────────────────────────────────
+# Primary path: DATABASE_URL (PostgreSQL via Neon, or any postgres URL).
+# Fallback path: MySQL env vars (for self-hosted / local MySQL).
+# Dev fallback: SQLite when neither is reachable (USE_SQLITE_FOR_DEV=true).
 
-# _database_url = os.environ.get('DATABASE_URL', '')
+_database_url = os.environ.get('DATABASE_URL', '')
 
-# if not _database_url:
-#     raise RuntimeError(
-#         'DATABASE_URL environment variable is not set.\n'
-#         'Set it in your .env file (local dev) or in Vercel environment variables.\n'
-#         'Get a free PostgreSQL database at https://neon.tech'
-#     )
-
-# try:
-#     import dj_database_url
-# except ImportError:
-#     raise ImportError(
-#         'dj-database-url is not installed. Run: pip install dj-database-url psycopg2-binary'
-#     )
-
-# Dev-friendly fallback:
-# - Default tries MySQL as configured in this project.
-# - If MySQL isn't reachable (connection refused / server down / auth issues)
-#   and USE_SQLITE_FOR_DEV is enabled (default: true for local development),
-#   we fall back to SQLite so manage.py commands can run.
-_USE_SQLITE_FOR_DEV = os.environ.get('USE_SQLITE_FOR_DEV', 'true').lower() == 'true'
-
-
-MYSQL_DATABASE = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('MYSQL_NAME', 'shantiveer_hms'),
-        'USER': os.environ.get('MYSQL_USER', 'root'),
-        'PASSWORD': os.environ.get('MYSQL_PASSWORD', ''),
-        'HOST': os.environ.get('MYSQL_HOST', '127.0.0.1'),
-        'PORT': os.environ.get('MYSQL_PORT', '3306'),
-    }
-}
-
-if _USE_SQLITE_FOR_DEV:
+if _database_url:
     try:
-        import socket
-        from django.db import connections
-
-        host = MYSQL_DATABASE['default']['HOST']
-        port = int(MYSQL_DATABASE['default']['PORT'])
-        sock = socket.create_connection((host, port), timeout=1)
-        sock.close()
-
-        # Confirm credentials too by attempting a real connection.
-        DATABASES = MYSQL_DATABASE
-        connections.databases = DATABASES  # ensure Django uses these settings
-        with connections['default'].cursor():
-            pass
-
-    except Exception:
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': str(BASE_DIR / 'db.sqlite3'),
-            }
-        }
-
+        import dj_database_url
+    except ImportError:
+        raise ImportError(
+            'dj-database-url is not installed. Run: pip install dj-database-url psycopg2-binary'
+        )
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=_database_url,
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=not DEBUG,
+        )
+    }
 else:
-    DATABASES = MYSQL_DATABASE
+    # MySQL path — used for local dev and self-hosted production
+    _mysql_options = {
+        'charset': 'utf8mb4',
+    }
 
+    # Only enforce SSL in production (not local dev).
+    # mysqlclient uses an 'ssl' dict — empty dict enables SSL without cert pinning.
+    # Pass MYSQL_CA_CERT env var to specify a CA certificate path for strict verification.
+    if not DEBUG:
+        _mysql_ca = os.environ.get('MYSQL_CA_CERT', '')
+        _mysql_options['ssl'] = {'ca': _mysql_ca} if _mysql_ca else {}
 
+    _MYSQL_DATABASE = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.environ.get('MYSQL_NAME', 'defaultdb'),
+            'USER': os.environ.get('MYSQL_USER', 'avnadmin'),
+            'PASSWORD': os.environ.get('MYSQL_PASSWORD', ''),
+            'HOST': os.environ.get('MYSQL_HOST', '127.0.0.1'),
+            'PORT': os.environ.get('MYSQL_PORT', '3306'),
+            'OPTIONS': _mysql_options,
+        }
+    }
+
+    DATABASES = _MYSQL_DATABASE
 
 # ─── Cache ───────────────────────────────────────────────────────────────────
-# Set REDIS_URL (Upstash free tier) for brute-force login protection
-# to persist correctly across Vercel serverless invocations.
 _redis_url = os.environ.get('REDIS_URL', '')
 
 if _redis_url:
@@ -253,9 +231,12 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'statics']
 STATIC_ROOT = BASE_DIR / 'staticfiles_collected'
 
-# WhiteNoise serves compressed, hashed static files
-# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+# WhiteNoise serves compressed, hashed static files in production.
+# In DEBUG mode use the default storage so runserver serves files normally.
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+else:
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -282,11 +263,8 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_THROTTLE_RATES': {
         'user': '200/hour',
-        # Dashboard/aggregation endpoints run several Sum() queries across
-        # large tables — throttle them tighter than general API traffic so
-        # a runaway auto-refresh loop (or a malicious client) can't be used
-        # to hammer the database.
         'dashboard': '120/min',
+        'alerts': '30/min',   # polling endpoint — 1 call per 2s max per user
     },
 }
 
@@ -294,6 +272,7 @@ REST_FRAMEWORK = {
 HOSPITAL_NAME = os.environ.get('HOSPITAL_NAME', 'ShantiVeer Hospital')
 HOSPITAL_ADDRESS = os.environ.get('HOSPITAL_ADDRESS', 'Charthwal Main Road, Thana Bhawan')
 HOSPITAL_PHONE = os.environ.get('HOSPITAL_PHONE', '9876543210')
+HOSPITAL_UPI_ID = os.environ.get('HOSPITAL_UPI_ID', '')
 
 # ─── Email ────────────────────────────────────────────────────────────────────
 _default_email_backend = (
@@ -320,8 +299,6 @@ if not DEBUG and not EMAIL_HOST_USER:
     )
 
 # ─── Logging ─────────────────────────────────────────────────────────────────
-_is_vercel = bool(os.environ.get('VERCEL', ''))
-
 _log_handlers = ['console']
 _handler_config: dict = {
     'console': {
@@ -330,17 +307,16 @@ _handler_config: dict = {
     },
 }
 
-if not _is_vercel:
-    logs_dir = BASE_DIR / 'logs'
-    logs_dir.mkdir(exist_ok=True)
-    _log_handlers.append('file')
-    _handler_config['file'] = {
-        'class': 'logging.handlers.RotatingFileHandler',
-        'filename': str(logs_dir / 'hms.log'),
-        'maxBytes': 5 * 1024 * 1024,
-        'backupCount': 5,
-        'formatter': 'verbose',
-    }
+logs_dir = BASE_DIR / 'logs'
+logs_dir.mkdir(exist_ok=True)
+_log_handlers.append('file')
+_handler_config['file'] = {
+    'class': 'logging.handlers.RotatingFileHandler',
+    'filename': str(logs_dir / 'hms.log'),
+    'maxBytes': 5 * 1024 * 1024,
+    'backupCount': 5,
+    'formatter': 'verbose',
+}
 
 LOGGING = {
     'version': 1,

@@ -7,21 +7,45 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from uhid.models import Patient
 
-from income.models import LedgerEntry, IncomeEntry
+from income.models import LedgerEntry, IncomeEntry, validate_payment_amount, validate_payment_mode
 
 from .models import (
     LabTestMaster,
     LabInvestigation,
     LabInvestigationItem,
+    LabTestResult,
 )
 from core.rbac import require_module
 
 
 from django.http import JsonResponse
 
+
+def _lab_due(inv):
+    """Compute outstanding due for a specific lab investigation.
+    Lab bills are collected in full at billing time so this is normally 0.00.
+    Returns a formatted string.
+    """
+    try:
+        from django.db.models import Sum as _Sum
+        qs = LedgerEntry.objects.filter(
+            source_app='lab',
+            source_id=inv.bill_no,
+        )
+        agg = qs.aggregate(
+            total_debit=_Sum('debit_amount'),
+            total_credit=_Sum('credit_amount'),
+        )
+        debit = agg['total_debit'] or Decimal('0')
+        credit = agg['total_credit'] or Decimal('0')
+        balance = debit - credit
+        return f'{balance:.2f}'
+    except Exception:
+        return '--'
 
 
 
@@ -53,6 +77,21 @@ def investigation(request):
             })
 
         with transaction.atomic():
+            # Validate and sanitise payment fields before creating any records
+            raw_discount = request.POST.get('discount') or '0'
+            try:
+                discount_val = Decimal(raw_discount)
+                if discount_val < 0:
+                    discount_val = Decimal('0')
+            except Exception:
+                discount_val = Decimal('0')
+
+            raw_mode = request.POST.get('payment_mode', 'Cash')
+            try:
+                payment_mode_val = validate_payment_mode(raw_mode, allowed=['Cash', 'UPI', 'Card'])
+            except ValueError:
+                payment_mode_val = 'Cash'
+
             inv = LabInvestigation.objects.create(
                 patient=patient,
                 patient_name=patient_name,
@@ -61,8 +100,8 @@ def investigation(request):
                 consultant=request.POST.get('consultant', '-- Self --'),
                 referred_by=request.POST.get('referred', 'SELF'),
                 remarks=request.POST.get('remarks', ''),
-                discount=Decimal(request.POST.get('discount') or 0),
-                payment_mode=request.POST.get('payment_mode', 'Cash'),
+                discount=discount_val,
+                payment_mode=payment_mode_val,
                 test_date=request.POST.get('date') or timezone.localdate(),
             )
 
@@ -80,8 +119,10 @@ def investigation(request):
                 except (TypeError, ValueError):
                     qty = 1
             
-                # duplicate test ko ignore karo
-                if str(test_id) not in qty_by_test_id:
+                # Sum quantities for duplicate tests (e.g., if CBC appears twice with qty 1 and 2, sum to 3)
+                if str(test_id) in qty_by_test_id:
+                    qty_by_test_id[str(test_id)] += qty
+                else:
                     qty_by_test_id[str(test_id)] = qty
 
             total = Decimal(0)
@@ -132,6 +173,8 @@ def investigation(request):
                     payer_type=LedgerEntry.PayerType.PATIENT,
                     payment_mode=inv.payment_mode,
                     description=f'Lab bill {inv.bill_no} payment collected at billing',
+                    source_app='lab',
+                    source_id=inv.bill_no,
                     patient=patient,
                 )
 
@@ -156,35 +199,47 @@ def view_all(request):
 
 @require_module('lab', level='view')
 def view_report(request, pk):
-    inv = get_object_or_404(LabInvestigation.objects.prefetch_related('items__test'), pk=pk)
+    inv = get_object_or_404(LabInvestigation.objects.prefetch_related('items__test', 'items__results'), pk=pk)
+    test_results = []
+    for item in inv.items.all():
+        result_obj = item.results.first()
+        test_results.append({
+            'item_id': item.id,
+            'name': item.test.name,
+            'qty': item.quantity,
+            'rate': item.rate,
+            'amount': item.amount,
+            'result': result_obj.result_value if result_obj else '',
+            'unit': result_obj.unit if result_obj else '',
+            'ref': result_obj.reference_range if result_obj else '',
+            'has_result': result_obj is not None,
+        })
     report = {
+        'id': inv.id,
         'bill_no': inv.bill_no,
         'patient': inv.patient_name,
+        'mobile': inv.mobile,
+        'address': inv.address,
+        'consultant': inv.consultant,
+        'referred_by': inv.referred_by,
+        'remarks': inv.remarks,
         'date': str(inv.test_date),
-        'test_results': [
-            {
-                'name': i.test.name,
-                'result': 'Normal',
-                'unit': '-',
-                'ref': 'Within range',
-            }
-            for i in inv.items.all()
-        ],
+        'total': inv.total,
+        'discount': inv.discount,
+        'payment_mode': inv.payment_mode,
+        'test_results': test_results,
     }
-    return render(request, 'lab/view_report.html', {'active_sidebar': 'lab', 'report': report})
+    return render(request, 'lab/view_report.html', {'active_sidebar': 'lab', 'report': report, 'inv': inv})
 
 
-@require_module('lab', level='view')
-def view_report_print(request, pk):
-    # Print-friendly endpoint (same content/template).
-    # A dedicated endpoint keeps URLs stable and matches UI “ViewPrint”.
-    return view_report(request, pk)
+
 
 
 @require_module('lab', level='view')
 def patient_list(request):
 
     q = (request.GET.get('q') or '').strip()
+    referral = (request.GET.get('referral') or '').strip()
 
     qs = LabInvestigation.objects.select_related('patient').prefetch_related('items__test').order_by('-created_at')
     if q:
@@ -193,13 +248,24 @@ def patient_list(request):
             Q(patient_name__icontains=q) |
             Q(patient__uhid__icontains=q)
         )
+    if referral:
+        qs = qs.filter(referred_by__icontains=referral)
+
+    # Distinct referral doctors for filter dropdown
+    referral_doctors = (
+        LabInvestigation.objects.exclude(referred_by='')
+        .exclude(referred_by='SELF')
+        .values_list('referred_by', flat=True)
+        .distinct()
+        .order_by('referred_by')
+    )
 
     # Build rows for template
     rows = []
     for inv in qs[:100]:
         patient = getattr(inv, 'patient', None)
         rows.append({
-
+            'id': inv.id,
             'name': inv.patient_name,
             'date': str(inv.test_date),
             'time': inv.created_at.strftime('%H:%M') if inv.created_at else '',
@@ -214,11 +280,9 @@ def patient_list(request):
             'amount': inv.total if inv.total is not None else '--',
 
             # Due balance for LAB (PATIENT liability).
-            # This column should show patient due (ledger debit - credit for PATIENT).
-            'due': (
-                (LedgerEntry.patient_due(patient.uhid) if (patient and getattr(patient, 'uhid', None)) else None)
-                or '--'
-            ),
+            # OPD/Lab bills are collected in full at billing time, so due is
+            # normally 0. We show ledger balance per bill as a sanity check.
+            'due': _lab_due(inv),
 
 
 
@@ -235,6 +299,8 @@ def patient_list(request):
         'active_sidebar': 'lab',
         'reports': rows,
         'q': q,
+        'referral_doctors': referral_doctors,
+        'selected_referral': referral,
     })
 
 
@@ -370,3 +436,144 @@ def patient_lookup(request):
         'guardian': guardian or '',
     })
 
+
+
+@require_module('lab', level='view')
+def view_report_print(request, pk):
+    """Print-friendly report — reuses view_report logic."""
+    return view_report(request, pk)
+
+
+@require_module('lab', level='full')
+def investigation_edit(request, pk):
+    """Edit lab investigation details (patient name, discount, payment mode, tests)."""
+    inv = get_object_or_404(LabInvestigation.objects.prefetch_related('items__test'), pk=pk)
+    
+    if request.method == 'POST':
+        with transaction.atomic():
+            # Update investigation header
+            inv.patient_name = (request.POST.get('patient_name') or '').strip()
+            inv.mobile = request.POST.get('mobile', '')
+            inv.address = request.POST.get('address', '')
+            inv.consultant = request.POST.get('consultant', '-- Self --')
+            inv.referred_by = request.POST.get('referred', 'SELF')
+            inv.remarks = request.POST.get('remarks', '')
+            inv.discount = Decimal(request.POST.get('discount') or 0)
+            inv.payment_mode = request.POST.get('payment_mode', 'Cash')
+            inv.test_date = request.POST.get('date') or inv.test_date
+            
+            # Update tests if changed
+            posted_test_ids = request.POST.getlist('tests')
+            if posted_test_ids:
+                # Clear existing items and rebuild
+                inv.items.all().delete()
+                
+                qty_by_test_id = {}
+                for test_id in posted_test_ids:
+                    try:
+                        qty = int(request.POST.get(f'qty_{test_id}', 1))
+                    except (TypeError, ValueError):
+                        qty = 1
+                    
+                    if str(test_id) in qty_by_test_id:
+                        qty_by_test_id[str(test_id)] += qty
+                    else:
+                        qty_by_test_id[str(test_id)] = qty
+                
+                total = Decimal(0)
+                for test_id, qty in qty_by_test_id.items():
+                    test = LabTestMaster.objects.filter(pk=test_id).first()
+                    if not test:
+                        continue
+                    
+                    item = LabInvestigationItem.objects.create(
+                        investigation=inv,
+                        test=test,
+                        rate=test.rate,
+                        quantity=qty,
+                    )
+                    total += item.amount
+                
+                inv.total = total - inv.discount
+            
+            inv.save()
+        
+        messages.success(request, f'Lab bill {inv.bill_no} updated.')
+        return redirect('lab:view_all')
+    
+    # Render edit form
+    return render(request, 'lab/investigation_edit.html', {
+        'active_sidebar': 'lab',
+        'inv': inv,
+        'tests': LabTestMaster.objects.filter(is_active=True),
+        'today': timezone.localdate().isoformat(),
+    })
+
+
+@require_module('lab', level='full')
+@require_POST
+def investigation_delete(request, pk):
+    """Delete a lab investigation and reverse ledger entries."""
+    inv = get_object_or_404(LabInvestigation, pk=pk)
+    
+    with transaction.atomic():
+        # Reverse income entry
+        IncomeEntry.objects.filter(
+            description__icontains=f'Lab Bill {inv.bill_no}'
+        ).delete()
+        
+        # Reverse ledger entries if linked to patient
+        if inv.patient:
+            LedgerEntry.objects.filter(
+                source_app='lab',
+                source_id=inv.bill_no
+            ).delete()
+        
+        inv.delete()
+    
+    messages.success(request, f'Lab bill {inv.bill_no} deleted.')
+    return redirect('lab:view_all')
+
+
+@require_module('lab', level='full')
+def investigation_results(request, pk):
+    """Enter or edit test results for a lab investigation."""
+    inv = get_object_or_404(LabInvestigation.objects.prefetch_related('items__test', 'items__results'), pk=pk)
+    
+    if request.method == 'POST':
+        with transaction.atomic():
+            for item in inv.items.all():
+                result_value = request.POST.get(f'result_{item.id}', '').strip()
+                unit = request.POST.get(f'unit_{item.id}', '').strip()
+                reference_range = request.POST.get(f'ref_{item.id}', '').strip()
+                
+                # Update or create result
+                result_obj, created = LabTestResult.objects.update_or_create(
+                    investigation_item=item,
+                    defaults={
+                        'result_value': result_value,
+                        'unit': unit,
+                        'reference_range': reference_range,
+                    }
+                )
+        
+        messages.success(request, f'Test results saved for {inv.bill_no}.')
+        return redirect('lab:view_report', pk=inv.pk)
+    
+    # Prepare test items with existing results
+    test_items = []
+    for item in inv.items.all():
+        result_obj = item.results.first()
+        test_items.append({
+            'item': item,
+            'test_name': item.test.name,
+            'result_value': result_obj.result_value if result_obj else '',
+            'unit': result_obj.unit if result_obj else '',
+            'reference_range': result_obj.reference_range if result_obj else '',
+        })
+    
+    return render(request, 'lab/investigation_results.html', {
+        'active_sidebar': 'lab',
+        'inv': inv,
+        'test_items': test_items,
+    })

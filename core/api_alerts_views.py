@@ -1,4 +1,6 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.response import Response
 from django.db.models import Q
 from django.utils import timezone
@@ -20,17 +22,10 @@ def _parse_datetime(value):
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@throttle_classes([ScopedRateThrottle])
 def alerts_signal(request):
-    """Lightweight polling endpoint used by dashboard to trigger alerts.
-
-    Returns:
-      {
-        "notifications": [{pk,title,message,kind,created_at}, ...],
-        "icu": {seen_at, title, patient_name} | null
-      }
-
-    Client side keeps track of last pk/seen_at to determine "new".
-    """
+    """Lightweight polling endpoint used by dashboard to trigger alerts."""
 
     user = request.user if request.user and request.user.is_authenticated else None
 
@@ -113,6 +108,9 @@ def alerts_signal(request):
         'icu': icu,
         'server_time': now.isoformat(),
     })
+
+
+alerts_signal.throttle_scope = 'alerts'
 
 
 

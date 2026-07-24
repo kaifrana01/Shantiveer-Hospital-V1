@@ -7,9 +7,18 @@
     <div class="small text-muted text-center mb-2">Total records: {{ records|length }}</div>
     <div class="green-banner">OPD</div>
 
-    <form method="get" class="d-flex gap-2 mb-3">
-        <input type="text" name="q" class="form-control form-control-lg" placeholder="Search Name / UHID / Phone / OPD No" value="{{ q }}">
+    <form method="get" class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+        <input type="text" name="q" class="form-control form-control-lg" style="max-width:320px" placeholder="Search Name / UHID / Phone / OPD No" value="{{ q }}">
+        <select name="referral" class="form-select" style="max-width:200px">
+            <option value="">— All Referral Doctors —</option>
+            {% for doc in referral_doctors %}
+            <option value="{{ doc }}" {% if doc == selected_referral %}selected{% endif %}>{{ doc }}</option>
+            {% endfor %}
+        </select>
         <button class="btn btn-success btn-lg px-4"><i class="bi bi-search"></i> Search</button>
+        {% if q or selected_referral %}
+        <a href="{% url 'prescription:list' %}" class="btn btn-outline-secondary btn-lg">Clear</a>
+        {% endif %}
     </form>
 
     <div class="form-card p-0 overflow-hidden">

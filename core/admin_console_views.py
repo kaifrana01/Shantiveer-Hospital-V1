@@ -1,12 +1,15 @@
 from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.exceptions import PermissionDenied
+from core.rbac import require_module
 
 
-@login_required
+@require_module('django_admin', level='full')
 def admin_console(request):
-    # Render a SPA-like admin console UI (users/tests/logs). The UI uses the
-    # existing JSON endpoints exposed by core.admin_api.
+    """SPA-like admin console UI (users/tests/logs).
+    Restricted to Admin role only — same gate as the Django admin itself.
+    The underlying JSON endpoints (core.admin_api) additionally require is_staff.
+    """
     return render(request, 'core/admin_console.html', {
         'active_sidebar': 'dashboard',
     })
-

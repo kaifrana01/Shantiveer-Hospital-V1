@@ -25,9 +25,6 @@ def dashboard_stats(request):
 
     range_filter = request.GET.get('range', 'month')
     if range_filter not in services.VALID_RANGES:
-        # Don't let an arbitrary client-supplied string flow into ORM
-        # date math or cache keys — fall back to a safe default instead
-        # of erroring or silently misbehaving.
         range_filter = 'month'
     today = timezone.localdate()
 
@@ -36,9 +33,9 @@ def dashboard_stats(request):
         from expenses.models import Expense
         from core.services import get_dashboard_expenses_timeseries
 
-        labels, values = get_dashboard_expenses_timeseries(expense_type=None, range_filter=range_filter)
+        expense_labels, expense_values = get_dashboard_expenses_timeseries(expense_type=None, range_filter=range_filter)
     except Exception:
-        labels, values = (['0'], [0])
+        expense_labels, expense_values = (['0'], [0])
 
 
     # Build date filter for patient chart
@@ -146,8 +143,8 @@ def dashboard_stats(request):
     return Response({
         'range': range_filter,
         'expenses_timeseries': {
-            'labels': labels,
-            'values': values,
+            'labels': expense_labels,
+            'values': expense_values,
         },
         'patient_chart': {
             'labels': labels,
@@ -239,6 +236,7 @@ def uhid_lookup(request, uhid):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def ai_triage(request):
     from core.ai_services import triage_score
 
@@ -266,6 +264,7 @@ def ai_triage(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def ai_prescription_summary(request):
     from core.ai_services import summarize_prescription
     text = request.GET.get('text', '')
@@ -274,6 +273,7 @@ def ai_prescription_summary(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def ai_inventory_reorder(request):
     from core.ai_services import recommend_inventory_reorder
 
@@ -303,6 +303,7 @@ def ai_inventory_reorder(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def ai_lab_recommend(request):
     from core.ai_services import recommend_lab_tests
     diagnosis = request.GET.get('diagnosis', '')

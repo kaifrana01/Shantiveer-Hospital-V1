@@ -33,32 +33,28 @@ FULL, VIEW, NONE = 'full', 'view', 'none'
 # Module key -> {role: level}. Any role missing from a module's dict
 # defaults to NONE.
 MODULE_ACCESS = {
-'dashboard':         {ADMIN: FULL, DOCTOR: FULL, RECEPTIONIST: FULL, NURSE: FULL, LAB_TECH: FULL, PHARMACIST: FULL, BILLING: FULL, ACCOUNTANT: VIEW},
+    'dashboard':         {ADMIN: FULL, DOCTOR: FULL, RECEPTIONIST: FULL, NURSE: FULL, LAB_TECH: FULL, PHARMACIST: FULL, BILLING: FULL, ACCOUNTANT: VIEW},
     'uhid':              {ADMIN: FULL, DOCTOR: VIEW, RECEPTIONIST: FULL, NURSE: VIEW,
-                           LAB_TECH: VIEW, PHARMACIST: VIEW, BILLING: VIEW},
+                          LAB_TECH: VIEW, PHARMACIST: VIEW, BILLING: VIEW},
     # NOTE: the OPD app exposes a single combined queue+registration view,
     # so 'opd_registration' gates that screen for everyone who may see the
     # OPD queue at all; request.is_view_only hides the registration form
     # for roles that may only browse it (Doctor, Nurse).
     'opd_registration':  {ADMIN: FULL, DOCTOR: VIEW, RECEPTIONIST: FULL, NURSE: VIEW},
-'opd_list':          {ADMIN: FULL, DOCTOR: FULL, RECEPTIONIST: FULL, NURSE: VIEW, ACCOUNTANT: FULL},
-'ipd_admission':     {ADMIN: FULL, DOCTOR: FULL, RECEPTIONIST: FULL, NURSE: FULL, ACCOUNTANT: FULL},
+    'opd_list':          {ADMIN: FULL, DOCTOR: FULL, RECEPTIONIST: FULL, NURSE: VIEW, ACCOUNTANT: VIEW},
+    'ipd_admission':     {ADMIN: FULL, DOCTOR: FULL, RECEPTIONIST: FULL, NURSE: FULL},
     'ipd_list':          {ADMIN: FULL, DOCTOR: FULL, RECEPTIONIST: VIEW, NURSE: FULL, ACCOUNTANT: VIEW},
     'billing_collect':   {ADMIN: FULL, BILLING: FULL},
-'patient_bill':      {ADMIN: FULL, DOCTOR: VIEW, BILLING: FULL, ACCOUNTANT: FULL},
+    'patient_bill':      {ADMIN: FULL, DOCTOR: VIEW, BILLING: FULL, ACCOUNTANT: VIEW},
     'discharge':         {ADMIN: FULL, DOCTOR: FULL, NURSE: VIEW},
-    'lab':                {ADMIN: FULL, DOCTOR: FULL, NURSE: VIEW, LAB_TECH: FULL},
-    'ultrasound':        {ADMIN: FULL, DOCTOR: FULL, NURSE: VIEW, LAB_TECH: FULL},
+    'lab':               {ADMIN: FULL, DOCTOR: FULL, NURSE: VIEW, LAB_TECH: FULL, ACCOUNTANT: VIEW},
+    'ultrasound':        {ADMIN: FULL, DOCTOR: FULL, NURSE: VIEW, LAB_TECH: FULL, ACCOUNTANT: VIEW},
     'pharmacy':          {ADMIN: FULL, NURSE: VIEW, PHARMACIST: FULL},
-    'prescription':      {ADMIN: FULL, DOCTOR: FULL, NURSE: VIEW, PHARMACIST: VIEW},
+    'prescription':      {ADMIN: FULL, DOCTOR: FULL, NURSE: VIEW, PHARMACIST: VIEW, ACCOUNTANT: VIEW},
     'beds':              {ADMIN: FULL, DOCTOR: VIEW, RECEPTIONIST: VIEW, NURSE: FULL},
     'masterdata':        {ADMIN: FULL},
-'income':            {ADMIN: FULL, BILLING: FULL, ACCOUNTANT: FULL},
-'expenses':          {ADMIN: FULL, BILLING: FULL, ACCOUNTANT: FULL},
-
-    # Accountant finance screens (Ledger/Reports/Receipts/etc.)
-
-
+    'income':            {ADMIN: FULL, BILLING: FULL, ACCOUNTANT: FULL},
+    'expenses':          {ADMIN: FULL, BILLING: FULL, ACCOUNTANT: FULL},
     'backup':            {ADMIN: FULL},
     'history':           {ADMIN: FULL},
     'django_admin':      {ADMIN: FULL},
@@ -67,13 +63,13 @@ MODULE_ACCESS = {
 ROLE_LABELS = {
     ADMIN: 'Administrator', DOCTOR: 'Doctor', RECEPTIONIST: 'Receptionist',
     NURSE: 'Nurse', LAB_TECH: 'Lab Technician', PHARMACIST: 'Pharmacist',
-    BILLING: 'Billing Clerk',
+    BILLING: 'Billing Clerk', ACCOUNTANT: 'Accountant',
 }
 
 ROLE_ICONS = {
     ADMIN: 'bi-shield-check', DOCTOR: 'bi-person-badge', RECEPTIONIST: 'bi-headset',
     NURSE: 'bi-heart-pulse', LAB_TECH: 'bi-droplet', PHARMACIST: 'bi-capsule',
-    BILLING: 'bi-cash-coin',
+    BILLING: 'bi-cash-coin', ACCOUNTANT: 'bi-calculator',
 }
 
 

@@ -1,0 +1,74 @@
+{% extends 'base_cyan.html' %}
+{% block title %}Add Income Entry{% endblock %}
+{% block page_title %}Add Income Entry{% endblock %}
+{% block content %}
+<div class="page-container">
+  <div class="form-card" style="max-width:560px;margin:auto">
+    <h5 class="mb-3" style="color:#1A56A0;font-weight:700">
+      <i class="bi bi-plus-circle me-2"></i>Manual Income Entry
+    </h5>
+
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show py-2">
+          {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="row g-3">
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
+          <input type="date" name="date" class="form-control" value="{{ today }}" required>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+          <select name="category" class="form-select" required>
+            {% for val, label in categories %}
+              <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label fw-semibold">Patient / Party Name <span class="text-danger">*</span></label>
+          <input type="text" name="patient_name" class="form-control" placeholder="Patient name or party" required>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
+          <textarea name="description" class="form-control" rows="2" placeholder="Brief description of this income" required></textarea>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Payment Mode</label>
+          <select name="payment_mode" class="form-select">
+            {% for val, label in payment_modes %}
+              <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Amount (₹) <span class="text-danger">*</span></label>
+          <input type="number" name="amount" class="form-control" step="0.01" min="0.01" placeholder="0.00" required>
+        </div>
+
+        <div class="col-12 d-flex gap-2 mt-2">
+          <button type="submit" class="btn btn-primary px-4">
+            <i class="bi bi-save me-1"></i>Save Entry
+          </button>
+          <a href="{% url 'income:daybook' %}" class="btn btn-outline-secondary px-4">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+          </a>
+        </div>
+
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

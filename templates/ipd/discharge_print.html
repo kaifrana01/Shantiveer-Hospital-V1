@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Discharge Summary - {{ discharge.admission.ipd_no }}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; background: #dde3ed; padding: 2rem 0; }
+
+  .page {
+    max-width: 760px; margin: 0 auto; background: #fff;
+    border-radius: 12px; overflow: hidden;
+    box-shadow: 0 4px 24px rgba(26,86,160,.13);
+  }
+
+  .top-band {
+    background: linear-gradient(135deg, #1A56A0 0%, #0e3a74 100%);
+    padding: 0 28px;
+    display: flex; align-items: center; gap: 18px;
+    min-height: 90px;
+  }
+  .logo-circle {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 3px solid rgba(255,255,255,.35);
+    box-shadow: 0 2px 10px rgba(0,0,0,.25);
+    font-size: 28px; font-weight: 700; color: #1A56A0;
+  }
+  .hospital-text { flex: 1; color: #fff; }
+  .hospital-name { font-size: 22px; font-weight: 700; letter-spacing: .4px; line-height: 1.15; }
+  .hospital-sub  { font-size: 11.5px; opacity: .85; margin-top: 2px; }
+  .hospital-meta { font-size: 10.5px; opacity: .72; margin-top: 3px; }
+  .hospital-contact {
+    text-align: right; color: rgba(255,255,255,.8);
+    font-size: 10.5px; line-height: 1.6; flex-shrink: 0;
+  }
+
+  .accent-stripe {
+    height: 4px;
+    background: linear-gradient(90deg, #E6A817 0%, #f5c842 50%, #E6A817 100%);
+  }
+
+  .doc-title {
+    text-align: center;
+    padding: 12px;
+    background: #f0f4fa;
+    border-bottom: 1px solid #dde3f0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1A56A0;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .body { padding: 18px 28px 22px; }
+
+  .section-bar {
+    display: flex; align-items: center; gap: 8px;
+    background: #1A56A0; color: #fff;
+    font-size: 11.5px; font-weight: 600;
+    padding: 4px 12px; border-radius: 5px;
+    margin: 14px 0 9px; letter-spacing: .35px;
+    text-transform: uppercase;
+  }
+  .section-bar::before {
+    content: "";
+    width: 3px; height: 14px;
+    background: #E6A817;
+    border-radius: 2px;
+    display: inline-block;
+  }
+
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px 18px; }
+  .info-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 18px; }
+  .info-item { display: flex; flex-direction: column; }
+  .info-label { font-size: 9.5px; color: #8492a6; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
+  .info-value {
+    font-size: 13px; color: #1f2937; font-weight: 500;
+    border-bottom: 1px solid #e8ecf0; padding-bottom: 3px;
+    min-height: 22px;
+  }
+
+  .text-box {
+    border: 1px solid #e8ecf0; border-radius: 7px;
+    padding: 9px 13px; font-size: 13px; color: #1f2937;
+    min-height: 44px; white-space: pre-wrap;
+    background: #f9fbff;
+  }
+
+  .diag-box {
+    background: #FFFBF0;
+    border-left: 4px solid #E6A817;
+    border-radius: 0 6px 6px 0;
+    padding: 8px 12px;
+    font-size: 13px; color: #1f2937;
+    min-height: 32px; white-space: pre-wrap;
+  }
+
+  .billing-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 8px 0; }
+  .billing-table th {
+    background: #1A56A0; color: #fff; font-weight: 500;
+    padding: 6px 9px; text-align: left;
+  }
+  .billing-table th:first-child { border-radius: 5px 0 0 0; }
+  .billing-table th:last-child  { border-radius: 0 5px 0 0; }
+  .billing-table td { padding: 6px 9px; border-bottom: .5px solid #e8ecf0; color: #1f2937; }
+  .billing-table tr:nth-child(even) td { background: #f7f9fc; }
+  .billing-table .total-row td { font-weight: 700; background: #EBF2FC !important; }
+
+  .sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; }
+  .sig-block { text-align: center; }
+  .sig-line { border-top: 1px solid #b0bec5; margin-top: 36px; padding-top: 5px; font-size: 11px; color: #6b7280; }
+
+  .footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 14px; padding-top: 10px;
+    border-top: 1px solid #e8ecf0;
+    font-size: 10.5px; color: #9ca3af;
+  }
+
+  .print-btn {
+    background: #1A56A0; color: #fff; border: none;
+    padding: 6px 22px; border-radius: 5px;
+    font-size: 13px; cursor: pointer; font-weight: 500;
+    transition: background .15s;
+  }
+  .print-btn:hover { background: #154a8a; }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .print-btn, .no-print { display: none !important; }
+    .page { box-shadow: none; border-radius: 0; max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="top-band">
+    <div class="logo-circle">SV</div>
+    <div class="hospital-text">
+      <div class="hospital-name">Shantiveer Hospital</div>
+      <div class="hospital-sub">Multi-Speciality Hospital</div>
+      <div class="hospital-meta">www.shantiveerhospital.in</div>
+    </div>
+    <div class="hospital-contact">
+      Emergency: 108<br>
+      IPD / Billing Desk
+    </div>
+  </div>
+  <div class="accent-stripe"></div>
+  <div class="doc-title">🏥 Discharge Summary</div>
+
+  <div class="body">
+
+    <!-- PATIENT INFO -->
+    <div class="section-bar">Patient Information</div>
+    <div class="info-grid">
+      <div class="info-item">
+        <span class="info-label">Patient Name</span>
+        <span class="info-value">{{ discharge.admission.patient.name }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">IPD No.</span>
+        <span class="info-value">{{ discharge.admission.ipd_no }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">UHID</span>
+        <span class="info-value">{{ discharge.admission.patient.uhid }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Age / Gender</span>
+        <span class="info-value">{{ discharge.admission.patient.age_years }}Y / {{ discharge.admission.patient.gender }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Contact</span>
+        <span class="info-value">{{ discharge.admission.patient.mobile }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Guardian</span>
+        <span class="info-value">{{ discharge.admission.guardian|default:"-" }}</span>
+      </div>
+    </div>
+
+    <!-- ADMISSION INFO -->
+    <div class="section-bar">Admission Details</div>
+    <div class="info-grid">
+      <div class="info-item">
+        <span class="info-label">Date of Admission</span>
+        <span class="info-value">{{ discharge.admission.date }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Date of Discharge</span>
+        <span class="info-value">{{ discharge.discharge_date }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Consultant</span>
+        <span class="info-value">{{ discharge.admission.consultant|default:"-" }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Ward / Room</span>
+        <span class="info-value">{{ discharge.admission.room_category|default:"-" }} / {{ discharge.admission.room_no|default:"-" }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Referral</span>
+        <span class="info-value">{{ discharge.admission.referral|default:"Self" }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">TPA / Insurance</span>
+        <span class="info-value">{{ discharge.admission.tpa|default:"-" }}</span>
+      </div>
+    </div>
+
+    <!-- DIAGNOSIS -->
+    <div class="section-bar">Diagnosis</div>
+    <div class="diag-box">{{ discharge.admission.diagnosis|default:"—" }}</div>
+
+    <!-- NOTES -->
+    {% if discharge.notes %}
+    <div class="section-bar">Clinical Notes / Advice at Discharge</div>
+    <div class="text-box">{{ discharge.notes }}</div>
+    {% endif %}
+
+    <!-- BILLING SUMMARY -->
+    <div class="section-bar">Billing Summary</div>
+    <table class="billing-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th style="text-align:right">Amount (₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in bill_items %}
+        <tr>
+          <td>{{ item.desc }}</td>
+          <td style="text-align:right">{{ item.amount }}</td>
+        </tr>
+        {% endfor %}
+        <tr class="total-row">
+          <td>Total Bill</td>
+          <td style="text-align:right">₹ {{ bill_total }}</td>
+        </tr>
+        <tr>
+          <td>Amount Paid</td>
+          <td style="text-align:right">₹ {{ paid_total }}</td>
+        </tr>
+        <tr class="total-row">
+          <td>Amount Due / Balance</td>
+          <td style="text-align:right">₹ {{ due_amount }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- SIGNATURES -->
+    <div class="sig-grid">
+      <div class="sig-block">
+        <div class="sig-line">Patient / Attendant Signature</div>
+      </div>
+      <div class="sig-block">
+        <div class="sig-line">Dr. {{ discharge.admission.consultant|default:"Consultant" }}</div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <span>Generated on: {% now "d M Y H:i" %}</span>
+      <span class="no-print">
+        <button class="print-btn" onclick="window.print()">🖨️ Print</button>
+      </span>
+      <span>Shantiveer Hospital — All Rights Reserved</span>
+    </div>
+
+  </div><!-- /body -->
+</div><!-- /page -->
+
+</body>
+</html>
