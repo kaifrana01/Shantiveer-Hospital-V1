@@ -1,5 +1,5 @@
 """
-WSGI config for SantiVeer HMS project.
+WSGI config for ShantiVeer HMS project.
 Loads .env automatically when present (for local dev / simple deployment).
 """
 import os

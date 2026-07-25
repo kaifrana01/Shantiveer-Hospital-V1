@@ -33,9 +33,39 @@ body {
     color: var(--text-dark);
     background: var(--bg-light);
     min-height: 100vh;
-    font-size: 17px; /* increased for better readability */
-    line-height: 1.6;
+    font-size: 18px; /* increased for better readability */
+    line-height: 1.65;
 }
+
+/* Global icon scaling (Bootstrap Icons) */
+.bi {
+    font-size: 1.25rem;
+    line-height: 1;
+    vertical-align: -0.125em;
+}
+
+/* Global button scaling (Bootstrap + native) */
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+    font-size: 1rem;
+}
+
+.btn,
+.btn-cyan,
+.btn-save,
+.btn-view,
+.btn-action {
+    font-size: 1rem;
+}
+
+.btn {
+    padding: 0.7rem 1.1rem;
+    min-height: 44px;
+    border-radius: 8px;
+}
+
 
 a { text-decoration: none; }
 
@@ -684,16 +714,16 @@ label { font-size: 0.85rem; font-weight: 500; color: var(--text-dark); margin-bo
 }
 
 /* ========== BUTTONS ========== */
-.btn-cyan  { background: var(--cyan); color: #000; border: none; padding: 0.45rem 1.25rem; border-radius: 5px; font-weight: 500; cursor: pointer; font-size: 0.88rem; transition: background 0.15s; }
+.btn-cyan  { background: var(--cyan); color: #000; border: none; padding: 0.6rem 1.45rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.98rem; transition: background 0.15s; }
 .btn-cyan:hover  { background: var(--cyan-dark); color: #fff; }
 
-.btn-save  { background: var(--primary-blue); color: #fff; border: none; padding: 0.45rem 1.5rem; border-radius: 5px; cursor: pointer; font-size: 0.88rem; font-weight: 500; transition: opacity 0.15s; }
+.btn-save  { background: var(--primary-blue); color: #fff; border: none; padding: 0.6rem 1.65rem; border-radius: 8px; cursor: pointer; font-size: 0.98rem; font-weight: 600; transition: opacity 0.15s; }
 .btn-save:hover  { opacity: 0.88; }
 
-.btn-view  { background: #6b7280; color: #fff; border: none; padding: 0.45rem 1.5rem; border-radius: 5px; cursor: pointer; font-size: 0.88rem; }
+.btn-view  { background: #6b7280; color: #fff; border: none; padding: 0.6rem 1.65rem; border-radius: 8px; cursor: pointer; font-size: 0.98rem; font-weight: 600; }
 .btn-view:hover  { background: #4b5563; }
 
-.btn-action { padding: 0.22rem 0.55rem; font-size: 0.72rem; border: none; border-radius: 4px; color: #fff; margin: 1px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 0.2rem; transition: opacity 0.15s; }
+.btn-action { padding: 0.32rem 0.75rem; font-size: 0.86rem; border: none; border-radius: 6px; color: #fff; margin: 2px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; transition: opacity 0.15s; min-height: 38px; }
 .btn-action:hover { opacity: 0.82; color: #fff; }
 .btn-pres    { background: #06b6d4; }
 .btn-print   { background: #f97316; }
@@ -714,8 +744,8 @@ label { font-size: 0.85rem; font-weight: 500; color: var(--text-dark); margin-bo
 }
 
 /* ========== TABLES ========== */
-.hms-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
-.hms-table thead th {
+.hms-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.hms-table thead th {  
     background: var(--primary-blue);
     color: #fff;
     padding: 0.6rem 0.75rem;

@@ -3,13 +3,9 @@
   "builds": [
     {
       "src": "ShantiVeer_hms/wsgi.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "build_files.sh",
-      "use": "@vercel/static-build",
+      "use": "@vercel/python",
       "config": {
-        "distDir": "staticfiles_collected"
+        "maxLambdaSize": "15mb"
       }
     }
   ],
