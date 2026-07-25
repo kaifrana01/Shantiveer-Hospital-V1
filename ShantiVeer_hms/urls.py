@@ -68,7 +68,9 @@ urlpatterns = [
     path('api/', include(('core.api_urls', 'api'), namespace='api')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Always serve uploaded media files through Django.
+# In production with Nginx, Nginx should handle /media/ directly for
+# performance — but this ensures uploads work in all environments.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 admin.site.site_header = 'ShantiVeer HMS Admin'

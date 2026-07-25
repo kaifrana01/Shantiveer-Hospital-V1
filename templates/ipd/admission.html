@@ -5,7 +5,7 @@
 <div class="ipd-split-layout">
     <div class="form-card">
         <button type="button" class="btn-cyan mb-3" data-bs-toggle="modal" data-bs-target="#uhidModal"><i class="bi bi-search"></i> Search UHID</button>
-        <form method="post">{% csrf_token %}
+        <form method="post" enctype="multipart/form-data">{% csrf_token %}
             <input type="hidden" name="edit_id" value="{{ edit_id }}">
             <div class="row g-2 mb-2">
                 <div class="col-md-2"><label class="small">UHID</label><input name="uhid" class="form-control form-control-sm" value="{{ form_uhid }}"></div>
