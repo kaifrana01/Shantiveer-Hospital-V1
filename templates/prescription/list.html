@@ -52,19 +52,18 @@
                     <td>{{ r.total }}</td>
                     <td>{{ r.due }}</td>
                     <td>
-                        <a href="{% url 'prescription:detail' r.id %}" class="btn-action btn-pres">Pres 02</a>
-
+                        <a href="{% url 'prescription:detail' r.id %}" class="btn-action btn-pres">Prescription</a>
                         <a href="{% url 'prescription:print' r.id %}" class="btn-action btn-print" target="_blank">Print</a>
                         <a href="{% url 'prescription:print' r.id %}" class="btn-action btn-receipt" target="_blank">Receipt</a>
-
+                        {% if module_access.opd_registration == 'full' %}
                         <a href="{% url 'opd:registration' %}?edit={{ r.id }}" class="btn-action btn-edit">Edit</a>
+                        {% endif %}
                         {% if user.is_superuser %}
                             <form method="post" action="{% url 'opd:delete_opd_visit' r.id %}" style="display:inline;">
                                 {% csrf_token %}
                                 <button type="submit" class="btn-action btn-delete" onclick="return confirm('Delete this record?');">Delete</button>
                             </form>
                         {% endif %}
-
                     </td>
                 </tr>
                 {% empty %}

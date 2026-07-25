@@ -85,6 +85,7 @@ def detail(request, pk):
     return render(request, 'prescription/detail.html', {
         'active_sidebar': 'prescription',
         'record': record,
+        'pres': pres,
         'medicine_lines': medicine_lines,
     })
 

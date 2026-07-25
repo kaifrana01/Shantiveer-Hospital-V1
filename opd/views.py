@@ -76,6 +76,11 @@ def registration(request):
     if request.method == 'POST':
         uhid = request.POST.get('uhid', '').strip()
 
+        # Block write operations for view-only roles (e.g. Doctor on OPD)
+        if request.is_view_only:
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied("Your role has view-only access to OPD registration.")
+
         # If this is an edit, update existing visit instead of creating a new one.
         edit_id = request.GET.get('edit')
         visit_obj = None

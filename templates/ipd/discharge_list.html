@@ -10,7 +10,9 @@
             <button class="btn btn-outline-dark">Search</button>
             <a href="{% url 'ipd:discharge_list' %}" class="btn btn-secondary">Reset</a>
         </form>
+        {% if not request.is_view_only %}
         <a href="{% url 'ipd:discharge_add' %}" class="btn btn-primary">+ Add Discharge</a>
+        {% endif %}
     </div>
     <table class="hms-table"><thead style="background:#1a3a5a"><tr>
         <th style="background:#1a3a5a;color:#fff">IPD No</th><th>Patient Name</th><th>Age</th><th>Gender</th><th>Guardian</th>
@@ -27,9 +29,11 @@
             <a href="{% url 'ipd:bill' %}?ipd_no={{ d.ipd_no }}" class="btn btn-info btn-sm text-white">
                 <i class="bi bi-receipt"></i> Bill
             </a>
+            {% if module_access.billing_collect != 'none' %}
             <a href="{% url 'ipd:payment' %}?ipd_no={{ d.ipd_no }}" class="btn btn-warning btn-sm">
                 <i class="bi bi-credit-card"></i> Collect
             </a>
+            {% endif %}
         </td>
     </tr>
     {% endfor %}</tbody></table>
