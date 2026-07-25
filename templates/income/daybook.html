@@ -66,3 +66,78 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('tableSearch');
+    const tbody = document.querySelector('.hms-table tbody');
+    const countSpan = document.querySelector('.d-flex.justify-content-between.small.text-muted span');
+
+    // Mark all data rows (skip colspan "empty" placeholder)
+    if (tbody) {
+        tbody.querySelectorAll('tr').forEach(function (row) {
+            if (row.querySelector('td[colspan]')) return;
+            row.setAttribute('data-searchable', '1');
+        });
+    }
+
+    function updateCount(visible, total) {
+        if (countSpan) {
+            countSpan.textContent = 'Showing ' + visible + ' of ' + total + ' entries';
+        }
+    }
+
+    if (searchInput && tbody) {
+        searchInput.addEventListener('input', function () {
+            const query = this.value.trim().toLowerCase();
+            const rows = tbody.querySelectorAll('tr[data-searchable]');
+            let visible = 0;
+
+            rows.forEach(function (row) {
+                if (!query || row.textContent.toLowerCase().includes(query)) {
+                    row.style.display = '';
+                    visible++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Toggle "no results" row
+            let noResultRow = tbody.querySelector('.no-result-row');
+            if (visible === 0 && rows.length > 0) {
+                if (!noResultRow) {
+                    noResultRow = document.createElement('tr');
+                    noResultRow.className = 'no-result-row';
+                    noResultRow.innerHTML = '<td colspan="8" class="text-center text-muted py-3">No matching entries found.</td>';
+                    tbody.appendChild(noResultRow);
+                }
+                noResultRow.style.display = '';
+            } else if (noResultRow) {
+                noResultRow.style.display = 'none';
+            }
+
+            updateCount(visible, rows.length);
+        });
+    }
+
+    // Copy button — copies visible rows to clipboard
+    const copyBtn = document.getElementById('copyBtn');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', function () {
+            const headers = Array.from(document.querySelectorAll('.hms-table thead th'))
+                .slice(0, 7).map(th => th.textContent.trim()).join('\t');
+            const rows = tbody ? Array.from(tbody.querySelectorAll('tr[data-searchable]'))
+                .filter(r => r.style.display !== 'none')
+                .map(r => Array.from(r.querySelectorAll('td')).slice(0, 7)
+                    .map(td => td.textContent.trim()).join('\t'))
+                .join('\n') : '';
+            navigator.clipboard.writeText(headers + '\n' + rows).then(function () {
+                copyBtn.textContent = 'Copied!';
+                setTimeout(function () { copyBtn.textContent = 'Copy'; }, 2000);
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

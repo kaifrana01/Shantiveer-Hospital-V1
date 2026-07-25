@@ -29,3 +29,7 @@ django-redis>=5.4.0
 
 # Audit trail / history tracking for high-priority financial & clinical models
 django-simple-history>=3.5.0
+
+# PDF generation (used for income/USG/lab daybook exports)
+xhtml2pdf>=0.2.11
+reportlab>=4.0.0
