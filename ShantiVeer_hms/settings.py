@@ -238,10 +238,12 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'statics']
 STATIC_ROOT = BASE_DIR / 'staticfiles_collected'
 
-# WhiteNoise serves compressed, hashed static files in production.
-# In DEBUG mode use the default storage so runserver serves files normally.
+# WhiteNoise serves compressed, cached static files in production.
+# Using WhiteNoiseStorage (not CompressedManifestStaticFilesStorage) to avoid
+# requiring a pre-built staticfiles.json manifest — WhiteNoise handles
+# compression and cache-busting headers at runtime instead.
 if not DEBUG:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 else:
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
