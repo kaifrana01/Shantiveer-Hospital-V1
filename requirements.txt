@@ -13,6 +13,10 @@ dj-database-url>=2.1.0
 # Install manually: pip install mysqlclient>=2.2.0
 # mysqlclient>=2.2.0
 
+# pymysql: pure-Python MySQL driver, used as MySQLdb shim on VPS (set USE_MYSQL=true).
+# Safe to install everywhere — no compilation required.
+pymysql>=1.1.0
+
 # Date/time utilities (used for DOB-based age calculation in uhid/views.py)
 python-dateutil>=2.8.2
 
