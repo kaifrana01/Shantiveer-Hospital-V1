@@ -154,19 +154,25 @@ if _database_url:
         )
     }
 else:
-    # MySQL path — used for local dev and self-hosted production
+    # MySQL path — used for VPS, Vercel (via pymysql), and local dev.
+    # pymysql is a pure-Python MySQL driver that works on Vercel where
+    # mysqlclient (C extension) cannot be compiled.
+    try:
+        import pymysql
+        pymysql.install_as_MySQLdb()
+    except ImportError:
+        pass  # mysqlclient is available natively (VPS/local with system libs)
+
     _mysql_options = {
         'charset': 'utf8mb4',
     }
 
     # Only enforce SSL in production (not local dev).
-    # mysqlclient uses an 'ssl' dict — empty dict enables SSL without cert pinning.
-    # Pass MYSQL_CA_CERT env var to specify a CA certificate path for strict verification.
     if not DEBUG:
         _mysql_ca = os.environ.get('MYSQL_CA_CERT', '')
         _mysql_options['ssl'] = {'ca': _mysql_ca} if _mysql_ca else {}
 
-    _MYSQL_DATABASE = {
+    DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': os.environ.get('MYSQL_NAME', 'defaultdb'),
@@ -177,8 +183,6 @@ else:
             'OPTIONS': _mysql_options,
         }
     }
-
-    DATABASES = _MYSQL_DATABASE
 
 # ─── Cache ───────────────────────────────────────────────────────────────────
 _redis_url = os.environ.get('REDIS_URL', '')
