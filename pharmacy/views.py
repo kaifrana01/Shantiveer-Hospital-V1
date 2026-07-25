@@ -23,6 +23,7 @@ Original pharmacy module provided:
 
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import PermissionDenied
@@ -202,6 +203,7 @@ def sale(request):
     return render(request, 'pharmacy/sale.html', {
         'active_sidebar': 'pharmacy',
         'items': PharmacyItem.objects.filter(is_active=True),
+        'hospital_upi_id': settings.HOSPITAL_UPI_ID,
     })
 
 

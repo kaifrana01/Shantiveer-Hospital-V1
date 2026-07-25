@@ -391,7 +391,7 @@
         <a href="#" class="btn-print" onclick="window.print(); return false;">
           <i class="bi bi-printer"></i> Print Bill
         </a>
-        <a href="{% url 'ipd:payment' %}" class="btn-pay">
+        <a href="{% url 'ipd:payment' %}?ipd_no={{ bill.ipd_no }}" class="btn-pay">
           <i class="bi bi-credit-card"></i> Collect Payment
         </a>
       </div>

@@ -142,14 +142,14 @@
 
   <!-- HEADER -->
   <div class="top-band">
-    <div class="logo-circle">SV</div>
+    <div class="logo-circle">{{ hospital_name|slice:":2"|upper }}</div>
     <div class="hospital-text">
-      <div class="hospital-name">Shantiveer Hospital</div>
+      <div class="hospital-name">{{ hospital_name }}</div>
       <div class="hospital-sub">Multi-Speciality Hospital</div>
-      <div class="hospital-meta">www.shantiveerhospital.in</div>
+      <div class="hospital-meta">{{ hospital_address }}</div>
     </div>
     <div class="hospital-contact">
-      Emergency: 108<br>
+      Ph: {{ hospital_phone }}<br>
       IPD / Billing Desk
     </div>
   </div>

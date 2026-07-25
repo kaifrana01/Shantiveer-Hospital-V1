@@ -1,5 +1,6 @@
 import datetime
 
+from django.conf import settings
 from django.http import HttpResponseNotAllowed
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
@@ -116,6 +117,7 @@ def income_add(request):
         'today': timezone.localdate().isoformat(),
         'categories': IncomeEntry.CATEGORIES,
         'payment_modes': IncomeEntry.PAYMENT_MODES,
+        'hospital_upi_id': settings.HOSPITAL_UPI_ID,
     })
 
 

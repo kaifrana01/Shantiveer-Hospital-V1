@@ -1,4 +1,5 @@
 from decimal import Decimal
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
@@ -306,9 +307,20 @@ def payment_total(request):
         ipd_no = f'IPD{ipd_no}'
 
     adm = IPDAdmission.objects.select_related('patient').filter(ipd_no=ipd_no).first()
-    total = _compute_ipd_bill_total(adm) if adm else Decimal('0.00')
-    patient_name = adm.patient.name if adm else ''
-    return JsonResponse({'total': str(total), 'patient_name': patient_name})
+    if not adm:
+        return JsonResponse({'total': '0.00', 'patient_name': '', 'due': '0.00'})
+
+    bill_total = _compute_ipd_bill_total(adm)
+    paid_total = adm.payments.aggregate(s=Sum('amount'))['s'] or Decimal('0.00')
+    due = max(bill_total - paid_total, Decimal('0.00'))
+
+    return JsonResponse({
+        'total': str(due),          # pre-fill with outstanding due
+        'bill_total': str(bill_total),
+        'paid_total': str(paid_total),
+        'due': str(due),
+        'patient_name': adm.patient.name,
+    })
 
 
 @require_module('billing_collect', level='full')
@@ -570,6 +582,9 @@ def discharge_print(request, pk):
         'bill_total': bill_total,
         'paid_total': paid_total,
         'due_amount': due_amount,
+        'hospital_name': settings.HOSPITAL_NAME,
+        'hospital_address': settings.HOSPITAL_ADDRESS,
+        'hospital_phone': settings.HOSPITAL_PHONE,
     })
 
 

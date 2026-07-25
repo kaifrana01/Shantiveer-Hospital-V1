@@ -59,11 +59,28 @@
       </div>
       <div class="usg-form-group">
         <label>Payment Mode</label>
-        <select name="payment_mode">
+        <select name="payment_mode" id="usgPayMode">
           <option value="Cash">💵 Cash</option>
           <option value="UPI">📱 UPI</option>
           <option value="Card">💳 Card</option>
         </select>
+      </div>
+    </div>
+
+    <!-- UPI QR panel -->
+    <div id="usgUpiPanel" style="display:none;margin-top:12px;padding:14px 18px;background:#f0fdfa;border:1.5px solid #99f6e4;border-radius:12px;display:none;align-items:flex-start;gap:18px;">
+      <img src="{% static 'img/QR code.png' %}" alt="UPI QR"
+           style="width:130px;height:130px;border:1px solid #d1fae5;border-radius:10px;object-fit:contain;background:#fff;padding:4px;flex-shrink:0;">
+      <div>
+        <div style="font-size:.78rem;font-weight:700;color:#0f766e;margin-bottom:8px;">
+          <i class="bi bi-upc-scan"></i>&nbsp; UPI ID:
+          <span style="font-family:monospace;background:#e6fffb;padding:2px 8px;border-radius:4px;">{{ hospital_upi_id }}</span>
+        </div>
+        <div id="usgUpiAmount" style="font-size:1.5rem;font-weight:800;color:#0f172a;margin-bottom:6px;">₹—</div>
+        <div style="font-size:.75rem;color:#475569;line-height:1.5;">
+          Ask patient to scan the QR code or use the UPI ID above.<br>
+          Confirm payment receipt before clicking <strong>Submit Bill</strong>.
+        </div>
       </div>
     </div>
 
@@ -205,6 +222,31 @@
   });
   discountEl.addEventListener('input', recalc);
   recalc();
+
+  // ── UPI QR panel toggle ──
+  const usgPayMode = document.getElementById('usgPayMode');
+  const usgUpiPanel = document.getElementById('usgUpiPanel');
+  const usgUpiAmt = document.getElementById('usgUpiAmount');
+
+  function toggleUsgUpi(){
+    if(!usgPayMode || !usgUpiPanel) return;
+    const isUpi = usgPayMode.value === 'UPI';
+    usgUpiPanel.style.display = isUpi ? 'flex' : 'none';
+    if(isUpi && usgUpiAmt){
+      const total = document.getElementById('usgTotal')?.textContent || '₹0';
+      usgUpiAmt.textContent = total;
+    }
+  }
+  usgPayMode?.addEventListener('change', toggleUsgUpi);
+  // also update UPI amount when total changes
+  const origRecalc = recalc;
+  function recalcWithUpi(){
+    origRecalc();
+    toggleUsgUpi();
+  }
+  checkboxes.forEach(cb => cb.addEventListener('change', toggleUsgUpi));
+  discountEl?.addEventListener('input', toggleUsgUpi);
+  toggleUsgUpi();
 })();
 </script>
 {% endblock %}

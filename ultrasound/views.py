@@ -7,6 +7,7 @@ from decimal import Decimal, InvalidOperation
 from datetime import date, timedelta
 from collections import defaultdict
 
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
@@ -188,6 +189,7 @@ def ultrasound_investigation(request):
             'active_sidebar': 'ultrasound',
             'tests': UltrasoundTestMaster.objects.filter(is_active=True),
             'today': timezone.localdate().isoformat(),
+            'hospital_upi_id': settings.HOSPITAL_UPI_ID,
         }
 
         if not selected_tests:
@@ -291,6 +293,7 @@ def ultrasound_investigation(request):
         'active_sidebar': 'ultrasound',
         'tests': UltrasoundTestMaster.objects.filter(is_active=True),
         'today': timezone.localdate().isoformat(),
+        'hospital_upi_id': settings.HOSPITAL_UPI_ID,
     })
 
 

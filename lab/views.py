@@ -1,5 +1,6 @@
 from decimal import Decimal, InvalidOperation
 
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
@@ -66,6 +67,7 @@ def investigation(request):
                 'active_sidebar': 'lab',
                 'tests': LabTestMaster.objects.filter(is_active=True),
                 'today': timezone.localdate().isoformat(),
+                'hospital_upi_id': settings.HOSPITAL_UPI_ID,
             })
 
         if not patient_name:
@@ -74,6 +76,7 @@ def investigation(request):
                 'active_sidebar': 'lab',
                 'tests': LabTestMaster.objects.filter(is_active=True),
                 'today': timezone.localdate().isoformat(),
+                'hospital_upi_id': settings.HOSPITAL_UPI_ID,
             })
 
         with transaction.atomic():
@@ -185,6 +188,7 @@ def investigation(request):
         'active_sidebar': 'lab',
         'tests': LabTestMaster.objects.filter(is_active=True),
         'today': timezone.localdate().isoformat(),
+        'hospital_upi_id': settings.HOSPITAL_UPI_ID,
     })
 
 

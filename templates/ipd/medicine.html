@@ -6,14 +6,40 @@
     <h2>IPD Medicine Bill</h2>
     <form method="post">{% csrf_token %}
         <div class="row g-2 mb-3">
-            <div class="col-md-2"><label class="small">IPD No</label><input name="ipd_no" class="form-control" required></div>
+            <div class="col-md-2">
+                <label class="small">IPD No</label>
+                <input name="ipd_no" id="medIpdNo" class="form-control" required
+                       value="{{ request.GET.ipd_no|default:'' }}">
+            </div>
             <div class="col-md-3"><label class="small">Medicine</label><input name="medicine" class="form-control"></div>
-            <div class="col-md-1"><label class="small">Qty</label><input type="number" name="qty" class="form-control" value="1"></div>
-            <div class="col-md-2"><label class="small">Rate</label><input type="number" name="rate" class="form-control" step="0.01"></div>
-            <div class="col-md-2"><label class="small">&nbsp;</label><button class="btn-cyan d-block w-100">Add</button></div>
+            <div class="col-md-1"><label class="small">Qty</label><input type="number" name="qty" class="form-control" value="1" min="1"></div>
+            <div class="col-md-2"><label class="small">Rate (₹)</label><input type="number" name="rate" class="form-control" step="0.01" min="0"></div>
+            <div class="col-md-2"><label class="small">&nbsp;</label><button class="btn-cyan d-block w-100">Add Medicine</button></div>
         </div>
     </form>
-    <table class="hms-table"><thead><tr><th>Medicine</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
-    <tbody>{% for m in medicines %}<tr><td>{{ m.name }}</td><td>{{ m.qty }}</td><td>{{ m.rate }}</td><td>{{ m.amount }}</td></tr>{% endfor %}</tbody></table>
+    <table class="hms-table">
+        <thead><tr><th>Medicine</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
+        <tbody>
+        {% for m in medicines %}
+        <tr>
+            <td>{{ m.name }}</td><td>{{ m.qty }}</td>
+            <td>₹{{ m.rate }}</td><td>₹{{ m.amount }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center text-muted py-3">No medicines added yet.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
 </div></div>
+<script>
+// Auto-fill IPD No from URL on page load
+(function(){
+    var params = new URLSearchParams(window.location.search);
+    var ipd = params.get('ipd_no');
+    if (ipd) {
+        var el = document.getElementById('medIpdNo');
+        if (el && !el.value) el.value = ipd;
+    }
+})();
+</script>
 {% endblock %}

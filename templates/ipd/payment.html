@@ -305,6 +305,13 @@
           </div>
         </div>
 
+        <!-- Row 1b: Bill summary strip (shown after IPD No is resolved) -->
+        <div id="billSummaryStrip" style="display:none;margin-bottom:.9rem;padding:.6rem 1rem;background:var(--surface-2);border:1.5px solid var(--teal-mid);border-radius:8px;font-size:.82rem;display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center;">
+          <span>Bill Total: <strong id="stripBillTotal">—</strong></span>
+          <span>Already Paid: <strong id="stripPaid" style="color:var(--green)">—</strong></span>
+          <span>Balance Due: <strong id="stripDue" style="color:var(--red)">—</strong></span>
+        </div>
+
         <!-- Row 2: Remarks -->
         <div class="field-grid remarks-row">
           <div class="field-wrap">
@@ -413,8 +420,18 @@
       const res  = await fetch(`{% url 'ipd:payment_total' %}?ipd_no=${encodeURIComponent(ipd)}`);
       if (!res.ok) return;
       const data = await res.json();
-      if (data.total     !== undefined) amtInput.value  = data.total;
-      if (data.patient_name)            nameInput.value = data.patient_name;
+      // Pre-fill amount with outstanding due
+      if (data.total !== undefined) amtInput.value = data.total;
+      if (data.patient_name)        nameInput.value = data.patient_name;
+
+      // Show balance summary strip
+      const strip = document.getElementById('billSummaryStrip');
+      if (strip && data.bill_total !== undefined) {
+        strip.style.display = 'flex';
+        document.getElementById('stripBillTotal').textContent = '₹' + parseFloat(data.bill_total).toLocaleString('en-IN', {minimumFractionDigits:2});
+        document.getElementById('stripPaid').textContent      = '₹' + parseFloat(data.paid_total).toLocaleString('en-IN', {minimumFractionDigits:2});
+        document.getElementById('stripDue').textContent       = '₹' + parseFloat(data.due).toLocaleString('en-IN', {minimumFractionDigits:2});
+      }
       updateUpiAmount();
     } catch (_) {}
   }
@@ -455,6 +472,16 @@
       setTimeout(() => toast.classList.remove('show'), 3000);
     }, 200);
   });
+
+  // ── Auto-fill if ipd_no is in the URL (coming from bill page) ──
+  (function() {
+    const params = new URLSearchParams(window.location.search);
+    const ipd = params.get('ipd_no');
+    if (ipd) {
+      ipdInput.value = ipd.trim();
+      fetchTotal();
+    }
+  })();
 
   // Init
   updateUpiPanel();

@@ -46,14 +46,14 @@
 
                 <td>
                     <a href="{% url 'ipd:admission' %}?edit={{ p.id }}" class="btn btn-warning btn-sm">Edit</a>
-                    {% comment %} <a href="{% url 'prescription:list' %}?ipd_patient={{ p.ipd_no }}" class="btn btn-secondary btn-sm">Prescription</a> {% endcomment %}
+                    <a href="{% url 'ipd:bill' %}?ipd_no={{ p.ipd_no }}" class="btn btn-info btn-sm text-white">Bill</a>
+                    <a href="{% url 'ipd:payment' %}?ipd_no={{ p.ipd_no }}" class="btn btn-success btn-sm">Collect</a>
+                    <a href="{% url 'ipd:medicine' %}?ipd_no={{ p.ipd_no }}" class="btn btn-secondary btn-sm">Medicine</a>
                     {% if p.status != 'Discharged' %}
-
                     <form method="post" action="{% url 'ipd:discharge_add' %}" style="display:inline;" onsubmit="return confirm('Discharge {{ p.name }}?');">
                         {% csrf_token %}
                         <input type="hidden" name="ipd_no" value="{{ p.ipd_no }}">
-<!-- After discharge, take user to Collect Payment -->
-<input type="hidden" name="next" value="{% url 'ipd:payment' %}?ipd_no={{ p.ipd_no }}">
+                        <input type="hidden" name="next" value="{% url 'ipd:payment' %}?ipd_no={{ p.ipd_no }}">
                         <button type="submit" class="btn btn-primary btn-sm">Discharge</button>
                     </form>
                     {% endif %}
