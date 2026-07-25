@@ -30,6 +30,9 @@ jobs:
 
             echo "=== [3/6] Installing/updating dependencies ==="
             pip install -r requirements.txt --quiet
+            # mysqlclient is excluded from requirements.txt (not buildable on Vercel)
+            # Install it explicitly here where MySQL system libs are available
+            pip install mysqlclient>=2.2.0 --quiet
 
             echo "=== [4/6] Collecting static files ==="
             python manage.py collectstatic --noinput --clear

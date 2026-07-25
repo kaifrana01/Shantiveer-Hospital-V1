@@ -25,6 +25,9 @@ ALLOW_DEMO_SETUP = os.environ.get('ALLOW_DEMO_SETUP', 'false').lower() == 'true'
 _raw_hosts = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
 
+# Vercel deployments use *.vercel.app domains — always allow them
+ALLOWED_HOSTS += ['.vercel.app']
+
 if DEBUG:
     ALLOWED_HOSTS = list(dict.fromkeys(ALLOWED_HOSTS + ['127.0.0.1', 'localhost']))
 
@@ -307,16 +310,23 @@ _handler_config: dict = {
     },
 }
 
-logs_dir = BASE_DIR / 'logs'
-logs_dir.mkdir(exist_ok=True)
-_log_handlers.append('file')
-_handler_config['file'] = {
-    'class': 'logging.handlers.RotatingFileHandler',
-    'filename': str(logs_dir / 'hms.log'),
-    'maxBytes': 5 * 1024 * 1024,
-    'backupCount': 5,
-    'formatter': 'verbose',
-}
+# Only write to file if the filesystem is writable (not on Vercel/serverless).
+# Vercel has a read-only filesystem — file logging is skipped there.
+_is_vercel = os.environ.get('VERCEL', '') or os.environ.get('VERCEL_ENV', '')
+if not _is_vercel:
+    logs_dir = BASE_DIR / 'logs'
+    try:
+        logs_dir.mkdir(exist_ok=True)
+        _log_handlers.append('file')
+        _handler_config['file'] = {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': str(logs_dir / 'hms.log'),
+            'maxBytes': 5 * 1024 * 1024,
+            'backupCount': 5,
+            'formatter': 'verbose',
+        }
+    except OSError:
+        pass  # Filesystem not writable — console-only logging
 
 LOGGING = {
     'version': 1,

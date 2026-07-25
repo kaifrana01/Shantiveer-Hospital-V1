@@ -9,8 +9,9 @@ Pillow>=10.0.0
 psycopg2-binary>=2.9.9
 dj-database-url>=2.1.0
 
-# MySQL support (Hostinger VPS deployment)
-mysqlclient>=2.2.0
+# MySQL support (Hostinger VPS / local dev only — NOT required on Vercel/PostgreSQL deployments)
+# Install manually: pip install mysqlclient>=2.2.0
+# mysqlclient>=2.2.0
 
 # Date/time utilities (used for DOB-based age calculation in uhid/views.py)
 python-dateutil>=2.8.2
