@@ -1,0 +1,94 @@
+{% extends 'base_module.html' %}
+{% block title %}OPD Patient List{% endblock %}
+{% block page_title %}OPD Patient List{% endblock %}
+{% block content %}
+<div class="page-container">
+
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0"><i class="bi bi-heart-pulse text-primary me-2"></i>OPD Patient List</h2>
+    {% if module_access.opd_registration == 'full' %}
+    <a href="{% url 'opd:registration' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-circle"></i> New OPD
+    </a>
+    {% endif %}
+  </div>
+
+  <form method="get" class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+    <input type="text" name="q" class="form-control" style="max-width:300px"
+           placeholder="Search Name / UHID / Phone / OPD No" value="{{ q }}">
+    <select name="referral" class="form-select" style="max-width:200px">
+      <option value="">— All Referral Doctors —</option>
+      {% for doc in referral_doctors %}
+      <option value="{{ doc }}" {% if doc == selected_referral %}selected{% endif %}>{{ doc }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-success px-4"><i class="bi bi-search"></i> Search</button>
+    {% if q or selected_referral %}
+    <a href="{% url 'opd:patient_list' %}" class="btn btn-outline-secondary">Clear</a>
+    {% endif %}
+  </form>
+
+  <div class="small text-muted mb-2">Showing {{ records|length }} record{{ records|length|pluralize }}</div>
+
+  <div class="form-card p-0 overflow-hidden">
+    <table class="hms-table mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>OPD No</th>
+          <th>UHID</th>
+          <th>Patient Name</th>
+          <th>Gender</th>
+          <th>Doctor</th>
+          <th>Phone</th>
+          <th>Date</th>
+          <th>Total (₹)</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td><strong>{{ r.opd_no }}</strong></td>
+          <td>{{ r.uhid }}</td>
+          <td>{{ r.name }}</td>
+          <td>{{ r.gender }}</td>
+          <td>{{ r.doctor|default:"—" }}</td>
+          <td>{{ r.phone }}</td>
+          <td>{{ r.date }}</td>
+          <td style="font-family:monospace;">{{ r.total }}</td>
+          <td class="text-nowrap">
+            {% if module_access.prescription != 'none' %}
+            <a href="{% url 'prescription:detail' r.id %}" class="btn btn-sm btn-primary">
+              <i class="bi bi-file-medical"></i> Prescription
+            </a>
+            <a href="{% url 'prescription:print' r.id %}" class="btn btn-sm btn-outline-secondary" target="_blank">
+              <i class="bi bi-printer"></i>
+            </a>
+            {% endif %}
+            {% if module_access.opd_registration == 'full' %}
+            <a href="{% url 'opd:registration' %}?edit={{ r.id }}" class="btn btn-sm btn-warning">
+              <i class="bi bi-pencil"></i> Edit
+            </a>
+            {% endif %}
+            {% if user.is_superuser %}
+            <form method="post" action="{% url 'opd:delete_opd_visit' r.id %}" style="display:inline;"
+                  onsubmit="return confirm('Delete OPD {{ r.opd_no }}?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="10" class="text-center text-muted py-4">No OPD records found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

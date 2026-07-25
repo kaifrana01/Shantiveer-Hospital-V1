@@ -1,6 +1,6 @@
 from decimal import Decimal
-
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
@@ -230,6 +230,10 @@ def registration(request):
                 _post_opd_visit_to_ledger(visit_obj)
                 messages.success(request, f'OPD {visit_obj.opd_no} saved successfully.')
 
+        # Redirect to opd_list if available, otherwise prescription:list
+        from core.rbac import has_access
+        if has_access(request.user, 'opd_list'):
+            return redirect('opd:patient_list')
         return redirect('prescription:list')
 
     next_no = f'OPD{OPDVisit.objects.count() + 1:03d}'
@@ -278,5 +282,45 @@ def delete_opd_visit(request, pk):
             ).order_by('-created_at')[:1].delete()
         visit.delete()
     messages.success(request, f'OPD {visit.opd_no} deleted successfully.')
+    from core.rbac import has_access
+    if has_access(request.user, 'opd_list'):
+        return redirect('opd:patient_list')
     return redirect('prescription:list')
 
+
+
+@require_module('opd_list', level='view')
+def patient_list(request):
+    """OPD patient list — accessible to Receptionist (FULL) and Doctor (FULL)
+    without requiring prescription module access."""
+    q = (request.GET.get('q') or '').strip()
+    referral = (request.GET.get('referral') or '').strip()
+
+    visits = OPDVisit.objects.select_related('patient').order_by('-date', '-time')
+    if q:
+        visits = visits.filter(
+            Q(opd_no__icontains=q) |
+            Q(patient__name__icontains=q) |
+            Q(patient__uhid__icontains=q) |
+            Q(patient__mobile__icontains=q)
+        )
+    if referral:
+        visits = visits.filter(referral__icontains=referral)
+
+    referral_doctors = (
+        OPDVisit.objects.exclude(referral='')
+        .values_list('referral', flat=True)
+        .distinct()
+        .order_by('referral')
+    )
+
+    from core.services import opd_to_dict
+    records = [opd_to_dict(v) for v in visits[:200]]
+
+    return render(request, 'opd/patient_list.html', {
+        'active_sidebar': 'opd',
+        'records': records,
+        'q': q,
+        'referral_doctors': referral_doctors,
+        'selected_referral': referral,
+    })

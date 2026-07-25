@@ -46,9 +46,14 @@
       <i class="bi bi-file-medical"></i> OPD Patient List
       {% if module_access.prescription == 'view' %}<span class="badge-view">View</span>{% endif %}
     </a>
+    {% elif module_access.opd_list != 'none' %}
+    <a href="{% url 'opd:patient_list' %}" class="{% if active_sidebar == 'opd' %}active{% endif %}">
+      <i class="bi bi-file-medical"></i> OPD Patient List
+      {% if module_access.opd_list == 'view' %}<span class="badge-view">View</span>{% endif %}
+    </a>
     {% endif %}
-    {% elif module_access.opd_list != 'none' and module_access.prescription != 'none' %}
-    {# Accountant / roles with opd_list but not opd_registration — show list only #}
+    {% elif module_access.opd_list != 'none' %}
+    {# Roles with opd_list but not opd_registration (Accountant) — show list only #}
     <a href="{% url 'prescription:list' %}" class="{% if active_sidebar == 'prescription' %}active{% endif %}">
       <i class="bi bi-file-medical"></i> OPD Patient List
       <span class="badge-view">View</span>

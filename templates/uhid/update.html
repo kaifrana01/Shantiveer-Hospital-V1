@@ -2,54 +2,164 @@
 {% block title %}UHID Update{% endblock %}
 {% block page_title %}UHID Update{% endblock %}
 {% block content %}
-<div class="uhid-green-header">UHID Update</div>
+<div class="uhid-green-header">UHID Registration</div>
 <div class="search-bar-row">
-    <label>Enter UHID :</label>
-    <form method="get" class="d-flex gap-2 flex-grow-1"><input name="uhid" class="form-control form-control-sm" style="max-width:200px" placeholder="UHID" value="{{ search_uhid }}"><button class="btn btn-primary btn-sm">Search</button></form>
+    <label>Search Patient:</label>
+    <form method="get" class="d-flex gap-2 flex-grow-1 align-items-center">
+        <input name="uhid" class="form-control form-control-sm" style="max-width:160px"
+               placeholder="UHID" value="{{ search_uhid }}">
+        <input name="q" class="form-control form-control-sm" style="max-width:220px"
+               placeholder="Name / Mobile" value="{{ search_q }}">
+        <button class="btn btn-primary btn-sm">Search</button>
+        {% if search_uhid or search_q %}
+        <a href="{% url 'uhid:update' %}" class="btn btn-outline-secondary btn-sm">Clear</a>
+        {% endif %}
+    </form>
+    {% if not request.is_view_only %}
+    <a href="{% url 'uhid:update' %}" class="btn btn-success btn-sm ms-2">
+        <i class="bi bi-person-plus"></i> New Patient
+    </a>
+    {% endif %}
 </div>
 <div class="page-container">
     <div class="form-card mb-3" style="border:1px solid #ccc">
         <form method="post">{% csrf_token %}
+            <input type="hidden" name="uhid" value="{{ patient.uhid|default:'' }}">
             <div class="row g-2 mb-2">
-                <div class="col-md-4"><label class="small">Patient Name</label><div class="input-group input-group-sm"><select class="form-select" style="max-width:70px"><option>Mr</option><option>Mrs</option></select><input name="patient_name" class="form-control" value="{{ patient.name }}"></div></div>
-                <div class="col-md-4"><label class="small">Relation</label><div class="input-group input-group-sm"><select class="form-select" style="max-width:70px"><option>S/o</option><option>D/o</option><option>W/o</option></select><input name="guardian" class="form-control"></div></div>
+                <div class="col-md-4">
+                    <label class="small">Patient Name</label>
+                    <div class="input-group input-group-sm">
+                        <select name="title" class="form-select" style="max-width:70px">
+                            <option {% if patient.title == 'Mr' %}selected{% endif %}>Mr</option>
+                            <option {% if patient.title == 'Mrs' %}selected{% endif %}>Mrs</option>
+                            <option {% if patient.title == 'Ms' %}selected{% endif %}>Ms</option>
+                        </select>
+                        <input name="patient_name" class="form-control" value="{{ patient.name|default:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="small">Guardian / Relation</label>
+                    <div class="input-group input-group-sm">
+                        <select name="guardian_relation" class="form-select" style="max-width:70px">
+                            <option {% if patient.guardian_relation == 'S/o' %}selected{% endif %}>S/o</option>
+                            <option {% if patient.guardian_relation == 'D/o' %}selected{% endif %}>D/o</option>
+                            <option {% if patient.guardian_relation == 'W/o' %}selected{% endif %}>W/o</option>
+                        </select>
+                        <input name="guardian" class="form-control" value="{{ patient.guardian|default:'' }}">
+                    </div>
+                </div>
             </div>
             <div class="row g-2 mb-2">
-                <div class="col-md-2"><label class="small">Gender</label><select name="gender" class="form-select form-select-sm"><option>Male</option><option>Female</option></select></div>
-                <div class="col-md-2"><label class="small">Marital</label><select name="marital" class="form-select form-select-sm"><option>Single</option><option>Married</option></select></div>
-                <div class="col-md-2"><label class="small">DOB</label><input type="date" name="dob" class="form-control form-control-sm"></div>
-                <div class="col-md-2"><label class="small">Mobile</label><input name="mobile" class="form-control form-control-sm"></div>
-                <div class="col-md-1"><label class="small">B.G.</label><select name="blood_group" class="form-select form-select-sm"><option>NA</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option>
-<option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div>
-                <div class="col-md-1"><label class="small">Resident</label><select class="form-select form-select-sm"><option>India</option></select></div>
+                <div class="col-md-2">
+                    <label class="small">Gender</label>
+                    <select name="gender" class="form-select form-select-sm">
+                        <option value="Male" {% if patient.gender == 'Male' %}selected{% endif %}>Male</option>
+                        <option value="Female" {% if patient.gender == 'Female' %}selected{% endif %}>Female</option>
+                        <option value="Other" {% if patient.gender == 'Other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="small">Marital</label>
+                    <select name="marital" class="form-select form-select-sm">
+                        <option value="Single" {% if patient.marital_status == 'Single' %}selected{% endif %}>Single</option>
+                        <option value="Married" {% if patient.marital_status == 'Married' %}selected{% endif %}>Married</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="small">DOB</label>
+                    <input type="date" name="dob" class="form-control form-control-sm"
+                           value="{{ patient.dob|date:'Y-m-d'|default:'' }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="small">Mobile</label>
+                    <input name="mobile" class="form-control form-control-sm" value="{{ patient.mobile|default:'' }}">
+                </div>
+                <div class="col-md-1">
+                    <label class="small">B.G.</label>
+                    <select name="blood_group" class="form-select form-select-sm">
+                        <option {% if patient.blood_group == 'NA' or not patient.blood_group %}selected{% endif %} value="NA">NA</option>
+                        <option {% if patient.blood_group == 'A+' %}selected{% endif %} value="A+">A+</option>
+                        <option {% if patient.blood_group == 'A-' %}selected{% endif %} value="A-">A-</option>
+                        <option {% if patient.blood_group == 'B+' %}selected{% endif %} value="B+">B+</option>
+                        <option {% if patient.blood_group == 'B-' %}selected{% endif %} value="B-">B-</option>
+                        <option {% if patient.blood_group == 'AB+' %}selected{% endif %} value="AB+">AB+</option>
+                        <option {% if patient.blood_group == 'AB-' %}selected{% endif %} value="AB-">AB-</option>
+                        <option {% if patient.blood_group == 'O+' %}selected{% endif %} value="O+">O+</option>
+                        <option {% if patient.blood_group == 'O-' %}selected{% endif %} value="O-">O-</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label class="small">Resident</label>
+                    <select class="form-select form-select-sm">
+                        <option>India</option>
+                    </select>
+                </div>
             </div>
             <div class="row g-2 mb-2">
-                <div class="col-md-2"><label class="small">State</label><select class="form-select form-select-sm"><option>-- Select State --</option><option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Goa</option><option>Gujarat</option>
-                    <option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option>
-                    <option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option><option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option><option>Delhi</option><option>Jammu and Kashmir</option><option>Ladakh</option><option>Chandigarh</option><option>Lakshadweep</option><option>Puducherry</option></select></div>
-                <div class="col-md-2"><label class="small">City</label><select class="form-select form-select-sm"><option>-- Select City --</option><option>Agra</option><option>Aligarh</option><option>Ambedkar Nagar</option><option>Amethi</option><option>Amroha</option><option>Auraiya</option><option>Ayodhya</option><option>Azamgarh</option><option>Baghpat</option><option>Bahraich</option><option>Ballia</option><option>Balrampur</option><option>Banda</option><option>Barabanki</option><option>Bareilly</option>
-
-<option>Basti</option><option>Bhadohi</option><option>Bijnor</option><option>Budaun</option><option>Bulandshahr</option><option>Chandauli</option><option>Chitrakoot</option><option>Deoria</option><option>Etah</option><option>Etawah</option><option>Farrukhabad</option><option>Fatehpur</option><option>Firozabad</option><option>Gautam Buddha Nagar (Noida)</option><option>Ghaziabad</option>
-
-<option>Ghazipur</option><option>Gonda</option><option>Gorakhpur</option><option>Hamirpur</option><option>Hapur</option><option>Hardoi</option><option>Hathras</option><option>Jalaun</option><option>Jaunpur</option><option>Jhansi</option><option>Kannauj</option><option>Kanpur Dehat</option><option>Kanpur Nagar</option><option>Kasganj</option><option>Kaushambi</option>
-
-<option>Kheri (Lakhimpur Kheri)</option><option>Kushinagar</option><option>Lalitpur</option><option>Lucknow</option><option>Maharajganj</option><option>Mahoba</option><option>Mainpuri</option><option>Mathura</option><option>Mau</option><option>Meerut</option><option>Mirzapur</option><option>Moradabad</option><option>Muzaffarnagar</option><option>Pilibhit</option><option>Pratapgarh</option>
-
-<option>Prayagraj</option><option>Raebareli</option><option>Rampur</option><option>Saharanpur</option><option>Sambhal</option><option>Sant Kabir Nagar</option><option>Shahjahanpur</option><option>Shamli</option><option>Shravasti</option><option>Siddharthnagar</option><option>Sitapur</option><option>Sonbhadra</option><option>Sultanpur</option><option>Unnao</option><option>Varanasi</option></select></div>
-                <div class="col-md-6"><label class="small">Address</label><textarea name="address" class="form-control form-control-sm" rows="2"></textarea></div>
-                <div class="col-md-2 d-flex align-items-end"><button type="submit" class="btn btn-primary w-100">Save</button></div>
+                <div class="col-md-2">
+                    <label class="small">State</label>
+                    <select name="state" class="form-select form-select-sm">
+                        <option value="">-- Select State --</option>
+                        {% for s in indian_states %}
+                        <option {% if patient.state == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="small">City</label>
+                    <input name="city" class="form-control form-control-sm" value="{{ patient.city|default:'' }}" placeholder="City">
+                </div>
+                <div class="col-md-6">
+                    <label class="small">Address</label>
+                    <textarea name="address" class="form-control form-control-sm" rows="2">{{ patient.address|default:'' }}</textarea>
+                </div>
+                {% if not request.is_view_only %}
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Save</button>
+                </div>
+                {% endif %}
             </div>
         </form>
     </div>
-    <table class="hms-table"><thead><tr><th>UHID</th><th>Patient Name</th><th>Gender</th><th>Age</th><th>Mobile</th></tr></thead>
-    <tbody>{% for p in patients %}<tr><td><a href="?uhid={{ p.uhid }}">{{ p.uhid }}</a></td><td>{{ p.name }}</td><td>{{ p.gender }}</td><td>{{ p.age_display }}</td><td>{{ p.mobile }}</td></tr>{% endfor %}</tbody></table>
+    <table class="hms-table">
+      <thead>
+        <tr>
+          <th>UHID</th><th>Patient Name</th><th>Gender</th><th>Age</th>
+          <th>Mobile</th><th>City / State</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in patients %}
+        <tr>
+          <td><a href="?uhid={{ p.uhid }}"><strong>{{ p.uhid }}</strong></a></td>
+          <td>{{ p.name }}</td>
+          <td>{{ p.gender }}</td>
+          <td>{{ p.age_display }}</td>
+          <td>{{ p.mobile }}</td>
+          <td>{{ p.city|default:"" }}{% if p.city and p.state %}, {% endif %}{{ p.state|default:"" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-3">No patients found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
     {% if patients.has_other_pages %}
     <nav class="mt-3"><ul class="pagination justify-content-center">
-      {% if patients.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ patients.previous_page_number }}{% if search_uhid %}&uhid={{ search_uhid }}{% endif %}">← Previous</a></li>{% endif %}
+      {% if patients.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ patients.previous_page_number }}{% if search_uhid %}&uhid={{ search_uhid }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}">← Previous</a>
+      </li>
+      {% endif %}
       {% for num in patients.paginator.page_range %}
-        <li class="page-item {% if patients.number == num %}active{% endif %}"><a class="page-link" href="?page={{ num }}{% if search_uhid %}&uhid={{ search_uhid }}{% endif %}">{{ num }}</a></li>
+      <li class="page-item {% if patients.number == num %}active{% endif %}">
+        <a class="page-link" href="?page={{ num }}{% if search_uhid %}&uhid={{ search_uhid }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}">{{ num }}</a>
+      </li>
       {% endfor %}
-      {% if patients.has_next %}<li class="page-item"><a class="page-link" href="?page={{ patients.next_page_number }}{% if search_uhid %}&uhid={{ search_uhid }}{% endif %}">Next →</a></li>{% endif %}
+      {% if patients.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ patients.next_page_number }}{% if search_uhid %}&uhid={{ search_uhid }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}">Next →</a>
+      </li>
+      {% endif %}
     </ul></nav>
     {% endif %}
 </div>

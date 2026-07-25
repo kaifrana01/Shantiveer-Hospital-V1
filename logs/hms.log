@@ -1250,3 +1250,5 @@ Traceback (most recent call last):
 django.db.utils.OperationalError: (2013, 'Lost connection to MySQL server during query ([WinError 10053] An established connection was aborted by the software in your host machine)')
 [2026-07-25 09:14:50,307] ERROR django.server "GET /api/dashboard/income-breakdown/?range=month HTTP/1.1" 500 136911
 [2026-07-25 09:14:50,308] ERROR django.server "GET /api/dashboard/?range=month HTTP/1.1" 500 255251
+[2026-07-25 10:56:25,313] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-25 10:56:25,317] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
