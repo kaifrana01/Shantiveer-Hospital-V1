@@ -238,10 +238,11 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'statics']
 STATIC_ROOT = BASE_DIR / 'staticfiles_collected'
 
-# WhiteNoise serves compressed, cached static files in production.
-# Using WhiteNoiseStorage (not CompressedManifestStaticFilesStorage) to avoid
-# requiring a pre-built staticfiles.json manifest — WhiteNoise handles
-# compression and cache-busting headers at runtime instead.
+# WhiteNoise: serve static files directly from STATICFILES_DIRS without
+# requiring collectstatic to have been run first (safe for Vercel serverless).
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = True
+
 if not DEBUG:
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 else:
