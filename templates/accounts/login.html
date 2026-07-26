@@ -140,16 +140,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#080f1c;min-height:1
   color:#fff;font-size:.8rem;letter-spacing:.14em;
   text-transform:uppercase;text-align:center;margin-bottom:1.5rem;
 }
-.creds-box{
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:8px;padding:.75rem 1rem;margin-bottom:1.5rem;
-}
-.creds-box .cb-head{font-size:.65rem;color:#475569;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;}
-.creds-row{display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.2rem;}
-.creds-row span:first-child{color:#64748b;}
-.creds-row span:last-child{color:#e2e8f0;font-weight:600;font-family:monospace;}
-
 .inp-wrap{position:relative;margin-bottom:1.1rem;}
 .inp-wrap i{position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:#475569;pointer-events:none;}
 .inp-wrap input{
@@ -291,17 +281,6 @@ body[data-role="pharmacist"]  {--accent:#f59e0b;--accent-grad:linear-gradient(90
     <button class="back-btn" onclick="goBack()"><i class="bi bi-arrow-left"></i> Choose role</button>
     <div class="panel-badge" id="pBadge"></div>
     <p class="panel-title">HOSPITAL MANAGEMENT SOFTWARE</p>
-
-     <!-- credential hint box (UI only — no plaintext password) -->
-    <div class="creds-box" aria-label="Demo credentials">
-      <div class="cb-head">Demo login</div>
-      <div class="creds-row"><span>Account</span><span id="hAccount"></span></div>
-      <div class="creds-row"><span>Username</span><span id="hUser"></span></div>
-      <div class="creds-row"><span>Password</span><span id="hPass" style="opacity:.9">••••••••</span></div>
-      <div style="margin-top:.35rem;color:#64748b;font-size:.72rem;line-height:1.4;">
-        Use the demo username above. Password is hidden for safety.
-      </div>
-    </div>
 
     <form method="post">
       {% csrf_token %}
@@ -507,13 +486,9 @@ function pick(role){
   b.style.color      = r.badgeColor;
   b.innerHTML = `<i class="bi ${r.badgeIcon}"></i> ${r.badgeLabel}`;
 
-  // creds (password is never rendered; plaintext demo password must not be shown)
-  document.getElementById('hAccount').textContent = r.user;
-  document.getElementById('hUser').textContent = r.user;
-  document.getElementById('hPass').textContent = '••••••••';
+  // creds (removed demo login display)
 
-
-  document.getElementById('uField').value      = r.user;
+  document.getElementById('uField').value      = '';
   document.getElementById('roleField').value   = role;
 
 
