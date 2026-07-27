@@ -50,27 +50,51 @@ def _ipd_dict(a):
     }
 
 
-def _compute_ipd_bill_total(adm):
-    """Compute total IPD bill based on bed_charge field + medicines.
-    
-    Uses admission.bed_charge if set, otherwise falls back to ward-based defaults.
+def _get_bed_charge_details(adm, discharge_date=None):
+    """Return (rate_per_day, days_stayed, total_bed_charge) for an admission.
+
+    bed_charge stores the *per-day* rate.  Days are calculated as:
+        discharge_date (or today) − admission date,  minimum 1 day.
     """
-    # Use bed_charge if explicitly set, else fall back to ward-based defaults
+    from datetime import date as _date
+    # Per-day rate: use stored bed_charge if set, else ward-based default
     if adm.bed_charge and adm.bed_charge > 0:
-        room_amount = adm.bed_charge
+        rate_per_day = Decimal(str(adm.bed_charge))
     else:
         ward = (adm.category or '').strip().lower()
         ward_map = {
-            'general ward': Decimal('2500'),
-            'private ward': Decimal('3500'),
-            'emergency ward': Decimal('2000'),
-            'icu': Decimal('4000'),
+            'general ward':   Decimal('500'),
+            'private ward':   Decimal('1000'),
+            'emergency ward': Decimal('800'),
+            'icu':            Decimal('1500'),
         }
-        room_amount = ward_map.get(ward, Decimal('1500'))
-    
+        rate_per_day = ward_map.get(ward, Decimal('500'))
+
+    # Determine end date: prefer the explicit discharge_date argument, then
+    # the DischargeSummary record, and fall back to today for admitted patients.
+    if discharge_date is None:
+        try:
+            discharge_date = adm.discharge.discharge_date
+        except Exception:
+            discharge_date = _date.today()
+
+    admission_date = adm.date
+    days = max(1, (discharge_date - admission_date).days)
+
+    return rate_per_day, days, rate_per_day * days
+
+
+def _compute_ipd_bill_total(adm, discharge_date=None):
+    """Compute total IPD bill: (bed_charge_per_day × days) + doctor fees + medicines.
+
+    Uses admission.bed_charge as the *per-day* rate.  Falls back to ward-based
+    per-day defaults when bed_charge is not set.
+    """
+    _rate, _days, room_amount = _get_bed_charge_details(adm, discharge_date)
+
     # Doctor fees: fixed at 2000 for now (could be made configurable later)
     doctor_fees = Decimal('2000')
-    
+
     med_total = sum(m.amount for m in adm.medicine_lines.all()) or Decimal('0.00')
     return room_amount + doctor_fees + med_total
 
@@ -412,25 +436,13 @@ def bill(request):
         adm = IPDAdmission.objects.select_related('patient').filter(ipd_no=ipd_no_norm).first()
 
         if adm:
-            items = []
-            # Use the single canonical billing function — keeps bill view,
-            # patient list, and payment_total all in sync.
-            if adm.bed_charge and adm.bed_charge > 0:
-                room_amount = adm.bed_charge
-            else:
-                ward = (adm.category or '').strip().lower()
-                ward_map = {
-                    'general ward': Decimal('2500'),
-                    'private ward': Decimal('3500'),
-                    'emergency ward': Decimal('2000'),
-                    'icu': Decimal('4000'),
-                }
-                room_amount = ward_map.get(ward, Decimal('1500'))
-
+            # Canonical billing: bed charge = per-day rate × days stayed
+            rate_per_day, days_stayed, room_amount = _get_bed_charge_details(adm)
             doctor_fees = Decimal('2000')
             med_total = sum(m.amount for m in adm.medicine_lines.all()) or Decimal('0.00')
 
-            items = [{'desc': 'Bed / Room Charges', 'amount': room_amount},
+            bed_desc = f'Bed / Room Charges (₹{rate_per_day} × {days_stayed} day{"s" if days_stayed != 1 else ""})'
+            items = [{'desc': bed_desc, 'amount': room_amount},
                      {'desc': 'Doctor / Consultation Fees', 'amount': doctor_fees}]
             if med_total:
                 items.append({'desc': 'Medicines', 'amount': med_total})
@@ -557,16 +569,13 @@ def discharge_print(request, pk):
     patient = adm.patient
 
     # Use the canonical billing function to keep all views consistent
-    room_amount = adm.bed_charge if adm.bed_charge and adm.bed_charge > 0 else (
-        {'general ward': Decimal('2500'), 'private ward': Decimal('3500'),
-         'emergency ward': Decimal('2000'), 'icu': Decimal('4000')}.get(
-            (adm.category or '').strip().lower(), Decimal('1500'))
-    )
+    rate_per_day, days_stayed, room_amount = _get_bed_charge_details(adm, d.discharge_date)
     doctor_fees = Decimal('2000')
     med_total = sum(m.amount for m in adm.medicine_lines.all()) or Decimal('0.00')
 
+    bed_desc = f'Bed / Room Charges (₹{rate_per_day} × {days_stayed} day{"s" if days_stayed != 1 else ""})'
     bill_items = [
-        {'desc': 'Bed / Room Charges', 'amount': room_amount},
+        {'desc': bed_desc, 'amount': room_amount},
         {'desc': 'Doctor / Consultation Fees', 'amount': doctor_fees},
     ]
     if med_total:
@@ -582,6 +591,8 @@ def discharge_print(request, pk):
         'bill_total': bill_total,
         'paid_total': paid_total,
         'due_amount': due_amount,
+        'days_stayed': days_stayed,
+        'rate_per_day': rate_per_day,
         'hospital_name': settings.HOSPITAL_NAME,
         'hospital_address': settings.HOSPITAL_ADDRESS,
         'hospital_phone': settings.HOSPITAL_PHONE,
