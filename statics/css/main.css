@@ -907,6 +907,10 @@ label { font-size: 0.85rem; font-weight: 500; color: var(--text-dark); margin-bo
     .lab-layout, .ipd-split-layout { grid-template-columns: 1fr; }
     .login-panel  { width: 100%; min-width: unset; }
     .billing-stats { grid-template-columns: repeat(2, 1fr); }
+
+    /* home page: hide sidebar on tablet and below */
+    .home-sidebar { display: none; }
+    .home-main { padding: 1.5rem; }
 }
 
 @media (max-width: 576px) {
@@ -915,6 +919,13 @@ label { font-size: 0.85rem; font-weight: 500; color: var(--text-dark); margin-bo
     .login-panel { width: 100%; padding: 2rem 1.5rem; min-height: 100vh; justify-content: center; }
     .billing-stats { grid-template-columns: 1fr 1fr; }
     .module-circles { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+
+    /* home page adjustments */
+    .home-main { padding: 1rem; }
+    .home-header { margin-bottom: 1.5rem; }
+    .home-header h1 { font-size: 1.1rem; }
+    .module-circle .circle { width: 72px; height: 72px; font-size: 1.5rem; }
+    .home-info-cards { grid-template-columns: 1fr; gap: 1rem; }
 }
 
 /* ========== SIDEBAR SUB-MENU (IPD collapse) ========== */

@@ -5,13 +5,15 @@
 {% block content %}
   <h2 class="mb-3">Ultrasound Bills</h2>
 
-  <form class="mb-3" method="get">
-    <input class="form-control" name="q" placeholder="Search by Bill No / Patient" value="{{ q|default:'' }}" />
+  <form class="mb-3 d-flex gap-2 flex-wrap" method="get">
+    <input class="form-control" style="max-width:320px;" name="q" placeholder="Search by Bill No / Patient" value="{{ q|default:'' }}" />
+    <button class="btn btn-primary">Search</button>
   </form>
 
   <div class="card">
-    <div class="card-body">
-      <table class="table table-striped">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+      <table class="table table-striped mb-0">
         <thead>
           <tr>
             <th>Bill No</th>
@@ -39,6 +41,7 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 {% endblock %}

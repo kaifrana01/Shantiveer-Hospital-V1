@@ -4,7 +4,8 @@
 {% block content %}
 <div class="page-container">
     <h2 class="text-center mb-3">View All Lab Reports</h2>
-    <form method="get" class="d-flex gap-2 mb-3"><input name="q" class="form-control" placeholder="Search UHID / Name / Bill No" value="{{ q }}"><button class="btn btn-primary">Search</button></form>
+    <form method="get" class="d-flex gap-2 mb-3 flex-wrap"><input name="q" class="form-control" placeholder="Search UHID / Name / Bill No" value="{{ q }}"><button class="btn btn-primary">Search</button></form>
+    <div class="table-responsive">
     <table class="hms-table green-head">
         <thead><tr><th>#</th><th>Bill No</th><th>Patient</th><th>Tests</th><th>Amount</th><th>Due</th><th>Date</th><th>Action</th></tr></thead>
         <tbody>{% for r in reports %}
@@ -14,7 +15,7 @@
             <a href="{% url 'lab:view_report_print' r.id %}" class="btn-action btn-print">ViewPrint</a>
         </td></tr>
         {% endfor %}</tbody>
-
     </table>
+    </div>
 </div>
 {% endblock %}

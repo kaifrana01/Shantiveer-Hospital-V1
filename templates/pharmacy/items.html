@@ -24,7 +24,8 @@
                 <div class="col-auto"><button class="btn btn-primary btn-sm">Add</button></div>
             </form>
         </div>
-        <form method="get" class="d-flex gap-2 mb-2"><input name="q" class="form-control form-control-sm" style="max-width:200px" placeholder="Name"><button class="btn btn-primary btn-sm">Search</button></form>
+        <form method="get" class="d-flex gap-2 mb-2 flex-wrap"><input name="q" class="form-control form-control-sm" style="max-width:200px" placeholder="Name"><button class="btn btn-primary btn-sm">Search</button></form>
+        <div class="table-responsive">
         <table class="hms-table green-head">
             <thead>
                 <tr>
@@ -83,6 +84,7 @@
             {% endfor %}
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 

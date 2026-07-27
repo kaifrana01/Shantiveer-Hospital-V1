@@ -7,6 +7,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ultrasound Report</title>
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="stylesheet" href="{% static 'css/responsive_overrides.css' %}">
+  <link rel="stylesheet" href="{% static 'css/mobile.css' %}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
   {% include 'includes/sidebar_dashboard.html' %}
@@ -59,6 +63,20 @@
     </div>
 
   </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
+  <script>
+  (function(){
+    var btn=document.getElementById('sidebarToggleBtn'),sidebar=document.getElementById('dashSidebar');
+    if(!btn||!sidebar)return;
+    var ov=document.createElement('div');ov.className='sidebar-overlay';document.body.appendChild(ov);
+    function open(){sidebar.classList.add('open');ov.classList.add('active');btn.setAttribute('aria-expanded','true');btn.querySelector('i').className='bi bi-x-lg';document.body.style.overflow='hidden';}
+    function close(){sidebar.classList.remove('open');ov.classList.remove('active');btn.setAttribute('aria-expanded','false');btn.querySelector('i').className='bi bi-list';document.body.style.overflow='';}
+    btn.addEventListener('click',function(){sidebar.classList.contains('open')?close():open();});
+    ov.addEventListener('click',close);
+    document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+    sidebar.querySelectorAll('a[href]').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<=992)close();});});
+  })();
+  </script>
 </body>
 </html>
 

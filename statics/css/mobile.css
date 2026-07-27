@@ -351,3 +351,29 @@
 .dash-sidebar, .usg-sidebar {
   will-change: transform;
 }
+
+/* ── USG expenses grid: stacks on mobile ── */
+@media (max-width: 768px) {
+  .usg-expenses-grid { grid-template-columns: 1fr !important; }
+}
+
+/* ── backup hero: stack on mobile ── */
+@media (max-width: 768px) {
+  .backup-hero { flex-direction: column !important; gap: 1rem !important; }
+  .backup-hero .ms-auto { width: 100% !important; }
+  .backup-hero .ms-auto button { width: 100% !important; }
+}
+
+/* ── history filter: inputs full width on mobile ── */
+@media (max-width: 576px) {
+  .hist-filter-card { padding: 10px; }
+  .hist-filter-card > div { flex: 1 1 100% !important; }
+  .hist-table th[style*="width"] { width: auto !important; }
+}
+
+/* ── pharmacy layout: stack on small screens ── */
+@media (max-width: 576px) {
+  .pharmacy-layout { flex-direction: column !important; }
+  .pharmacy-sidebar { width: 100% !important; display: flex !important; flex-wrap: wrap; gap: 0.4rem; }
+  .pharmacy-sidebar a { flex: 1 1 auto !important; text-align: center; }
+}

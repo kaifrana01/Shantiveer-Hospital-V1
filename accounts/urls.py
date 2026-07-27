@@ -18,4 +18,6 @@ urlpatterns = [
     ), name='password_reset_complete'),
     path('change-password/', views.change_password_view, name='change_password'),
     path('change-email/', views.change_email_view, name='change_email'),
+    path('profile/', views.profile_view, name='profile'),
+    path('profile/edit/', views.profile_edit_view, name='profile_edit'),
 ]

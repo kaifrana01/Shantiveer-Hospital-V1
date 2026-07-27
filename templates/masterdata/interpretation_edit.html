@@ -2,12 +2,12 @@
 {% block title %}Edit Interpretation{% endblock %}
 {% block page_title %}Edit Interpretation{% endblock %}
 {% block content %}
-<div class="d-flex gap-3 p-3">
-  <div class="master-sidebar" style="width:150px">
+<div class="d-flex gap-3 p-3 flex-wrap">
+  <div class="master-sidebar" style="width:150px;min-width:120px">
     <a href="{% url 'masterdata:doctors' %}">add-doctor</a>
     <a href="{% url 'masterdata:doctor_list' %}">list-doctor</a>
   </div>
-  <div class="flex-grow-1" style="max-width:680px">
+  <div class="flex-grow-1" style="max-width:100%">
     <div class="form-card">
       <div class="section-title" style="background:#999;color:#fff;margin:-1.5rem -1.5rem 1rem;padding:0.5rem 1rem">
         Edit Interpretation

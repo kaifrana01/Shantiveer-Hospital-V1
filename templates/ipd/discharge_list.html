@@ -5,7 +5,7 @@
 <div class="page-container"><div class="form-card">
     <h2>Discharge Summary List</h2>
     <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
-        <form method="get" class="d-flex gap-2">
+        <form method="get" class="d-flex gap-2 flex-wrap">
             <input name="q" class="form-control" placeholder="Search IPD / Name" value="{{ q }}">
             <button class="btn btn-outline-dark">Search</button>
             <a href="{% url 'ipd:discharge_list' %}" class="btn btn-secondary">Reset</a>
@@ -14,6 +14,7 @@
         <a href="{% url 'ipd:discharge_add' %}" class="btn btn-primary">+ Add Discharge</a>
         {% endif %}
     </div>
+    <div class="table-responsive">
     <table class="hms-table"><thead style="background:#1a3a5a"><tr>
         <th style="background:#1a3a5a;color:#fff">IPD No</th><th>Patient Name</th><th>Age</th><th>Gender</th><th>Guardian</th>
         <th>Room</th><th>Contact</th><th>Consultant</th><th>Discharge Date</th><th>Action</th>
@@ -37,5 +38,6 @@
         </td>
     </tr>
     {% endfor %}</tbody></table>
+    </div>
 </div></div>
 {% endblock %}

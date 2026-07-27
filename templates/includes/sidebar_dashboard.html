@@ -195,6 +195,9 @@
 
     {# ── Common bottom links ── #}
     <div style="margin-top:auto;padding-top:1rem;border-top:1px solid rgba(255,255,255,.08)">
+      <a href="{% url 'accounts:profile' %}" class="{% if active_sidebar == 'profile' %}active{% endif %}">
+        <i class="bi bi-person-circle"></i> My Profile
+      </a>
       <a href="{% url 'accounts:change_password' %}" class="{% if active_sidebar == 'password' %}active{% endif %}">
         <i class="bi bi-key"></i> Change Password
       </a>

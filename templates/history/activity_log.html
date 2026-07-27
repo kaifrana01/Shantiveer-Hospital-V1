@@ -8,7 +8,8 @@
 }
 .hist-table-wrap {
   background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .hist-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 .hist-table th {
@@ -42,37 +43,37 @@
 </div>
 
 <form method="get" class="hist-filter-card d-flex flex-wrap gap-2 align-items-end">
-  <div>
+  <div style="flex:1 1 160px;">
     <label class="small mb-1 d-block text-muted">Module</label>
-    <select name="model" class="form-select form-select-sm" style="min-width:180px">
+    <select name="model" class="form-select form-select-sm">
       <option value="">All Modules</option>
       {% for key, label in model_choices %}
       <option value="{{ key }}" {% if filters.model == key %}selected{% endif %}>{{ label }}</option>
       {% endfor %}
     </select>
   </div>
-  <div>
+  <div style="flex:1 1 120px;">
     <label class="small mb-1 d-block text-muted">Action</label>
-    <select name="action" class="form-select form-select-sm" style="min-width:130px">
+    <select name="action" class="form-select form-select-sm">
       <option value="">All Actions</option>
       {% for code, label in action_choices %}
       <option value="{{ code }}" {% if filters.action == code %}selected{% endif %}>{{ label }}</option>
       {% endfor %}
     </select>
   </div>
-  <div>
+  <div style="flex:1 1 130px;">
     <label class="small mb-1 d-block text-muted">Username</label>
-    <input type="text" name="user" value="{{ filters.user }}" class="form-control form-control-sm" placeholder="e.g. dr.sharma" style="width:160px">
+    <input type="text" name="user" value="{{ filters.user }}" class="form-control form-control-sm" placeholder="e.g. dr.sharma">
   </div>
-  <div>
+  <div style="flex:1 1 130px;">
     <label class="small mb-1 d-block text-muted">From</label>
     <input type="date" name="date_from" value="{{ filters.date_from }}" class="form-control form-control-sm">
   </div>
-  <div>
+  <div style="flex:1 1 130px;">
     <label class="small mb-1 d-block text-muted">To</label>
     <input type="date" name="date_to" value="{{ filters.date_to }}" class="form-control form-control-sm">
   </div>
-  <div class="d-flex gap-2">
+  <div class="d-flex gap-2" style="flex:0 0 auto;">
     <button class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
     <a href="{% url 'history:log' %}" class="btn btn-outline-secondary btn-sm">Reset</a>
   </div>

@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, SetPasswordForm
 from django.contrib.auth.models import User
+from .models import UserProfile
 
 
 class StyledLoginForm(AuthenticationForm):
@@ -64,3 +65,45 @@ class ChangeEmailForm(forms.Form):
         if new_email and User.objects.filter(email__iexact=new_email).exists():
             raise forms.ValidationError('This email address is already in use.')
         return cleaned_data
+
+
+class UserBasicForm(forms.ModelForm):
+    """Editable fields from Django's User model."""
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name':  forms.TextInput(attrs={'class': 'form-control'}),
+            'email':      forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
+
+class UserProfileForm(forms.ModelForm):
+    """All UserProfile fields."""
+    class Meta:
+        model = UserProfile
+        exclude = ['user', 'updated_at']
+        widgets = {
+            'phone':             forms.TextInput(attrs={'class': 'form-control'}),
+            'alternate_phone':   forms.TextInput(attrs={'class': 'form-control'}),
+            'date_of_birth':     forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'gender':            forms.Select(attrs={'class': 'form-select'}),
+            'blood_group':       forms.Select(attrs={'class': 'form-select'}),
+            'address':           forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'emergency_contact': forms.TextInput(attrs={'class': 'form-control'}),
+            'profile_photo':     forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+            'designation':       forms.TextInput(attrs={'class': 'form-control'}),
+            'department':        forms.TextInput(attrs={'class': 'form-control'}),
+            'specialization':    forms.TextInput(attrs={'class': 'form-control'}),
+            'qualification':     forms.TextInput(attrs={'class': 'form-control'}),
+            'employee_code':     forms.TextInput(attrs={'class': 'form-control'}),
+            'joining_date':      forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'username_handle':   forms.TextInput(attrs={'class': 'form-control', 'placeholder': '@handle'}),
+            'document_1':        forms.FileInput(attrs={'class': 'form-control'}),
+            'document_1_name':   forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Aadhaar Card'}),
+            'document_2':        forms.FileInput(attrs={'class': 'form-control'}),
+            'document_2_name':   forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Degree Certificate'}),
+            'document_3':        forms.FileInput(attrs={'class': 'form-control'}),
+            'document_3_name':   forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Registration Certificate'}),
+        }

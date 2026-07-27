@@ -45,6 +45,7 @@
                         <div class="col-md-2"><label class="small">Date</label><input type="date" name="date" class="form-control form-control-sm" value="{{ today }}"></div>
                     </div>
 
+                    <div class="table-responsive">
                     <table class="hms-table mt-3">
                         <thead>
                             <tr>
@@ -57,6 +58,7 @@
                         </thead>
                         <tbody id="selectedTestsBody"></tbody>
                     </table>
+                    </div>
 
                     <div class="mt-2 small">
                         Total: Rs.<span id="labTotal">0</span> |
@@ -64,19 +66,18 @@
                     </div>
                 </div>
 
-                <div class="lab-footer-bar">
+                <div class="lab-footer-bar flex-wrap">
                     <strong>Total</strong> <span class="badge bg-success fs-6" id="labTotalBadge">0</span>
-                    <label class="small mb-0">Discount</label><input type="number" class="form-control form-control-sm" style="width:80px" id="labDiscount2" value="0">
-                    <label class="small mb-0">Waive Off</label><input type="number" class="form-control form-control-sm" style="width:80px" id="labWaiveOff" value="0">
-                    <label class="small mb-0">Deposit</label><input type="number" class="form-control form-control-sm" style="width:80px" id="labDeposit" value="0">
-                    <label class="small mb-0">Due</label><input type="number" class="form-control form-control-sm" style="width:80px" id="labDue" readonly>
+                    <label class="small mb-0">Discount</label><input type="number" class="form-control form-control-sm" style="width:80px;min-width:60px" id="labDiscount2" value="0">
+                    <label class="small mb-0">Waive Off</label><input type="number" class="form-control form-control-sm" style="width:80px;min-width:60px" id="labWaiveOff" value="0">
+                    <label class="small mb-0">Deposit</label><input type="number" class="form-control form-control-sm" style="width:80px;min-width:60px" id="labDeposit" value="0">
+                    <label class="small mb-0">Due</label><input type="number" class="form-control form-control-sm" style="width:80px;min-width:60px" id="labDue" readonly>
                     <label class="small mb-0">Mode</label>
-                    <select name="payment_mode" id="labPayMode" class="form-select form-select-sm" style="width:100px">
+                    <select name="payment_mode" id="labPayMode" class="form-select form-select-sm" style="width:100px;min-width:80px">
                         <option>Cash</option>
                         <option>UPI</option>
                         <option>Card</option>
                     </select>
-
                     <button type="button" class="btn btn-outline-warning ms-auto me-2" id="printLabBtn">Print Test Bill</button>
                     <button type="submit" class="btn btn-primary">Submit</button>
                 </div>

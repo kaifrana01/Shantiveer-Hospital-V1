@@ -15,7 +15,8 @@ from django.core.cache import cache
 from django.contrib.auth.views import PasswordResetConfirmView
 from django.views.decorators.http import require_POST
 
-from .forms import StyledLoginForm, ForgotPasswordForm, StyledPasswordChangeForm, StyledSetPasswordForm, ChangeEmailForm
+from .forms import StyledLoginForm, ForgotPasswordForm, StyledPasswordChangeForm, StyledSetPasswordForm, ChangeEmailForm, UserBasicForm, UserProfileForm
+from .models import UserProfile
 
 logger = logging.getLogger(__name__)
 _MAX_ATTEMPTS = getattr(settings, 'LOGIN_ATTEMPTS_LIMIT', 5)
@@ -201,3 +202,38 @@ def change_password_view(request):
         messages.success(request, 'Password changed.')
         return redirect('core:home')
     return render(request, 'accounts/change_password.html', {'form': form})
+
+
+@login_required
+def profile_view(request):
+    """View own profile — read-only overview with tab switching."""
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    role = request.user.groups.all().first()
+    return render(request, 'accounts/profile.html', {
+        'profile': profile,
+        'role': role,
+        'active_sidebar': 'profile',
+    })
+
+
+@login_required
+def profile_edit_view(request):
+    """Edit own profile — personal details, employment, documents."""
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    if request.method == 'POST':
+        u_form = UserBasicForm(request.POST, instance=request.user)
+        p_form = UserProfileForm(request.POST, request.FILES, instance=profile)
+        if u_form.is_valid() and p_form.is_valid():
+            u_form.save()
+            p_form.save()
+            messages.success(request, 'Profile updated successfully.')
+            return redirect('accounts:profile')
+    else:
+        u_form = UserBasicForm(instance=request.user)
+        p_form = UserProfileForm(instance=profile)
+    return render(request, 'accounts/profile_edit.html', {
+        'u_form': u_form,
+        'p_form': p_form,
+        'profile': profile,
+        'active_sidebar': 'profile',
+    })

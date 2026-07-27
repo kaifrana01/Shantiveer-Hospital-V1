@@ -6,7 +6,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ultrasound</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="stylesheet" href="{% static 'css/responsive_overrides.css' %}">
+  <link rel="stylesheet" href="{% static 'css/mobile.css' %}">
 </head>
 <body>
   {% include 'includes/sidebar_dashboard.html' %}
@@ -129,6 +133,25 @@
       checkboxes.forEach(cb => cb.addEventListener('change', calc));
       calc();
     })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
+  <script>
+  /* ── Mobile sidebar toggle (standalone pages) ── */
+  (function(){
+    var btn     = document.getElementById('sidebarToggleBtn');
+    var sidebar = document.getElementById('dashSidebar');
+    if(!btn || !sidebar) return;
+    var overlay = document.createElement('div');
+    overlay.className = 'sidebar-overlay';
+    overlay.id = 'sidebarOverlay';
+    document.body.appendChild(overlay);
+    function openSidebar(){ sidebar.classList.add('open'); overlay.classList.add('active'); btn.setAttribute('aria-expanded','true'); btn.querySelector('i').className='bi bi-x-lg'; document.body.style.overflow='hidden'; }
+    function closeSidebar(){ sidebar.classList.remove('open'); overlay.classList.remove('active'); btn.setAttribute('aria-expanded','false'); btn.querySelector('i').className='bi bi-list'; document.body.style.overflow=''; }
+    btn.addEventListener('click', function(){ sidebar.classList.contains('open') ? closeSidebar() : openSidebar(); });
+    overlay.addEventListener('click', closeSidebar);
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSidebar(); });
+    sidebar.querySelectorAll('a[href]').forEach(function(a){ a.addEventListener('click', function(){ if(window.innerWidth<=992) closeSidebar(); }); });
+  })();
   </script>
 </body>
 </html>

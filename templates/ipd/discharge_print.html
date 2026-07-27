@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Discharge Summary - {{ discharge.admission.ipd_no }}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -133,6 +134,18 @@
     body { background: #fff; padding: 0; }
     .print-btn, .no-print { display: none !important; }
     .page { box-shadow: none; border-radius: 0; max-width: 100%; }
+  }
+
+  @media (max-width: 600px) {
+    body { padding: 0.5rem 0; }
+    .page { border-radius: 0; margin: 0; }
+    .top-band { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px 16px; min-height: auto; }
+    .hospital-contact { text-align: left; }
+    .body { padding: 12px 14px 16px; }
+    .info-grid { grid-template-columns: 1fr 1fr; }
+    .info-grid-2 { grid-template-columns: 1fr; }
+    .sig-grid { grid-template-columns: 1fr; gap: 12px; }
+    .footer { flex-direction: column; gap: 6px; align-items: flex-start; }
   }
 </style>
 </head>

@@ -92,6 +92,7 @@
             </div>
           </div>
           <ul class="dropdown-menu dropdown-menu-end shadow">
+            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="bi bi-person-circle"></i> My Profile</a></li>
             <li><a class="dropdown-item" href="{% url 'accounts:change_password' %}"><i class="bi bi-key"></i> Change Password</a></li>
             <li><hr class="dropdown-divider"></li>
             <li><form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="dropdown-item text-danger" style="background:none;border:none;cursor:pointer;width:100%;text-align:left;"><i class="bi bi-box-arrow-right"></i> Logout</button></form></li>

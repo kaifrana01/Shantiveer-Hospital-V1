@@ -2,8 +2,8 @@
 {% block title %}Add Doctor{% endblock %}
 {% block page_title %}Add Doctor{% endblock %}
 {% block content %}
-<div class="d-flex gap-3 p-3">
-    <div class="master-sidebar" style="width:150px">
+<div class="d-flex gap-3 p-3 flex-wrap">
+    <div class="master-sidebar" style="width:150px;min-width:120px">
         <a href="{% url 'masterdata:doctors' %}" class="active">add-doctor</a>
         <a href="{% url 'masterdata:doctor_list' %}">list-doctor</a>
     </div>

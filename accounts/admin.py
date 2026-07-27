@@ -298,3 +298,19 @@ except admin.sites.NotRegistered:
 
 admin.site.register(User, HMSUserAdmin)
 admin.site.register(LogEntry, ActivityLogAdmin)
+
+# ─── UserProfile Admin ────────────────────────────────────────────────────────
+from .models import UserProfile
+
+class UserProfileInline(admin.StackedInline):
+    model = UserProfile
+    can_delete = False
+    verbose_name_plural = 'Profile'
+    extra = 0
+
+# Re-register User with inline profile
+admin.site.unregister(User)
+class HMSUserAdminWithProfile(HMSUserAdmin):
+    inlines = [UserProfileInline]
+
+admin.site.register(User, HMSUserAdminWithProfile)

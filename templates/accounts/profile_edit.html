@@ -1,0 +1,333 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Edit Profile — ShantiVeer HMS{% endblock %}
+{% block page_title %}Edit My Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+.prof-edit-wrap { max-width: 900px; margin: 0 auto; }
+.edit-section-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.edit-section-header {
+  background: linear-gradient(90deg, #eff6ff, #fff);
+  border-bottom: 1px solid var(--border);
+  padding: 0.7rem 1.25rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--primary-blue);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.edit-section-body { padding: 1.25rem; }
+.form-label-sm {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.3rem;
+}
+.photo-preview-wrap {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.current-photo {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--border);
+}
+.current-photo-placeholder {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem; font-weight: 700; color: #fff;
+  border: 3px solid var(--border);
+  flex-shrink: 0;
+}
+.doc-upload-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  align-items: end;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+}
+.doc-upload-row:last-child { margin-bottom: 0; }
+.doc-num {
+  grid-column: 1 / -1;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--primary-blue);
+  margin-bottom: 0.25rem;
+}
+@media (max-width: 576px) {
+  .doc-upload-row { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+<div class="prof-edit-wrap">
+
+  {% if messages %}
+    {% for m in messages %}
+    <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %}">{{ m }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+      <h2 class="mb-0" style="font-size:1.15rem;font-weight:700">Edit My Details</h2>
+      <div class="text-muted small">Changes apply to your profile immediately</div>
+    </div>
+    <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i> Back to Profile
+    </a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" id="profileEditForm">
+    {% csrf_token %}
+
+    <!-- ── Basic Info ── -->
+    <div class="edit-section-card">
+      <div class="edit-section-header">
+        <i class="bi bi-person-circle"></i> Basic Information
+      </div>
+      <div class="edit-section-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label-sm">First Name</label>
+            {{ u_form.first_name }}
+            {% if u_form.first_name.errors %}<div class="text-danger small mt-1">{{ u_form.first_name.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-sm">Last Name</label>
+            {{ u_form.last_name }}
+            {% if u_form.last_name.errors %}<div class="text-danger small mt-1">{{ u_form.last_name.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-sm">Email</label>
+            {{ u_form.email }}
+            {% if u_form.email.errors %}<div class="text-danger small mt-1">{{ u_form.email.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-sm">Username Handle</label>
+            {{ p_form.username_handle }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Profile Photo ── -->
+    <div class="edit-section-card" id="photo">
+      <div class="edit-section-header">
+        <i class="bi bi-camera"></i> Profile Photo
+      </div>
+      <div class="edit-section-body">
+        <div class="photo-preview-wrap">
+          {% if profile.profile_photo %}
+            <img src="{{ profile.profile_photo.url }}" alt="Current Photo" class="current-photo" id="photoPreview">
+          {% else %}
+            <div class="current-photo-placeholder" id="photoPlaceholder">
+              {{ user.get_full_name|default:user.username|first|upper }}
+            </div>
+            <img src="" alt="" class="current-photo d-none" id="photoPreview">
+          {% endif %}
+          <div>
+            <label class="form-label-sm d-block">Upload New Photo</label>
+            {{ p_form.profile_photo }}
+            <div class="text-muted small mt-1">JPG, PNG — max 2 MB</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Personal Details ── -->
+    <div class="edit-section-card">
+      <div class="edit-section-header">
+        <i class="bi bi-person-lines-fill"></i> Personal Details
+      </div>
+      <div class="edit-section-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label-sm">Gender</label>
+            {{ p_form.gender }}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label-sm">Date of Birth</label>
+            {{ p_form.date_of_birth }}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label-sm">Blood Group</label>
+            {{ p_form.blood_group }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-sm">Phone</label>
+            {{ p_form.phone }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-sm">Alternate Phone</label>
+            {{ p_form.alternate_phone }}
+          </div>
+          <div class="col-12">
+            <label class="form-label-sm">Address</label>
+            {{ p_form.address }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-sm">Emergency Contact</label>
+            {{ p_form.emergency_contact }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Employment Details ── -->
+    <div class="edit-section-card">
+      <div class="edit-section-header">
+        <i class="bi bi-briefcase"></i> Employment Details
+      </div>
+      <div class="edit-section-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label-sm">Designation</label>
+            {{ p_form.designation }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-sm">Department</label>
+            {{ p_form.department }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-sm">Specialization</label>
+            {{ p_form.specialization }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-sm">Qualification</label>
+            {{ p_form.qualification }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-sm">Employee Code</label>
+            {{ p_form.employee_code }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-sm">Joining Date</label>
+            {{ p_form.joining_date }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Documents ── -->
+    <div class="edit-section-card" id="documents">
+      <div class="edit-section-header">
+        <i class="bi bi-folder2-open"></i> Documents
+      </div>
+      <div class="edit-section-body">
+        <p class="text-muted small mb-3">Upload up to 3 documents (PDF, images). Existing files are kept unless you upload a replacement.</p>
+
+        <!-- Document 1 -->
+        <div class="doc-upload-row">
+          <div class="doc-num">Document 1</div>
+          <div>
+            <label class="form-label-sm">Document Name</label>
+            {{ p_form.document_1_name }}
+          </div>
+          <div>
+            <label class="form-label-sm">File</label>
+            {{ p_form.document_1 }}
+            {% if profile.document_1 %}
+            <div class="text-muted small mt-1">
+              Current: <a href="{{ profile.document_1.url }}" target="_blank">{{ profile.document_1_name|default:"View file" }}</a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Document 2 -->
+        <div class="doc-upload-row">
+          <div class="doc-num">Document 2</div>
+          <div>
+            <label class="form-label-sm">Document Name</label>
+            {{ p_form.document_2_name }}
+          </div>
+          <div>
+            <label class="form-label-sm">File</label>
+            {{ p_form.document_2 }}
+            {% if profile.document_2 %}
+            <div class="text-muted small mt-1">
+              Current: <a href="{{ profile.document_2.url }}" target="_blank">{{ profile.document_2_name|default:"View file" }}</a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Document 3 -->
+        <div class="doc-upload-row">
+          <div class="doc-num">Document 3</div>
+          <div>
+            <label class="form-label-sm">Document Name</label>
+            {{ p_form.document_3_name }}
+          </div>
+          <div>
+            <label class="form-label-sm">File</label>
+            {{ p_form.document_3 }}
+            {% if profile.document_3 %}
+            <div class="text-muted small mt-1">
+              Current: <a href="{{ profile.document_3.url }}" target="_blank">{{ profile.document_3_name|default:"View file" }}</a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Save ── -->
+    <div class="d-flex gap-2 justify-content-end mb-4 flex-wrap">
+      <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-circle"></i> Save Changes
+      </button>
+    </div>
+
+  </form>
+</div>
+</div>
+
+<script>
+/* Live photo preview */
+(function () {
+  var inp = document.querySelector('input[type="file"][name="profile_photo"]');
+  if (!inp) return;
+  inp.addEventListener('change', function () {
+    var file = this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var preview = document.getElementById('photoPreview');
+      var placeholder = document.getElementById('photoPlaceholder');
+      if (preview) {
+        preview.src = e.target.result;
+        preview.classList.remove('d-none');
+      }
+      if (placeholder) placeholder.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+})();
+</script>
+{% endblock %}
