@@ -37,14 +37,29 @@ class Patient(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.uhid:
-            # Use select_for_update inside a transaction to prevent race conditions
-            # when two patients are registered simultaneously.
+            # Generate a unique UHID safely under concurrent load.
+            #
+            # The old approach used select_for_update() on an aggregate(), which
+            # does NOT actually acquire a row lock in MySQL — aggregate queries
+            # return a synthetic row, not real locked rows. Two simultaneous
+            # requests would read the same MAX and generate the same UHID,
+            # causing IntegrityError (1062 duplicate entry).
+            #
+            # Fix: lock the actual row with the current maximum UHID using
+            # select_for_update() on a real queryset, then compute next value.
+            # The inner atomic() block escalates to a savepoint if we are
+            # already inside a transaction (e.g. from opd/views.py).
             from django.db import transaction as _tx
             with _tx.atomic():
-                from django.db.models import Max
-                max_val = Patient.objects.select_for_update().aggregate(m=Max('uhid'))['m']
-                if max_val and str(max_val).isdigit():
-                    self.uhid = str(int(max_val) + 1)
+                last = (
+                    Patient.objects
+                    .select_for_update()
+                    .order_by('-uhid')
+                    .values('uhid')
+                    .first()
+                )
+                if last and str(last['uhid']).isdigit():
+                    self.uhid = str(int(last['uhid']) + 1)
                 else:
                     self.uhid = str(Patient.objects.count() + 3490)
         super().save(*args, **kwargs)

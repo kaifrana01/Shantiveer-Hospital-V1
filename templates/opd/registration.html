@@ -100,7 +100,7 @@
                 <div class="row g-2 mt-2" id="opdUpiQrWrap" style="display:none;">
                     <div class="col-md-6">
                         <label class="form-label small">UPI QR</label>
-                        <div id="opdUpiQrBox" class="p-2 border rounded" style="text-align:center;" data-qr-url="{% static 'img/QR code.png' %}"></div>
+                        <div id="opdUpiQrBox" class="p-2 border rounded" style="text-align:center;" data-qr-url="{% static 'img/QR_code.png' %}"></div>
                         <div class="small text-muted mt-1" id="opdUpiQrHint"></div>
                     </div>
                     <div class="col-md-6">
@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mode !== 'UPI') return;
 
         // Use static QR image via data attribute to respect Django STATIC_URL
-        const qrImgUrl = document.getElementById('opdUpiQrBox').dataset.qrUrl || '{% static "img/QR code.png" %}';
+        const qrImgUrl = document.getElementById('opdUpiQrBox').dataset.qrUrl || '{% static "img/QR_code.png" %}';
 
         const box = document.getElementById('opdUpiQrBox');
         if (box) box.innerHTML = `<img src="${qrImgUrl}" alt="UPI QR" width="200" height="200"/>`;
