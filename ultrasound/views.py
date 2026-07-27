@@ -68,13 +68,13 @@ def dashboard(request):
     for d, amt in inc_rows:
         if d is None:
             continue
-        inc_map[d] = float(inc_map.get(d, 0) + (amt or 0))
+        inc_map[d] = float(inc_map.get(d, 0.0) + float(amt or 0))
 
     exp_map = {}
     for d, amt in exp_rows:
         if d is None:
             continue
-        exp_map[d] = float(exp_map.get(d, 0) + (amt or 0))
+        exp_map[d] = float(exp_map.get(d, 0.0) + float(amt or 0))
 
     chart_labels = []
     chart_income = []
@@ -100,14 +100,14 @@ def dashboard(request):
         if d is None:
             continue
         key = d.strftime('%b %Y')
-        monthly_inc_map[key] = float(monthly_inc_map.get(key, 0) + (amt or 0))
+        monthly_inc_map[key] = float(monthly_inc_map.get(key, 0.0) + float(amt or 0))
 
     monthly_exp_map = {}
     for d, amt in monthly_exp_rows:
         if d is None:
             continue
         key = d.strftime('%b %Y')
-        monthly_exp_map[key] = float(monthly_exp_map.get(key, 0) + (amt or 0))
+        monthly_exp_map[key] = float(monthly_exp_map.get(key, 0.0) + float(amt or 0))
 
     all_months = sorted(set(monthly_inc_map.keys()) | set(monthly_exp_map.keys()))
 
@@ -144,6 +144,16 @@ def dashboard(request):
         .order_by('-total')
     )
 
+    # Serialize payment_dist to JSON-safe list (Decimal → float)
+    payment_dist_json = json.dumps([
+        {
+            'payment_mode': p['payment_mode'],
+            'total': float(p['total'] or 0),
+            'count': p['count'],
+        }
+        for p in payment_dist
+    ])
+
     context = {
         'active_sidebar': 'ultrasound_dashboard',
         # KPIs
@@ -162,6 +172,7 @@ def dashboard(request):
         'monthly_chart_labels': json.dumps(monthly_chart_labels),
         'monthly_chart_income': json.dumps(monthly_chart_income),
         'monthly_chart_expenses': json.dumps(monthly_chart_expenses),
+        'payment_dist_json': payment_dist_json,
         # Tables
         'test_stats': list(test_stats),
         'recent_bills': recent_bills,

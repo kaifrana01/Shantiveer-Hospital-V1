@@ -39,35 +39,34 @@ class Patient(models.Model):
         if not self.uhid:
             # Generate a unique UHID safely under concurrent load.
             #
-            # IMPORTANT: uhid is a CharField, so lexicographic ordering is
-            # unreliable (e.g. '10000' < '9999' as strings). We must cast to
-            # integer before finding the max, otherwise two concurrent requests
-            # can both read the same "last" value and produce a duplicate UHID
-            # (IntegrityError 1062).
+            # uhid is a CharField and some legacy rows have non-numeric values
+            # (e.g. patient name used as UHID). Cast('uhid', IntegerField())
+            # crashes MySQL on those rows with a data-truncation error, which
+            # resets the connection (ERR_CONNECTION_RESET in the browser).
             #
-            # Fix: use a DB-level CAST to get the true numeric maximum, then
-            # lock *all* existing rows with select_for_update() so no other
-            # transaction can insert until we commit. The inner atomic() block
-            # escalates to a savepoint when called from inside an existing
-            # transaction (e.g. opd/views.py or ipd/views.py).
+            # Safe approach:
+            #   1. Lock all rows first so no concurrent insert can sneak in.
+            #   2. Fetch all UHIDs into Python, filter to purely numeric ones,
+            #      find the true integer max, and increment.
+            #   3. Fall back to a safe starting value if no numeric UHIDs exist.
             from django.db import transaction as _tx
-            from django.db.models.functions import Cast
-            from django.db.models import IntegerField, Max
             with _tx.atomic():
                 # Lock all patient rows to block concurrent inserts.
                 Patient.objects.select_for_update().values('id').first()
 
-                # Find the true numeric maximum across all UHID values.
-                result = (
+                # Pull only numeric-looking UHIDs — filter in the DB with REGEXP
+                # so we never pass a non-numeric string to int().
+                numeric_uhids = (
                     Patient.objects
-                    .annotate(uhid_int=Cast('uhid', IntegerField()))
-                    .aggregate(max_uhid=Max('uhid_int'))
+                    .filter(uhid__regex=r'^\d+$')
+                    .values_list('uhid', flat=True)
                 )
-                max_uhid = result.get('max_uhid')
+                max_uhid = max((int(u) for u in numeric_uhids), default=None)
+
                 if max_uhid is not None:
                     self.uhid = str(max_uhid + 1)
                 else:
-                    # No patients yet — start the sequence at 10001.
+                    # No numeric UHIDs yet — start the sequence at 10001.
                     self.uhid = '10001'
         super().save(*args, **kwargs)
 

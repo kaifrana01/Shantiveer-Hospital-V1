@@ -30,11 +30,9 @@
             <a href="{% url 'ipd:bill' %}?ipd_no={{ d.ipd_no }}" class="btn btn-info btn-sm text-white">
                 <i class="bi bi-receipt"></i> Bill
             </a>
-            {% if module_access.billing_collect != 'none' %}
             <a href="{% url 'ipd:payment' %}?ipd_no={{ d.ipd_no }}" class="btn btn-warning btn-sm">
                 <i class="bi bi-credit-card"></i> Collect
             </a>
-            {% endif %}
         </td>
     </tr>
     {% endfor %}</tbody></table>

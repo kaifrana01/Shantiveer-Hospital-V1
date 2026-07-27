@@ -19,9 +19,10 @@ logger = logging.getLogger(__name__)
 
 def _dump_database(dump_path: Path) -> str:
     """
-    Dump the configured database (PostgreSQL or MySQL) to dump_path.
+    Dump the configured database to dump_path.
+    Supports PostgreSQL, MySQL, and SQLite.
     Returns the archive name to use for the dump inside the backup zip.
-    Raises RuntimeError/subprocess.CalledProcessError on failure.
+    Raises RuntimeError on failure.
     """
     db_cfg = settings.DATABASES['default']
     engine = db_cfg.get('ENGINE', '')
@@ -42,13 +43,8 @@ def _dump_database(dump_path: Path) -> str:
         ]
 
         result = subprocess.run(
-            cmd,
-            env=env,
-            capture_output=True,
-            text=True,
-            timeout=300,
+            cmd, env=env, capture_output=True, text=True, timeout=300,
         )
-
         if result.returncode != 0:
             raise RuntimeError(
                 f'pg_dump exited with code {result.returncode}. '
@@ -71,19 +67,22 @@ def _dump_database(dump_path: Path) -> str:
         ]
 
         result = subprocess.run(
-            cmd,
-            env=env,
-            capture_output=True,
-            text=True,
-            timeout=300,
+            cmd, env=env, capture_output=True, text=True, timeout=300,
         )
-
         if result.returncode != 0:
             raise RuntimeError(
                 f'mysqldump exited with code {result.returncode}. '
                 f'stderr: {result.stderr.strip()}'
             )
         return 'database/dump.sql'
+
+    elif 'sqlite3' in engine:
+        import shutil
+        db_file = Path(db_cfg.get('NAME', 'db.sqlite3'))
+        if not db_file.exists():
+            raise RuntimeError(f'SQLite database file not found: {db_file}')
+        shutil.copy2(db_file, dump_path)
+        return 'database/db.sqlite3'
 
     else:
         raise RuntimeError(f'Unsupported database engine for backup: {engine}')
@@ -185,7 +184,7 @@ def backup_dashboard(request):
     schedule = BackupSchedule.objects.first()
     backups = BackupRecord.objects.all()[:20]
     return render(request, 'core/backup.html', {
-        'active_sidebar': 'dashboard',
+        'active_sidebar': 'backup',
         'schedule': schedule,
         'backups': backups,
     })
@@ -204,22 +203,22 @@ def backup_now(request):
 
 
 @require_module('backup', level='full')
+@require_POST
 def backup_schedule_save(request):
     """Save or update the backup schedule preference."""
-    if request.method == 'POST':
-        frequency = request.POST.get('frequency', 'manual')
-        valid = {c[0] for c in BackupSchedule.FREQUENCY_CHOICES}
-        if frequency not in valid:
-            messages.error(request, 'Invalid frequency selected.')
-            return redirect('core:backup')
-        is_active = frequency != 'manual'
-        schedule, _ = BackupSchedule.objects.get_or_create(pk=1)
-        schedule.frequency = frequency
-        schedule.is_active = is_active
-        schedule.created_by = request.user
-        schedule.save()
-        label = dict(BackupSchedule.FREQUENCY_CHOICES).get(frequency, frequency)
-        messages.success(request, f'Backup schedule set to: {label}')
+    frequency = request.POST.get('frequency', 'manual')
+    valid = {c[0] for c in BackupSchedule.FREQUENCY_CHOICES}
+    if frequency not in valid:
+        messages.error(request, 'Invalid frequency selected.')
+        return redirect('core:backup')
+    is_active = frequency != 'manual'
+    schedule, _ = BackupSchedule.objects.get_or_create(pk=1)
+    schedule.frequency = frequency
+    schedule.is_active = is_active
+    schedule.created_by = request.user
+    schedule.save()
+    label = dict(BackupSchedule.FREQUENCY_CHOICES).get(frequency, frequency)
+    messages.success(request, f'Backup schedule set to: {label}')
     return redirect('core:backup')
 
 
@@ -237,14 +236,14 @@ def backup_download(request, pk):
 
 
 @require_module('backup', level='full')
+@require_POST
 def backup_delete(request, pk):
     """Delete a backup record and its file."""
-    if request.method == 'POST':
-        record = get_object_or_404(BackupRecord, pk=pk)
-        path = Path(record.filepath).resolve()
-        backup_dir = (Path(settings.BASE_DIR) / 'backups').resolve()
-        if str(path).startswith(str(backup_dir)) and path.exists():
-            path.unlink()
-        record.delete()
-        messages.success(request, 'Backup deleted.')
+    record = get_object_or_404(BackupRecord, pk=pk)
+    path = Path(record.filepath).resolve()
+    backup_dir = (Path(settings.BASE_DIR) / 'backups').resolve()
+    if str(path).startswith(str(backup_dir)) and path.exists():
+        path.unlink()
+    record.delete()
+    messages.success(request, 'Backup deleted.')
     return redirect('core:backup')

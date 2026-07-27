@@ -1,0 +1,84 @@
+{% extends 'base_ipd.html' %}
+{% block title %}Add Discharge{% endblock %}
+{% block page_title %}Add Discharge{% endblock %}
+{% block content %}
+<div class="page-container">
+  <div class="form-card">
+    <h2>Discharge Patient</h2>
+
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show" role="alert">
+          {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="row g-3">
+
+        <div class="col-md-4">
+          <label class="form-label small">Select Admitted Patient</label>
+          <select name="ipd_no" id="ipdPatientSelect" class="form-select" required>
+            <option value="">— Select Patient —</option>
+            {% for a in admitted_patients %}
+            <option value="{{ a.ipd_no }}"
+                    data-name="{{ a.patient.name }}"
+                    data-room="{{ a.room_no }}"
+                    data-consultant="{{ a.consultant }}"
+                    data-date="{{ a.date }}">
+              {{ a.ipd_no }} — {{ a.patient.name }} ({{ a.room_no }})
+            </option>
+            {% empty %}
+            <option disabled>No admitted patients</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small">Patient Name</label>
+          <input type="text" id="patientNameField" class="form-control" readonly placeholder="Auto-filled">
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label small">Room No</label>
+          <input type="text" id="roomField" class="form-control" readonly placeholder="Auto-filled">
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label small">Consultant</label>
+          <input type="text" id="consultantField" class="form-control" readonly placeholder="Auto-filled">
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label small">Discharge Date</label>
+          <input type="date" name="discharge_date" class="form-control" value="{{ today }}" required>
+        </div>
+
+      </div>
+
+      <div class="text-center mt-4 gap-2">
+        <button type="submit" class="btn btn-primary px-4"
+                onclick="return confirm('Confirm discharge for selected patient?');">
+          <i class="bi bi-box-arrow-right"></i> Discharge Patient
+        </button>
+        <a href="{% url 'ipd:discharge_list' %}" class="btn btn-outline-secondary ms-2">
+          <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.getElementById('ipdPatientSelect').addEventListener('change', function () {
+  const opt = this.options[this.selectedIndex];
+  document.getElementById('patientNameField').value  = opt.dataset.name       || '';
+  document.getElementById('roomField').value         = opt.dataset.room       || '';
+  document.getElementById('consultantField').value   = opt.dataset.consultant || '';
+});
+</script>
+{% endblock %}
+{% endblock %}

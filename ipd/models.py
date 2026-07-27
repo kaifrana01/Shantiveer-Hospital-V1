@@ -63,6 +63,9 @@ class IPDPayment(models.Model):
     upi_id = models.CharField(max_length=200, blank=True, help_text='UPI ID used for payment (for UPI mode).')
     remarks = models.CharField(max_length=300, blank=True)
     paid_at = models.DateTimeField(auto_now_add=True)
+    # Field exists in the DB (added manually via SQL). Keep it here so Django
+    # includes it in every INSERT and doesn't hit OperationalError 1364.
+    is_opd_carry_forward = models.BooleanField(default=False)
 
 
     history = HistoricalRecords()

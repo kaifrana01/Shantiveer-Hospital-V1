@@ -497,7 +497,7 @@ def admission_beds(request):
 @require_module('discharge', level='view')
 def discharge_list(request):
     q = request.GET.get('q', '').strip()
-    items = DischargeSummary.objects.select_related('admission__patient')
+    items = DischargeSummary.objects.select_related('admission__patient').order_by('-discharge_date')
     if q:
         items = items.filter(
             Q(admission__ipd_no__icontains=q) | Q(admission__patient__name__icontains=q)
@@ -528,7 +528,7 @@ def discharge_add(request):
         if not adm:
             messages.error(request, 'IPD Number not found. Please check and try again.')
             return redirect('ipd:discharge_list')
-        
+
         if adm:
             with transaction.atomic():
                 DischargeSummary.objects.get_or_create(
@@ -557,7 +557,14 @@ def discharge_add(request):
                     return redirect(next_url)
 
         return redirect('ipd:discharge_list')
-    return redirect('ipd:discharge_list')
+
+    # GET — show a discharge form with all admitted patients listed
+    admitted = IPDAdmission.objects.filter(status='Admitted').select_related('patient').order_by('-date')
+    return render(request, 'ipd/discharge_add.html', {
+        'active_sidebar': 'ipd',
+        'today': timezone.localdate().isoformat(),
+        'admitted_patients': admitted,
+    })
 
 
 @require_module('discharge', level='view')

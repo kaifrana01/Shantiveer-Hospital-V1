@@ -61,6 +61,19 @@ class Command(BaseCommand):
             )
             return
 
+        # Guard against duplicate runs: skip if a successful backup already
+        # exists for today with this frequency type.
+        already_done = BackupRecord.objects.filter(
+            backup_type=frequency,
+            status='success',
+            created_at__date=today,
+        ).exists()
+        if already_done:
+            self.stdout.write(
+                f'A successful {frequency} backup already exists for {today}. Skipping.'
+            )
+            return
+
         admin_user = User.objects.filter(is_superuser=True).first()
         record = _do_backup(admin_user, backup_type=frequency)
 

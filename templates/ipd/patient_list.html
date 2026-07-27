@@ -46,7 +46,7 @@
                 <td>{{ p.total_amount|stringformat:"0.2f" }}</td>
 
                 <td class="text-nowrap">
-                    <a href="{% url 'uhid:patient_profile' p.uhid %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-person-lines-fill"></i> Profile</a>
+                    <a href="{% url 'uhid:update' %}?uhid={{ p.uhid }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-person-lines-fill"></i> Profile</a>
                     <a href="{% url 'ipd:admission' %}?edit={{ p.id }}" class="btn btn-warning btn-sm">Edit</a>
                     {% comment %} <a href="{% url 'prescription:list' %}?ipd_patient={{ p.ipd_no }}" class="btn btn-secondary btn-sm">Prescription</a> {% endcomment %}
                     {% if p.status != 'Discharged' %}

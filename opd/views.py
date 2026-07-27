@@ -14,7 +14,7 @@ from income.models import LedgerEntry
 from .models import OPDVisit, OPDVisitTestItem
 from prescription.models import Prescription
 from lab.models import LabTestMaster
-from core.rbac import require_module
+from core.rbac import require_module, has_access
 from masterdata.models import Doctor
 
 
@@ -86,10 +86,10 @@ def registration(request):
         visit_obj = None
         if edit_id:
             visit_obj = get_object_or_404(OPDVisit, pk=edit_id)
-            if not request.user.has_perm('opd.change_opdvisit'):
+            if not has_access(request.user, 'opd_registration', level='full'):
                 raise PermissionDenied
         else:
-            if not request.user.has_perm('opd.add_opdvisit'):
+            if not has_access(request.user, 'opd_registration', level='full'):
                 raise PermissionDenied
 
         def _cap_text(s):
@@ -231,7 +231,6 @@ def registration(request):
                 messages.success(request, f'OPD {visit_obj.opd_no} saved successfully.')
 
         # Redirect to opd_list if available, otherwise prescription:list
-        from core.rbac import has_access
         if has_access(request.user, 'opd_list'):
             return redirect('opd:patient_list')
         return redirect('prescription:list')
@@ -282,7 +281,6 @@ def delete_opd_visit(request, pk):
             ).order_by('-created_at')[:1].delete()
         visit.delete()
     messages.success(request, f'OPD {visit.opd_no} deleted successfully.')
-    from core.rbac import has_access
     if has_access(request.user, 'opd_list'):
         return redirect('opd:patient_list')
     return redirect('prescription:list')

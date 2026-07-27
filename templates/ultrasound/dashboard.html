@@ -200,7 +200,7 @@
   const monthly_labels   = {{ monthly_chart_labels|safe }};
   const monthly_income   = {{ monthly_chart_income|safe }};
   const monthly_expenses = {{ monthly_chart_expenses|safe }};
-  const pay_dist = {{ payment_dist|default:'[]'|safe }};
+  const pay_dist = {{ payment_dist_json|safe }};
 
   // ── Shared chart defaults ──
   Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
