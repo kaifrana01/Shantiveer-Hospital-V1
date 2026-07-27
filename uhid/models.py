@@ -39,29 +39,36 @@ class Patient(models.Model):
         if not self.uhid:
             # Generate a unique UHID safely under concurrent load.
             #
-            # The old approach used select_for_update() on an aggregate(), which
-            # does NOT actually acquire a row lock in MySQL — aggregate queries
-            # return a synthetic row, not real locked rows. Two simultaneous
-            # requests would read the same MAX and generate the same UHID,
-            # causing IntegrityError (1062 duplicate entry).
+            # IMPORTANT: uhid is a CharField, so lexicographic ordering is
+            # unreliable (e.g. '10000' < '9999' as strings). We must cast to
+            # integer before finding the max, otherwise two concurrent requests
+            # can both read the same "last" value and produce a duplicate UHID
+            # (IntegrityError 1062).
             #
-            # Fix: lock the actual row with the current maximum UHID using
-            # select_for_update() on a real queryset, then compute next value.
-            # The inner atomic() block escalates to a savepoint if we are
-            # already inside a transaction (e.g. from opd/views.py).
+            # Fix: use a DB-level CAST to get the true numeric maximum, then
+            # lock *all* existing rows with select_for_update() so no other
+            # transaction can insert until we commit. The inner atomic() block
+            # escalates to a savepoint when called from inside an existing
+            # transaction (e.g. opd/views.py or ipd/views.py).
             from django.db import transaction as _tx
+            from django.db.models.functions import Cast
+            from django.db.models import IntegerField, Max
             with _tx.atomic():
-                last = (
+                # Lock all patient rows to block concurrent inserts.
+                Patient.objects.select_for_update().values('id').first()
+
+                # Find the true numeric maximum across all UHID values.
+                result = (
                     Patient.objects
-                    .select_for_update()
-                    .order_by('-uhid')
-                    .values('uhid')
-                    .first()
+                    .annotate(uhid_int=Cast('uhid', IntegerField()))
+                    .aggregate(max_uhid=Max('uhid_int'))
                 )
-                if last and str(last['uhid']).isdigit():
-                    self.uhid = str(int(last['uhid']) + 1)
+                max_uhid = result.get('max_uhid')
+                if max_uhid is not None:
+                    self.uhid = str(max_uhid + 1)
                 else:
-                    self.uhid = str(Patient.objects.count() + 3490)
+                    # No patients yet — start the sequence at 10001.
+                    self.uhid = '10001'
         super().save(*args, **kwargs)
 
     @property
