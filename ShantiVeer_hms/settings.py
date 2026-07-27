@@ -95,6 +95,7 @@ INSTALLED_APPS = [
 # ─── Middleware ───────────────────────────────────────────────────────────────
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'django.middleware.gzip.GZipMiddleware',
 ]
 
 if _WHITENOISE:
@@ -180,6 +181,7 @@ else:
             'PASSWORD': os.environ.get('MYSQL_PASSWORD', ''),
             'HOST': os.environ.get('MYSQL_HOST', '127.0.0.1'),
             'PORT': os.environ.get('MYSQL_PORT', '3306'),
+            'CONN_MAX_AGE': 600,
             'OPTIONS': _mysql_options,
         }
     }

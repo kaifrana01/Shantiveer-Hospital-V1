@@ -6,7 +6,7 @@
     <div class="search-bar-row mb-3" style="border-radius:4px">
         <form method="get" class="d-flex align-items-center gap-2 flex-wrap">
             <label>Date :</label>
-            <input type="date" name="date" class="form-control form-control-sm" style="width:160px" value="{{ selected_date }}">
+            <input type="date" name="date" class="form-control form-control-sm" style="width:160px;min-width:130px" value="{{ selected_date }}">
             <button class="btn btn-primary btn-sm">Submit</button>
             <a href="{% url 'income:daybook' %}" class="btn btn-primary btn-sm">Reset</a>
             <a href="{% url 'income:add' %}" class="btn btn-success btn-sm ms-auto">
@@ -15,15 +15,17 @@
         </form>
     </div>
     <div class="form-card">
-        <div class="d-flex justify-content-between mb-2">
+        <div class="d-flex justify-content-between mb-2 flex-wrap gap-2">
             <div class="btn-group btn-group-sm">
                 <button type="button" class="btn btn-outline-secondary" id="copyBtn">Copy</button>
                 <a class="btn btn-outline-secondary" href="{% url 'income:daybook_export' selected_date %}?export=csv">CSV</a>
                 <a class="btn btn-outline-secondary" href="{% url 'income:daybook_export' selected_date %}?export=pdf">PDF</a>
             </div>
-            <div class="d-flex align-items-center gap-2"><label class="small mb-0">Search:</label><input class="form-control form-control-sm" style="width:150px" id="tableSearch"></div>
+            <div class="d-flex align-items-center gap-2"><label class="small mb-0">Search:</label><input class="form-control form-control-sm" style="width:150px;min-width:100px" id="tableSearch"></div>
         </div>
+        <div class="table-responsive">
 
+        <div class="table-responsive">
         <table class="hms-table">
             <thead><tr><th>#</th><th>Date</th><th>Category</th><th>Patient Name</th><th>Description</th><th>Payment Mode</th><th>Amount</th><th>Action</th></tr></thead>
             <tbody>{% for e in entries %}
@@ -58,86 +60,132 @@
                 <tr class="fw-bold table-success"><td colspan="7" class="text-end">Total Income</td><td>{{ totals.income }}</td></tr>
             </tfoot>
         </table>
+        </div>
         <p class="text-center text-muted my-2">-----------Expenses-----------</p>
-        <div class="d-flex justify-content-between small text-muted mt-2">
-            <span>Showing 1 to {{ entries|length }} of {{ entries|length }} entries</span>
-            <nav><ul class="pagination pagination-sm mb-0"><li class="page-item"><a class="page-link">Previous</a></li><li class="page-item active"><a class="page-link">1</a></li><li class="page-item"><a class="page-link">Next</a></li></ul></nav>
+        <div class="d-flex justify-content-between align-items-center small text-muted mt-2">
+            <span id="dbShowingText">Showing 1 to {{ entries|length }} of {{ entries|length }} entries</span>
+            <nav>
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item" id="dbPrevItem"><a class="page-link" href="#" id="dbPrevBtn">Previous</a></li>
+                <li class="page-item" id="dbPageNumbers"></li>
+                <li class="page-item" id="dbNextItem"><a class="page-link" href="#" id="dbNextBtn">Next</a></li>
+              </ul>
+            </nav>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const searchInput = document.getElementById('tableSearch');
-    const tbody = document.querySelector('.hms-table tbody');
-    const countSpan = document.querySelector('.d-flex.justify-content-between.small.text-muted span');
+(function () {
+  var PAGE_SIZE = 10;
+  var table = document.querySelector('.hms-table');
+  if (!table) return;
+  var tbody = table.querySelector('tbody');
+  var allRows = Array.prototype.slice.call(tbody.querySelectorAll('tr')).filter(function (r) {
+    // Ignore the "No entries for this date." empty-state row
+    return !(r.children.length === 1 && r.children[0].hasAttribute('colspan'));
+  });
 
-    // Mark all data rows (skip colspan "empty" placeholder)
-    if (tbody) {
-        tbody.querySelectorAll('tr').forEach(function (row) {
-            if (row.querySelector('td[colspan]')) return;
-            row.setAttribute('data-searchable', '1');
-        });
+  var currentPage = 1;
+  var totalRows = allRows.length;
+  var totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+
+  var showingText = document.getElementById('dbShowingText');
+  var prevBtn = document.getElementById('dbPrevBtn');
+  var nextBtn = document.getElementById('dbNextBtn');
+  var prevItem = document.getElementById('dbPrevItem');
+  var nextItem = document.getElementById('dbNextItem');
+  var pageNumbersLi = document.getElementById('dbPageNumbers');
+
+  function renderPageNumbers() {
+    pageNumbersLi.innerHTML = '';
+    for (var p = 1; p <= totalPages; p++) {
+      var a = document.createElement('a');
+      a.href = '#';
+      a.className = 'page-link' + (p === currentPage ? ' fw-bold' : '');
+      a.style.marginLeft = '2px';
+      a.textContent = p;
+      a.setAttribute('data-page', p);
+      if (p === currentPage) {
+        a.style.background = '#0d6efd';
+        a.style.color = '#fff';
+        a.style.borderColor = '#0d6efd';
+      }
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        goToPage(parseInt(this.getAttribute('data-page'), 10));
+      });
+      pageNumbersLi.appendChild(a);
     }
+  }
 
-    function updateCount(visible, total) {
-        if (countSpan) {
-            countSpan.textContent = 'Showing ' + visible + ' of ' + total + ' entries';
-        }
+  function showPage(page) {
+    if (totalRows === 0) {
+      showingText.textContent = 'Showing 0 to 0 of 0 entries';
+      return;
     }
+    var start = (page - 1) * PAGE_SIZE;
+    var end = Math.min(start + PAGE_SIZE, totalRows);
 
-    if (searchInput && tbody) {
-        searchInput.addEventListener('input', function () {
-            const query = this.value.trim().toLowerCase();
-            const rows = tbody.querySelectorAll('tr[data-searchable]');
-            let visible = 0;
+    allRows.forEach(function (row, idx) {
+      row.style.display = (idx >= start && idx < end) ? '' : 'none';
+    });
 
-            rows.forEach(function (row) {
-                if (!query || row.textContent.toLowerCase().includes(query)) {
-                    row.style.display = '';
-                    visible++;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+    showingText.textContent = 'Showing ' + (start + 1) + ' to ' + end + ' of ' + totalRows + ' entries';
 
-            // Toggle "no results" row
-            let noResultRow = tbody.querySelector('.no-result-row');
-            if (visible === 0 && rows.length > 0) {
-                if (!noResultRow) {
-                    noResultRow = document.createElement('tr');
-                    noResultRow.className = 'no-result-row';
-                    noResultRow.innerHTML = '<td colspan="8" class="text-center text-muted py-3">No matching entries found.</td>';
-                    tbody.appendChild(noResultRow);
-                }
-                noResultRow.style.display = '';
-            } else if (noResultRow) {
-                noResultRow.style.display = 'none';
-            }
+    prevItem.classList.toggle('disabled', page === 1);
+    nextItem.classList.toggle('disabled', page === totalPages);
+  }
 
-            updateCount(visible, rows.length);
-        });
-    }
+  function goToPage(page) {
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    showPage(currentPage);
+    renderPageNumbers();
+  }
 
-    // Copy button — copies visible rows to clipboard
-    const copyBtn = document.getElementById('copyBtn');
-    if (copyBtn) {
-        copyBtn.addEventListener('click', function () {
-            const headers = Array.from(document.querySelectorAll('.hms-table thead th'))
-                .slice(0, 7).map(th => th.textContent.trim()).join('\t');
-            const rows = tbody ? Array.from(tbody.querySelectorAll('tr[data-searchable]'))
-                .filter(r => r.style.display !== 'none')
-                .map(r => Array.from(r.querySelectorAll('td')).slice(0, 7)
-                    .map(td => td.textContent.trim()).join('\t'))
-                .join('\n') : '';
-            navigator.clipboard.writeText(headers + '\n' + rows).then(function () {
-                copyBtn.textContent = 'Copied!';
-                setTimeout(function () { copyBtn.textContent = 'Copy'; }, 2000);
-            });
-        });
-    }
-});
+  prevBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    goToPage(currentPage - 1);
+  });
+  nextBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    goToPage(currentPage + 1);
+  });
+
+  // Keep pagination in sync with the existing table search box
+  var searchInput = document.getElementById('tableSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', function () {
+      var term = this.value.trim().toLowerCase();
+      allRows.forEach(function (row) {
+        row.setAttribute('data-search-hidden', row.textContent.toLowerCase().indexOf(term) === -1 ? '1' : '0');
+      });
+      var visibleRows = allRows.filter(function (r) { return r.getAttribute('data-search-hidden') !== '1'; });
+      totalRows = term ? visibleRows.length : allRows.length;
+      // For simplicity when searching, show all matches on one page
+      allRows.forEach(function (row) {
+        row.style.display = row.getAttribute('data-search-hidden') === '1' ? 'none' : '';
+      });
+      totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+      showingText.textContent = term
+        ? 'Showing 1 to ' + totalRows + ' of ' + totalRows + ' entries (filtered)'
+        : 'Showing 1 to ' + Math.min(PAGE_SIZE, allRows.length) + ' of ' + allRows.length + ' entries';
+      if (term) {
+        prevItem.classList.add('disabled');
+        nextItem.classList.add('disabled');
+        pageNumbersLi.innerHTML = '';
+      } else {
+        currentPage = 1;
+        totalRows = allRows.length;
+        totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+        goToPage(1);
+      }
+    });
+  }
+
+  renderPageNumbers();
+  showPage(currentPage);
+})();
 </script>
 {% endblock %}

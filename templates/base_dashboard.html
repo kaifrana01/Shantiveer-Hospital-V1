@@ -8,12 +8,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Dashboard — ShantiVeer HMS{% endblock %}</title>
   <link rel="icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">
+  <!-- Preconnect to CDN for faster resource loading -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
   <link href="{% static 'css/main.css' %}" rel="stylesheet">
   <link href="{% static 'css/role_panels.css' %}" rel="stylesheet">
   {% block extra_css %}{% endblock %}
   <link href="{% static 'css/responsive_overrides.css' %}" rel="stylesheet">
+  <link href="{% static 'css/mobile.css' %}" rel="stylesheet">
 </head>
 
 {# ── inject role CSS class on <body> ── #}
@@ -25,7 +29,12 @@
   <main class="dash-main">
     <!-- ── topbar ── -->
     <div class="dash-topbar">
-      <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+      <div style="display:flex;align-items:center;gap:0.25rem;">
+        <button class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle sidebar" aria-expanded="false">
+          <i class="bi bi-list"></i>
+        </button>
+        <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+      </div>
       <div class="dash-topbar-right">
 
         <!-- role chip -->
@@ -104,11 +113,56 @@
   </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
 {% block extra_js %}{% endblock %}
 <script src="{% static 'js/dashboard.js' %}"></script>
-<script src="{% static 'js/notification_audio.js' %}"></script>
+<script src="{% static 'js/notification_audio.js' %}" defer></script>
+<script>
+/* ── Mobile sidebar toggle ── */
+(function(){
+  var btn     = document.getElementById('sidebarToggleBtn');
+  var sidebar = document.getElementById('dashSidebar');
+  if(!btn || !sidebar) return;
+
+  // Create overlay
+  var overlay = document.createElement('div');
+  overlay.className = 'sidebar-overlay';
+  overlay.id = 'sidebarOverlay';
+  document.body.appendChild(overlay);
+
+  function openSidebar(){
+    sidebar.classList.add('open');
+    overlay.classList.add('active');
+    btn.setAttribute('aria-expanded','true');
+    btn.querySelector('i').className = 'bi bi-x-lg';
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSidebar(){
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+    btn.setAttribute('aria-expanded','false');
+    btn.querySelector('i').className = 'bi bi-list';
+    document.body.style.overflow = '';
+  }
+
+  btn.addEventListener('click', function(){
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+
+  // Close on Escape
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeSidebar();
+  });
+
+  // Close sidebar when a nav link is clicked on mobile
+  sidebar.querySelectorAll('a[href]').forEach(function(a){
+    a.addEventListener('click', function(){
+      if(window.innerWidth <= 992) closeSidebar();
+    });
+  });
+})();
+</script>
 <script>
 /* real-time alert polling — disabled; uncomment and restore to re-enable */
 /*

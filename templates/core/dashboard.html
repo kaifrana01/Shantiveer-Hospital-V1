@@ -830,9 +830,7 @@
           </div>
         </div>
       </div>
-      <div style="position:relative; height:260px;">
-        <canvas id="incomeBreakdownChart"></canvas>
-      </div>
+      <canvas id="incomeBreakdownChart" height="100"></canvas>
       <div class="small text-muted mt-2 text-center">
         Room charges are split by category (ICU / Private / General); any admission outside those
         categories is grouped under "Other" so the total always reconciles with actual collections.
@@ -962,6 +960,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
 <script>
 window.DASHBOARD_API = "{% url 'api:dashboard_stats' %}";
 window.DASHBOARD_INCOME_BREAKDOWN_API = "{% url 'api:dashboard_income_breakdown' %}";

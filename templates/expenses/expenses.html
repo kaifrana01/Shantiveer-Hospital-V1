@@ -6,13 +6,17 @@
 {% block content %}
 
 <style>
-  .expense-line-row { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px dashed #eee; }
+  .expense-line-row { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px dashed #eee; flex-wrap:wrap; }
   .expense-line-row:last-child { border-bottom:none; }
-  .expense-line-label { width:120px; flex:0 0 120px; font-size:0.85rem; font-weight:600; color:#444; }
-  .expense-line-amount { width:120px; flex:0 0 120px; }
-  .expense-line-name { flex:1 1 auto; }
+  .expense-line-label { width:120px; flex:0 0 120px; font-size:0.85rem; font-weight:600; color:#444; min-width:90px; }
+  .expense-line-amount { flex:0 0 130px; min-width:90px; }
+  .expense-line-name { flex:1 1 140px; min-width:120px; }
   .register-cell-name { display:block; font-size:0.72rem; color:#888; margin-top:2px; }
   .register-cell-amount { font-weight:600; }
+  @media (max-width:576px) {
+    .expense-line-label { width:100%; flex:0 0 100%; }
+    .expense-line-amount, .expense-line-name { flex:1 1 120px; }
+  }
 </style>
 
 <div class="row g-3 mb-3">
@@ -325,50 +329,54 @@
       <div class="p-2">
         <canvas id="expensesPieChart" height="220"></canvas>
       </div>
-      <script>
-        (function(){
-          const data = [
-            {% if breakdown %}
-            {% for r in breakdown %}
-              { label: '{{ r.category }}', value: {{ r.total|default:0 }} },
-            {% endfor %}
-            {% else %}
-              { label: 'None', value: 0 },
-            {% endif %}
-          ];
-
-          const labels = data.map(d=>d.label);
-          const values = data.map(d=>d.value);
-
-          const ctx = document.getElementById('expensesPieChart');
-          if(!ctx || typeof Chart==='undefined') return;
-
-          new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-              labels,
-              datasets: [{
-                data: values,
-                backgroundColor: labels.map((_,i)=>[
-                  '#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#14b8a6','#f97316','#10b981','#64748b'
-                ][i%9])
-              }]
-            },
-            options: {
-              responsive: true,
-              plugins: {
-                legend: { position: 'bottom' },
-                tooltip: {
-                  callbacks: {
-                    label: (ctx)=> '₹' + Number(ctx.parsed).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})
-                  }
-                }
-              }
-            }
-          });
-        })();
-      </script>
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+  const data = [
+    {% if breakdown %}
+    {% for r in breakdown %}
+      { label: '{{ r.category }}', value: {{ r.total|default:0 }} },
+    {% endfor %}
+    {% else %}
+      { label: 'None', value: 0 },
+    {% endif %}
+  ];
+
+  const labels = data.map(d=>d.label);
+  const values = data.map(d=>d.value);
+
+  const ctx = document.getElementById('expensesPieChart');
+  if(!ctx || typeof Chart==='undefined') return;
+
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: labels.map((_,i)=>[
+          '#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#14b8a6','#f97316','#10b981','#64748b'
+        ][i%9])
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          callbacks: {
+            label: (ctx)=> '₹' + Number(ctx.parsed).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})
+          }
+        }
+      }
+    }
+  });
+})();
+</script>
 {% endblock %}

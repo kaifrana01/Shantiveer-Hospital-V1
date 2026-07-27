@@ -456,8 +456,7 @@
             renderRevenueChart(data);
         });
 
-        // Light auto-refresh (so sums update when any new income is added)
-        // without manual reload.
+        // Light auto-refresh every 60 seconds (reduced from 15s for performance)
         setInterval(function () {
             var billingContainer = document.getElementById('billingFilters');
             if (!billingContainer) return;
@@ -471,7 +470,7 @@
                 var ibRange = ibActiveBtn ? ibActiveBtn.getAttribute('data-range') : 'month';
                 fetchIncomeBreakdown(ibRange, renderIncomeBreakdownChart);
             }
-        }, 15000);
+        }, 60000);
 
 
         // Expenses chart filter tabs
