@@ -195,7 +195,13 @@ else:
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# On Vercel (serverless), /var/task/ is read-only — use /tmp for uploads.
+# Note: /tmp is ephemeral and cleared between function invocations.
+# For production, use S3/Cloudinary/external storage instead.
+if os.environ.get('VERCEL'):
+    MEDIA_ROOT = '/tmp/media'
+else:
+    MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ─── Auth ────────────────────────────────────────────────────────────────────
