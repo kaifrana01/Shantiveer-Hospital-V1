@@ -155,50 +155,69 @@ def admission(request):
         admission_obj = IPDAdmission.objects.select_related('patient').filter(pk=edit_id).first()
 
     if request.method == 'POST':
-        with transaction.atomic():
-            uhid = (request.POST.get('uhid') or '').strip()
-            patient = Patient.objects.filter(uhid=uhid).first() if uhid else None
+        try:
+            with transaction.atomic():
+                uhid = (request.POST.get('uhid') or '').strip()
+                patient = Patient.objects.filter(uhid=uhid).first() if uhid else None
 
-            # Determine category once, cleanly
-            raw_category = request.POST.get('room_category') or request.POST.get('category') or ''
-            category = _normalize_category(raw_category)
+                # Determine category once, cleanly
+                raw_category = request.POST.get('room_category') or request.POST.get('category') or ''
+                category = _normalize_category(raw_category)
 
-            if patient:
-                # Update existing patient demographics
-                patient.name = _cap_text(request.POST.get('patient_name', patient.name))
-                patient.mobile = request.POST.get('contact', patient.mobile)
-                patient.gender = _cap_text(request.POST.get('gender', patient.gender))
-                patient.age_years = int(request.POST.get('age') or patient.age_years)
-                patient.address = _cap_text(request.POST.get('address', patient.address))
-                patient.save()
-            else:
-                patient = Patient.objects.create(
-                    name=_cap_text(request.POST.get('patient_name', '')),
-                    mobile=request.POST.get('contact', ''),
-                    gender=_cap_text(request.POST.get('gender', 'Male')),
-                    age_years=int(request.POST.get('age') or 0),
-                    address=_cap_text(request.POST.get('address', '')),
+                if patient:
+                    # Update existing patient demographics
+                    patient.name = _cap_text(request.POST.get('patient_name', patient.name))
+                    patient.mobile = request.POST.get('contact', patient.mobile)
+                    patient.gender = _cap_text(request.POST.get('gender', patient.gender))
+                    patient.age_years = int(request.POST.get('age') or patient.age_years)
+                    patient.address = _cap_text(request.POST.get('address', patient.address))
+                    patient.save()
+                else:
+                    patient = Patient.objects.create(
+                        name=_cap_text(request.POST.get('patient_name', '')),
+                        mobile=request.POST.get('contact', ''),
+                        gender=_cap_text(request.POST.get('gender', 'Male')),
+                        age_years=int(request.POST.get('age') or 0),
+                        address=_cap_text(request.POST.get('address', '')),
+                    )
+
+                # Parse bed_charge and doctor_fees with validation
+                try:
+                    bed_charge = Decimal(request.POST.get('bed_charge') or '0')
+                    if bed_charge < 0:
+                        raise ValueError('Bed charge cannot be negative.')
+                except (ValueError, Exception) as e:
+                    messages.error(request, f'Invalid bed charge: {e}')
+                    return redirect('ipd:admission')
+
+                try:
+                    doctor_fees = Decimal(request.POST.get('doctor_fees') or '2000')
+                    if doctor_fees < 0:
+                        raise ValueError('Doctor fees cannot be negative.')
+                except (ValueError, Exception) as e:
+                    messages.error(request, f'Invalid doctor fees: {e}')
+                    return redirect('ipd:admission')
+
+                common_fields = dict(
+                    patient=patient,
+                    date=request.POST.get('date') or timezone.localdate(),
+                    time=request.POST.get('time') or None,
+                    guardian=_cap_text(request.POST.get('guardian', '')),
+                    category=category,
+                    consultant=_cap_text(request.POST.get('consultant', '')),
+                    kyc_type=request.POST.get('kyc_type', ''),
+                    kyc_no=_cap_text(request.POST.get('kyc_no', '')),
+                    room_category=_cap_text(raw_category),
+                    room_no=request.POST.get('room_no', ''),
+                    diagnosis=_cap_text(request.POST.get('diagnosis', '')),
+                    tpa=_cap_text(request.POST.get('tpa', '')),
+                    policy_no=_cap_text(request.POST.get('policy_no', '')),
+                    insurance_co=_cap_text(request.POST.get('insurance', '')),
+                    referral=_cap_text(request.POST.get('referral', '')),
+                    status=request.POST.get('status', 'Admitted'),
+                    bed_charge=bed_charge,
+                    doctor_fees=doctor_fees,
                 )
-
-            common_fields = dict(
-                patient=patient,
-                date=request.POST.get('date') or timezone.localdate(),
-                time=request.POST.get('time') or None,
-                guardian=_cap_text(request.POST.get('guardian', '')),
-                category=category,
-                consultant=_cap_text(request.POST.get('consultant', '')),
-                kyc_type=request.POST.get('kyc_type', ''),
-                kyc_no=_cap_text(request.POST.get('kyc_no', '')),
-                room_category=_cap_text(raw_category),
-                room_no=request.POST.get('room_no', ''),
-                diagnosis=_cap_text(request.POST.get('diagnosis', '')),
-                tpa=_cap_text(request.POST.get('tpa', '')),
-                policy_no=_cap_text(request.POST.get('policy_no', '')),
-                insurance_co=_cap_text(request.POST.get('insurance', '')),
-                referral=_cap_text(request.POST.get('referral', '')),
-                status=request.POST.get('status', 'Admitted'),
-                doctor_fees=Decimal(request.POST.get('doctor_fees') or '2000'),
-            )
 
             is_new_admission = admission_obj is None
 
@@ -275,15 +294,18 @@ def admission(request):
                         amount=adv,
                     )
 
-            # Save uploaded documents (multiple allowed)
-            for f in request.FILES.getlist('documents'):
-                IPDDocument.objects.create(
-                    admission=admission_obj,
-                    file=f,
-                    name=f.name,
-                )
+                # Save uploaded documents (multiple allowed)
+                for f in request.FILES.getlist('documents'):
+                    IPDDocument.objects.create(
+                        admission=admission_obj,
+                        file=f,
+                        name=f.name,
+                    )
 
-        return redirect('ipd:patient_list')
+            return redirect('ipd:patient_list')
+        except Exception as e:
+            messages.error(request, f'Error saving admission: {e}')
+            return redirect('ipd:admission')
 
     present = IPDAdmission.objects.filter(status='Admitted').select_related('patient')
     present_list = [
