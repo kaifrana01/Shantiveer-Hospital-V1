@@ -255,13 +255,12 @@
   </div>
 
   <!-- Ultrasound Bills -->
-  {% if usg_bills %}
   <div class="section-card">
-    <div class="section-head"><i class="bi bi-activity text-primary"></i> Ultrasound Bills ({{ usg_bills|length }})</div>
+    <div class="section-head"><i class="bi bi-activity text-primary"></i> Ultrasound Investigations ({{ usg_bills|length }})</div>
     <div class="section-body">
       <table class="hms-table">
         <thead><tr>
-          <th>Bill No</th><th>Date</th><th>Tests</th><th>Total</th><th>Payment</th><th>Action</th>
+          <th>Bill No</th><th>Date</th><th>Tests</th><th>Documents</th><th>Total</th><th>Payment</th><th>Action</th>
         </tr></thead>
         <tbody>
           {% for b in usg_bills %}
@@ -269,17 +268,52 @@
             <td><strong>{{ b.bill_no }}</strong></td>
             <td>{{ b.test_date }}</td>
             <td>{{ b.items.all|length }} test(s)</td>
+            <td>
+              {% if b.documents.all %}
+                <span class="badge-status" style="background:#dbeafe;color:#1e40af;">
+                  <i class="bi bi-file-earmark-pdf"></i> {{ b.documents.all|length }}
+                </span>
+              {% else %}
+                <span style="color:#94a3b8;font-size:0.75rem;">—</span>
+              {% endif %}
+            </td>
             <td>₹{{ b.total }}</td>
             <td><span class="badge-status badge-{{ b.payment_mode|lower }}">{{ b.payment_mode }}</span></td>
             <td>
-              <a href="{% url 'ultrasound:ultrasound_view_report' b.id %}" class="btn btn-sm btn-outline-primary" title="Report" target="_blank"><i class="bi bi-file-medical"></i></a>
+              <a href="{% url 'ultrasound:ultrasound_view_report' b.id %}" class="btn btn-sm btn-outline-primary" title="View Report" target="_blank"><i class="bi bi-file-medical"></i></a>
             </td>
           </tr>
           {% empty %}
-          <tr class="empty"><td colspan="6">No ultrasound bills found.</td></tr>
+          <tr class="empty"><td colspan="7">No ultrasound investigations found.</td></tr>
           {% endfor %}
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Ultrasound Documents -->
+  {% if usg_documents %}
+  <div class="section-card">
+    <div class="section-head"><i class="bi bi-file-earmark-text text-primary"></i> Ultrasound Documents ({{ usg_documents|length }})</div>
+    <div class="section-body" style="padding:1.25rem;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
+        {% for doc_info in usg_documents %}
+        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;background:#f8fafc;display:flex;align-items:flex-start;gap:12px;transition:all 0.15s;" onmouseover="this.style.background='#fff';this.style.borderColor='#1A56A0';" onmouseout="this.style.background='#f8fafc';this.style.borderColor='#e2e8f0';">
+          <div style="width:42px;height:42px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-file-earmark-pdf" style="font-size:1.25rem;color:#1e40af;"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:0.82rem;font-weight:600;color:#1e293b;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ doc_info.filename }}">{{ doc_info.filename }}</div>
+            <div style="font-size:0.7rem;color:#64748b;margin-bottom:6px;">
+              Bill: <strong>{{ doc_info.bill_no }}</strong> · {{ doc_info.test_date }}
+            </div>
+            <a href="{{ doc_info.url }}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;color:#1A56A0;text-decoration:none;font-weight:600;" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='none';">
+              <i class="bi bi-box-arrow-up-right"></i> Open Document
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
     </div>
   </div>
   {% endif %}

@@ -102,3 +102,19 @@ class DischargeSummary(models.Model):
     notes = models.TextField(blank=True)
 
     history = HistoricalRecords()
+
+
+class IPDDocument(models.Model):
+    """Documents uploaded against an IPD admission (multiple allowed)."""
+    admission = models.ForeignKey(
+        IPDAdmission, on_delete=models.CASCADE, related_name='documents'
+    )
+    file = models.FileField(upload_to='ipd_documents/%Y/%m/')
+    name = models.CharField(max_length=200, blank=True, help_text='Optional display label')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return self.file.name

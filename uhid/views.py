@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Sum, Q
+from django.http import JsonResponse
 from .models import Patient
 from core.rbac import require_module
 
@@ -175,9 +176,30 @@ def patient_profile(request, uhid):
     lab_bills     = patient.lab_bills.prefetch_related('items__test').order_by('-test_date')[:20]
 
     try:
-        usg_bills = patient.ultrasound_bills.prefetch_related('items__test').order_by('-test_date')[:20]
+        usg_bills = patient.ultrasound_bills.prefetch_related('items__test', 'documents').order_by('-test_date')[:20]
     except Exception:
         usg_bills = []
+
+    # Aggregate all ultrasound documents across all bills for display on profile
+    usg_documents = []
+    try:
+        from ultrasound.models import UltrasoundDocument
+        docs_qs = (
+            UltrasoundDocument.objects
+            .filter(investigation__patient=patient)
+            .select_related('investigation')
+            .order_by('-investigation__test_date', '-uploaded_at')
+        )
+        for doc in docs_qs:
+            usg_documents.append({
+                'filename': doc.file.name.split('/')[-1],
+                'url': doc.file.url,
+                'bill_no': doc.investigation.bill_no,
+                'test_date': doc.investigation.test_date,
+                'investigation_id': doc.investigation.id,
+            })
+    except Exception:
+        usg_documents = []
 
     from income.models import LedgerEntry
     agg = LedgerEntry.objects.filter(patient=patient).aggregate(
@@ -195,7 +217,24 @@ def patient_profile(request, uhid):
         'ipd_admissions': ipd_admissions,
         'lab_bills': lab_bills,
         'usg_bills': usg_bills,
+        'usg_documents': usg_documents,
         'total_charged': total_charged,
         'total_paid': total_paid,
         'outstanding': outstanding,
     })
+
+
+@require_module('uhid', level='view')
+def patient_search_api(request):
+    """JSON API for UHID/patient search — used by modal dialogs."""
+    q = (request.GET.get('q') or '').strip()
+    if not q or len(q) < 2:
+        return JsonResponse({'results': []})
+    
+    patients = Patient.objects.filter(
+        Q(uhid__icontains=q) |
+        Q(name__icontains=q) |
+        Q(mobile__icontains=q)
+    ).values('uhid', 'name', 'mobile', 'age_years', 'gender')[:10]
+    
+    return JsonResponse({'results': list(patients)})

@@ -10,7 +10,7 @@ from django.views.decorators.http import require_POST
 
 from uhid.models import Patient
 from income.models import LedgerEntry, validate_payment_amount, validate_payment_mode, PAYMENT_MODES_ALL
-from .models import IPDAdmission, IPDPayment, IPDMedicineLine, DischargeSummary
+from .models import IPDAdmission, IPDPayment, IPDMedicineLine, DischargeSummary, IPDDocument
 from core.models import Bed
 from core.rbac import require_module
 
@@ -275,6 +275,14 @@ def admission(request):
                         amount=adv,
                     )
 
+            # Save uploaded documents (multiple allowed)
+            for f in request.FILES.getlist('documents'):
+                IPDDocument.objects.create(
+                    admission=admission_obj,
+                    file=f,
+                    name=f.name,
+                )
+
         return redirect('ipd:patient_list')
 
     present = IPDAdmission.objects.filter(status='Admitted').select_related('patient')
@@ -286,10 +294,21 @@ def admission(request):
     from masterdata.models import Doctor
     doctors = Doctor.objects.filter(is_active=True).order_by('name')
 
-    # Bed dropdown — vacant beds only
-    bed_options = list(
-        Bed.objects.filter(status='Vacant').order_by('room_no', 'bed_no').values('room_no', 'bed_no')
-    )
+    # Bed dropdown — vacant beds + the currently occupied bed (so edit works)
+    bed_options_qs = Bed.objects.filter(status='Vacant').order_by('room_no', 'bed_no').values('room_no', 'bed_no')
+    bed_options = list(bed_options_qs)
+
+    # If editing and a room is already assigned, add it to the list so it shows as selected
+    if admission_obj and admission_obj.room_no:
+        current_room = admission_obj.room_no
+        already_in = any(b['room_no'] == current_room for b in bed_options)
+        if not already_in:
+            # Find the bed record for the current room
+            current_bed = Bed.objects.filter(room_no=current_room).values('room_no', 'bed_no').first()
+            if current_bed:
+                bed_options.insert(0, current_bed)
+            else:
+                bed_options.insert(0, {'room_no': current_room, 'bed_no': '—'})
 
     ctx = {
         'active_sidebar': 'ipd_admission',
@@ -323,6 +342,7 @@ def admission(request):
         'form_status': admission_obj.status if admission_obj else 'Admitted',
         'doctors': doctors,
         'bed_options': bed_options,
+        'existing_documents': list(admission_obj.documents.all()) if admission_obj else [],
     }
     return render(request, 'ipd/admission.html', ctx)
 

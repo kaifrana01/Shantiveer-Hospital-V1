@@ -3075,3 +3075,37 @@ django.urls.exceptions.NoReverseMatch: Reverse for 'register' not found. 'regist
 [2026-07-28 10:24:44,985] ERROR django.server "GET /uhid/ HTTP/1.1" 500 24426
 [2026-07-28 10:24:45,658] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
 [2026-07-28 10:24:45,716] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-28 13:26:49,370] ERROR django.request Internal Server Error: /ultrasound/bill/
+Traceback (most recent call last):
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\Desktop\New-Shantiveer-Project\core\rbac.py", line 132, in _wrapped
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\Desktop\New-Shantiveer-Project\ultrasound\views.py", line 286, in ultrasound_investigation
+    LedgerEntry.record_charge(
+  File "C:\Users\nadir\Desktop\New-Shantiveer-Project\income\models.py", line 290, in record_charge
+    return cls.objects.create(
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\db\models\query.py", line 665, in create
+    obj.save(force_insert=True, using=self.db)
+  File "C:\Users\nadir\Desktop\New-Shantiveer-Project\income\models.py", line 240, in save
+    self.full_clean()
+  File "C:\Users\nadir\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\django\db\models\base.py", line 1679, in full_clean
+    raise ValidationError(errors)
+django.core.exceptions.ValidationError: {'source_app': ["Value 'ultrasound' is not a valid choice."]}
+[2026-07-28 13:26:49,381] ERROR django.server "POST /ultrasound/bill/ HTTP/1.1" 500 17044
+[2026-07-28 13:26:49,840] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-28 13:26:49,863] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-28 13:26:52,089] WARNING django.request Not Found: /favicon.ico
+[2026-07-28 13:26:52,193] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 1690

@@ -10,9 +10,33 @@
   {% endfor %}
 {% endif %}
 
+<!-- UHID Search Box -->
+<div class="usg-card" style="margin-bottom:16px;">
+  <div class="usg-card-body">
+    <div style="display:flex;gap:12px;align-items:end;position:relative;">
+      <div style="flex:1;max-width:400px;position:relative;">
+        <label style="font-size:0.78rem;font-weight:600;color:#0f172a;margin-bottom:6px;display:block;">Search Patient (Optional)</label>
+        <input type="text" 
+               class="form-control" 
+               id="usgUhidSearch" 
+               placeholder="Enter UHID, name, or mobile..." 
+               autocomplete="off"
+               style="padding:8px 12px;font-size:0.88rem;border:1.5px solid #c7d2e2;border-radius:8px;">
+        <div id="usgUhidResults" style="position:absolute;top:100%;left:0;right:0;z-index:1050;background:#fff;border:1px solid #dee2e6;border-radius:0.5rem;max-height:300px;overflow-y:auto;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.15);margin-top:4px;"></div>
+      </div>
+      <button type="button" class="btn-usg-outline btn-usg-sm" onclick="document.getElementById('usgUhidSearch').focus();" style="height:38px;">
+        <i class="bi bi-search"></i> Search UHID
+      </button>
+    </div>
+    <small style="color:#64748b;font-size:0.75rem;display:block;margin-top:6px;">
+      <i class="bi bi-info-circle"></i> Link this bill to an existing patient record (recommended for tracking)
+    </small>
+  </div>
+</div>
+
 <form method="post" enctype="multipart/form-data" id="usgBillForm">
 {% csrf_token %}
-<input type="hidden" name="uhid" value="{{ uhid|default:'' }}" />
+<input type="hidden" name="uhid" id="usgUhidField" value="{{ uhid|default:'' }}" />
 
 <!-- ── Patient Details ── -->
 <div class="usg-card" style="margin-bottom:16px;">
@@ -248,6 +272,96 @@
   checkboxes.forEach(cb => cb.addEventListener('change', toggleUsgUpi));
   discountEl?.addEventListener('input', toggleUsgUpi);
   toggleUsgUpi();
+})();
+
+// ── UHID Search Autocomplete ──
+(function(){
+  const searchInput = document.getElementById('usgUhidSearch');
+  const resultsDiv = document.getElementById('usgUhidResults');
+  const uhidField = document.getElementById('usgUhidField');
+  const nameField = document.querySelector('input[name="patient_name"]');
+  const ageField = document.querySelector('input[name="age"]');
+  const genderField = document.querySelector('select[name="gender"]');
+  const mobileField = document.querySelector('input[name="mobile"]');
+  
+  if (!searchInput || !resultsDiv) return;
+  
+  let searchTimeout;
+  
+  function showResults(html) {
+    resultsDiv.innerHTML = html;
+    resultsDiv.style.display = 'block';
+  }
+  
+  function hideResults() {
+    resultsDiv.style.display = 'none';
+  }
+  
+  searchInput.addEventListener('input', function(){
+    clearTimeout(searchTimeout);
+    const query = this.value.trim();
+    
+    if (query.length < 2) {
+      hideResults();
+      return;
+    }
+    
+    showResults('<div style="padding:10px 14px;color:#64748b;font-size:0.82rem;"><span class="spinner-border spinner-border-sm me-2"></span>Searching...</div>');
+    
+    searchTimeout = setTimeout(async () => {
+      try {
+        const resp = await fetch('/uhid/api/search/?q=' + encodeURIComponent(query));
+        const data = await resp.json();
+        
+        if (!data.results || data.results.length === 0) {
+          showResults('<div style="padding:12px 14px;color:#94a3b8;font-size:0.82rem;text-align:center;"><i class="bi bi-inbox"></i> No patients found</div>');
+          return;
+        }
+        
+        let html = '';
+        data.results.forEach(p => {
+          html += `
+            <div class="usg-uhid-item" 
+                 data-uhid="${p.uhid}" data-name="${p.name}" 
+                 data-age="${p.age_years}" data-gender="${p.gender}" 
+                 data-mobile="${p.mobile}"
+                 style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f1f5f9;transition:background 0.1s;">
+              <div style="font-weight:600;font-size:0.88rem;color:#1e293b;">${p.name}</div>
+              <div style="font-size:0.75rem;color:#64748b;">
+                UHID: <strong>${p.uhid}</strong> &nbsp;·&nbsp; 
+                ${p.age_years} yrs &nbsp;·&nbsp; 
+                ${p.gender} &nbsp;·&nbsp; 
+                <i class="bi bi-phone"></i> ${p.mobile || '—'}
+              </div>
+            </div>`;
+        });
+        showResults(html);
+        
+        document.querySelectorAll('.usg-uhid-item').forEach(item => {
+          item.addEventListener('mouseenter', function(){ this.style.background='#f0fdfa'; });
+          item.addEventListener('mouseleave', function(){ this.style.background=''; });
+          item.addEventListener('click', function(){
+            if (uhidField) uhidField.value = this.dataset.uhid;
+            if (nameField) nameField.value = this.dataset.name;
+            if (ageField) ageField.value = this.dataset.age + 'Y';
+            if (genderField) genderField.value = this.dataset.gender;
+            if (mobileField) mobileField.value = this.dataset.mobile;
+            searchInput.value = this.dataset.name + ' (' + this.dataset.uhid + ')';
+            hideResults();
+          });
+        });
+        
+      } catch(e) {
+        showResults('<div style="padding:10px 14px;color:#dc3545;font-size:0.82rem;"><i class="bi bi-exclamation-triangle"></i> Search failed</div>');
+      }
+    }, 350);
+  });
+  
+  document.addEventListener('click', function(e){
+    if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)){
+      hideResults();
+    }
+  });
 })();
 </script>
 {% endblock %}

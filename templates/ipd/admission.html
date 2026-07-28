@@ -4,7 +4,20 @@
 {% block content %}
 <div class="ipd-split-layout">
     <div class="form-card">
-        <button type="button" class="btn-cyan mb-3" data-bs-toggle="modal" data-bs-target="#uhidModal"><i class="bi bi-search"></i> Search UHID</button>
+        <div class="d-flex gap-2 mb-3 align-items-end" style="position:relative;">
+            <div style="flex:1;max-width:400px;position:relative;">
+                <label class="small mb-1">Search Patient</label>
+                <input type="text" 
+                       class="form-control form-control-sm" 
+                       id="uhidSearchInput" 
+                       placeholder="Enter UHID, name, or mobile..." 
+                       autocomplete="off">
+                <div id="uhidResults" style="position:absolute;top:100%;left:0;right:0;z-index:1050;background:#fff;border:1px solid #dee2e6;border-radius:0.375rem;max-height:300px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>
+            </div>
+            <button type="button" class="btn-cyan" onclick="document.getElementById('uhidSearchInput').focus();">
+                <i class="bi bi-search"></i> Search UHID
+            </button>
+        </div>
         <form method="post" enctype="multipart/form-data">{% csrf_token %}
             <input type="hidden" name="edit_id" value="{{ edit_id }}">
             <div class="row g-2 mb-2">
@@ -161,7 +174,26 @@
                     <option value="Discharged" {% if form_status == 'Discharged' %}selected{% endif %}>Discharged</option>
                 </select></div>
             </div>
-            <div class="mb-3"><label class="small">Upload Document</label><input type="file" name="document" class="form-control form-control-sm"></div>
+            <div class="mb-3">
+                <label class="small">Upload Documents</label>
+                <input type="file" name="documents" multiple class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                <small class="text-muted">Multiple files allowed (PDF, images, Word)</small>
+                {% if existing_documents %}
+                <div class="mt-2">
+                    <small class="text-muted fw-semibold">Existing Documents:</small>
+                    <div class="d-flex flex-wrap gap-2 mt-1">
+                        {% for doc in existing_documents %}
+                        <a href="{{ doc.file.url }}" target="_blank"
+                           class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                           style="font-size:0.75rem;">
+                            <i class="bi bi-file-earmark-pdf"></i>
+                            {{ doc.name|default:doc.file.name|slice:"30" }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
 
             <div class="d-flex gap-2 align-items-center mb-2">
                 <button type="submit" class="btn btn-secondary">Save</button>
@@ -202,19 +234,197 @@
     <div class="present-patients-panel">
         <div class="d-flex gap-2 mb-2">
             <input type="text" class="form-control form-control-sm" placeholder="Search patient name or IPD" id="ipdSearch">
-            <button class="btn-cyan btn-sm">Refresh</button>
+            <button class="btn-cyan btn-sm" id="refreshBtn" onclick="window.location.reload()">Refresh</button>
         </div>
-        <h6 class="fw-bold mb-2">Present Patients</h6>
+        <h6 class="fw-bold mb-2">Present Patients (<span id="patientCount">{{ present_patients|length }}</span>)</h6>
         <div class="table-responsive">
-        <table class="hms-table">
+        <table class="hms-table" id="presentPatientsTable">
             <thead><tr><th>Name</th><th>Room</th><th>IPD</th><th>Category</th></tr></thead>
-            <tbody>
+            <tbody id="presentPatientsBody">
             {% for p in present_patients %}
-            <tr><td>{{ p.name }}</td><td>{{ p.room }}</td><td>{{ p.ipd_no }}</td><td>{{ p.category }}</td></tr>
+            <tr data-name="{{ p.name|lower }}" data-ipd="{{ p.ipd_no|lower }}" data-room="{{ p.room|lower }}" data-category="{{ p.category|lower }}">
+                <td>{{ p.name }}</td>
+                <td>{{ p.room }}</td>
+                <td>{{ p.ipd_no }}</td>
+                <td>{{ p.category }}</td>
+            </tr>
             {% endfor %}
             </tbody>
         </table>
         </div>
+        <div id="noResults" style="display:none;text-align:center;padding:2rem;color:#94a3b8;font-size:0.85rem;">
+            <i class="bi bi-search" style="font-size:2rem;display:block;margin-bottom:0.5rem;opacity:0.5;"></i>
+            No patients found
+        </div>
     </div>
 </div>
+
+<script>
+(function(){
+    const searchBox = document.getElementById('ipdSearch');
+    const tableBody = document.getElementById('presentPatientsBody');
+    const noResults = document.getElementById('noResults');
+    const patientCount = document.getElementById('patientCount');
+    
+    if (!searchBox || !tableBody) return;
+    
+    const allRows = Array.from(tableBody.querySelectorAll('tr'));
+    
+    function filterPatients() {
+        const query = searchBox.value.toLowerCase().trim();
+        let visibleCount = 0;
+        
+        allRows.forEach(row => {
+            const name = row.getAttribute('data-name') || '';
+            const ipd = row.getAttribute('data-ipd') || '';
+            const room = row.getAttribute('data-room') || '';
+            const category = row.getAttribute('data-category') || '';
+            
+            const matches = query === '' || 
+                           name.includes(query) || 
+                           ipd.includes(query) ||
+                           room.includes(query) ||
+                           category.includes(query);
+            
+            row.style.display = matches ? '' : 'none';
+            if (matches) visibleCount++;
+        });
+        
+        if (patientCount) {
+            patientCount.textContent = visibleCount;
+        }
+        
+        if (noResults) {
+            noResults.style.display = (visibleCount === 0 && query !== '') ? 'block' : 'none';
+        }
+        
+        if (tableBody && visibleCount === 0 && query !== '') {
+            tableBody.style.display = 'none';
+        } else if (tableBody) {
+            tableBody.style.display = '';
+        }
+    }
+    
+    searchBox.addEventListener('input', filterPatients);
+    searchBox.addEventListener('keyup', filterPatients);
+    
+    // Initial filter in case there's a pre-filled value
+    filterPatients();
+})();
+</script>
+
+<!-- UHID Inline Search Script -->
+<script>
+(function(){
+    const searchInput = document.getElementById('uhidSearchInput');
+    const resultsDiv  = document.getElementById('uhidResults');
+    const uhidField    = document.querySelector('input[name="uhid"]');
+    const nameField    = document.querySelector('input[name="patient_name"]');
+    const ageField     = document.querySelector('input[name="age"]');
+    const genderField  = document.querySelector('select[name="gender"]');
+    const contactField = document.querySelector('input[name="contact"]');
+
+    if (!searchInput || !resultsDiv) return;
+
+    let searchTimeout;
+
+    function showResults(html) {
+        resultsDiv.innerHTML = html;
+        resultsDiv.style.display = 'block';
+    }
+
+    function hideResults() {
+        resultsDiv.style.display = 'none';
+    }
+
+    searchInput.addEventListener('input', function(){
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+
+        if (query.length < 2) {
+            hideResults();
+            return;
+        }
+
+        showResults('<div style="padding:10px 14px;color:#64748b;font-size:0.82rem;"><span class="spinner-border spinner-border-sm me-2"></span>Searching...</div>');
+
+        searchTimeout = setTimeout(async () => {
+            try {
+                const resp = await fetch('/uhid/api/search/?q=' + encodeURIComponent(query));
+                const data = await resp.json();
+
+                if (!data.results || data.results.length === 0) {
+                    showResults('<div style="padding:12px 14px;color:#94a3b8;font-size:0.82rem;text-align:center;"><i class="bi bi-inbox"></i> No patients found</div>');
+                    return;
+                }
+
+                let html = '';
+                data.results.forEach(p => {
+                    html += `
+                        <div class="uhid-item" 
+                             data-uhid="${p.uhid}" data-name="${p.name}" 
+                             data-age="${p.age_years}" data-gender="${p.gender}" 
+                             data-mobile="${p.mobile}"
+                             style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f1f5f9;transition:background 0.1s;">
+                            <div style="font-weight:600;font-size:0.88rem;color:#1e293b;">${p.name}</div>
+                            <div style="font-size:0.75rem;color:#64748b;">
+                                UHID: <strong>${p.uhid}</strong> &nbsp;·&nbsp; 
+                                ${p.age_years} yrs &nbsp;·&nbsp; 
+                                ${p.gender} &nbsp;·&nbsp; 
+                                <i class="bi bi-phone"></i> ${p.mobile || '—'}
+                            </div>
+                        </div>`;
+                });
+                showResults(html);
+
+                document.querySelectorAll('.uhid-item').forEach(item => {
+                    item.addEventListener('mouseenter', function(){ this.style.background='#f0f9ff'; });
+                    item.addEventListener('mouseleave', function(){ this.style.background=''; });
+                    item.addEventListener('click', function(){
+                        if (uhidField)    uhidField.value    = this.dataset.uhid;
+                        if (nameField)    nameField.value    = this.dataset.name;
+                        if (ageField)     ageField.value     = this.dataset.age;
+                        if (genderField)  genderField.value  = this.dataset.gender.toUpperCase();
+                        if (contactField) contactField.value = this.dataset.mobile;
+                        searchInput.value = this.dataset.name + ' (' + this.dataset.uhid + ')';
+                        hideResults();
+                    });
+                });
+
+            } catch(e) {
+                showResults('<div style="padding:10px 14px;color:#dc3545;font-size:0.82rem;"><i class="bi bi-exclamation-triangle"></i> Search failed</div>');
+            }
+        }, 350);
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e){
+        if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)){
+            hideResults();
+        }
+    });
+
+    // Keyboard navigation
+    searchInput.addEventListener('keydown', function(e){
+        const items = resultsDiv.querySelectorAll('.uhid-item');
+        const active = resultsDiv.querySelector('.uhid-item-active');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            const next = active ? (active.nextElementSibling || items[0]) : items[0];
+            if (active) { active.classList.remove('uhid-item-active'); active.style.background=''; }
+            if (next) { next.classList.add('uhid-item-active'); next.style.background='#f0f9ff'; next.scrollIntoView({block:'nearest'}); }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            const prev = active ? (active.previousElementSibling || items[items.length-1]) : items[items.length-1];
+            if (active) { active.classList.remove('uhid-item-active'); active.style.background=''; }
+            if (prev) { prev.classList.add('uhid-item-active'); prev.style.background='#f0f9ff'; prev.scrollIntoView({block:'nearest'}); }
+        } else if (e.key === 'Enter' && active) {
+            e.preventDefault();
+            active.click();
+        } else if (e.key === 'Escape') {
+            hideResults();
+        }
+    });
+})();
+</script>
 {% endblock %}

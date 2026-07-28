@@ -122,6 +122,7 @@ class LedgerEntry(models.Model):
         ('ipd', 'IPD'),
         ('lab', 'Lab'),
         ('pharmacy', 'Pharmacy'),
+        ('ultrasound', 'Ultrasound'),
         ('manual', 'Manual / Accounts Desk'),
     ]
 
