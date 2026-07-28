@@ -25,9 +25,14 @@ class IPDAdmission(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Admitted')
     created_at = models.DateTimeField(auto_now_add=True)
     bed_charge = models.DecimalField(
-    max_digits=10,
-    decimal_places=2,
-    default=0)
+        max_digits=10,
+        decimal_places=2,
+        default=0)
+    doctor_fees = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=2000,
+        help_text='Consultant / doctor fees for this admission.')
 
     # Full audit trail — particularly important here since this model
     # carries tpa/policy_no/insurance_co, the fields a CRO will ask
@@ -41,15 +46,19 @@ class IPDAdmission(models.Model):
         if not self.ipd_no:
             from django.db import transaction as _tx
             with _tx.atomic():
-                from django.db.models import Max
-                import re
-                max_row = IPDAdmission.objects.select_for_update().aggregate(m=Max('ipd_no'))['m']
-                if max_row:
-                    nums = re.findall(r'\d+', max_row)
-                    n = int(nums[-1]) + 1 if nums else IPDAdmission.objects.count() + 100
-                else:
-                    n = 100
-                self.ipd_no = f'IPD{n}'
+                # CharField Max('ipd_no') is lexicographic ('IPD9' > 'IPD10'),
+                # so we pull all ipd_no values and find the true integer max in Python.
+                IPDAdmission.objects.select_for_update().values('id').first()
+                numeric_nos = (
+                    IPDAdmission.objects
+                    .filter(ipd_no__regex=r'^IPD\d+$')
+                    .values_list('ipd_no', flat=True)
+                )
+                max_n = max(
+                    (int(no[3:]) for no in numeric_nos if no[3:].isdigit()),
+                    default=99,
+                )
+                self.ipd_no = f'IPD{max_n + 1}'
         super().save(*args, **kwargs)
 
     def __str__(self):

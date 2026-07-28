@@ -1,0 +1,288 @@
+{% extends 'base_dashboard.html' %}
+{% block title %}Patient Profile — {{ patient.name }}{% endblock %}
+{% block page_title %}Patient Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+.profile-header {
+  background: linear-gradient(135deg, #1A56A0 0%, #0e3a74 100%);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.profile-avatar {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.2);
+  border: 3px solid rgba(255,255,255,.4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+.profile-header h2 { font-size: 1.3rem; font-weight: 700; margin: 0 0 4px; }
+.profile-header .meta { font-size: 0.82rem; opacity: .8; }
+.profile-header .uhid-badge {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.3);
+  padding: 3px 12px; border-radius: 20px;
+  font-size: 0.78rem; font-weight: 600;
+}
+
+.stat-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+@media (max-width: 768px) { .stat-cards { grid-template-columns: 1fr; } }
+.stat-card {
+  background: #fff; border-radius: 10px; padding: 1rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  display: flex; align-items: center; gap: 1rem;
+}
+.stat-card .icon {
+  width: 46px; height: 46px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem; flex-shrink: 0;
+}
+.stat-card .label { font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+.stat-card .value { font-size: 1.25rem; font-weight: 700; color: #1e293b; }
+
+.section-card {
+  background: #fff; border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  margin-bottom: 1.25rem; overflow: hidden;
+}
+.section-card .section-head {
+  background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+  padding: 0.75rem 1.25rem;
+  display: flex; align-items: center; gap: 0.5rem;
+  font-weight: 600; font-size: 0.9rem; color: #1e293b;
+}
+.section-card .section-body { padding: 0; }
+
+.info-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1rem; padding: 1.25rem;
+}
+@media (max-width: 768px) { .info-grid { grid-template-columns: 1fr 1fr; } }
+.info-item .lbl { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px; }
+.info-item .val { font-size: 0.9rem; font-weight: 500; color: #1e293b; }
+
+.hms-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.hms-table th { background: #1A56A0; color: #fff; padding: 8px 12px; text-align: left; font-weight: 500; }
+.hms-table td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; color: #374151; }
+.hms-table tr:hover td { background: #f8fafc; }
+.hms-table .empty td { text-align: center; color: #94a3b8; padding: 1.5rem; }
+
+.badge-status {
+  display: inline-block; padding: 2px 10px; border-radius: 20px;
+  font-size: 0.7rem; font-weight: 600;
+}
+.badge-admitted  { background: #d1fae5; color: #065f46; }
+.badge-discharged { background: #e5e7eb; color: #374151; }
+.badge-cash   { background: #eff6ff; color: #1e40af; }
+.badge-upi    { background: #f0fdf4; color: #166534; }
+.badge-card   { background: #fdf4ff; color: #7e22ce; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+
+  <!-- Back button -->
+  <div class="mb-3">
+    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+    {% if not request.is_view_only %}
+    <a href="{% url 'uhid:edit' patient.uhid %}" class="btn btn-primary btn-sm ms-2">
+      <i class="bi bi-pencil"></i> Edit Patient
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Profile header -->
+  <div class="profile-header">
+    <div class="profile-avatar">{{ patient.name|slice:":1"|upper }}</div>
+    <div style="flex:1">
+      <h2>{{ patient.title }} {{ patient.name }}</h2>
+      <div class="meta">
+        {{ patient.gender }} &nbsp;·&nbsp;
+        {% if patient.age_years %}{{ patient.age_years }} yrs{% endif %}
+        {% if patient.mobile %}&nbsp;·&nbsp; <i class="bi bi-phone"></i> {{ patient.mobile }}{% endif %}
+        {% if patient.address %}&nbsp;·&nbsp; {{ patient.address|truncatechars:40 }}{% endif %}
+      </div>
+    </div>
+    <div class="text-end">
+      <div class="uhid-badge mb-1"><i class="bi bi-person-badge"></i> UHID: {{ patient.uhid }}</div>
+      {% if patient.blood_group and patient.blood_group != 'NA' %}
+      <div class="uhid-badge"><i class="bi bi-droplet-half"></i> {{ patient.blood_group }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Financial stat cards -->
+  <div class="stat-cards">
+    <div class="stat-card">
+      <div class="icon" style="background:#eff6ff;color:#1e40af"><i class="bi bi-receipt"></i></div>
+      <div>
+        <div class="label">Total Billed</div>
+        <div class="value">₹{{ total_charged|floatformat:0 }}</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="icon" style="background:#d1fae5;color:#065f46"><i class="bi bi-check-circle"></i></div>
+      <div>
+        <div class="label">Total Paid</div>
+        <div class="value">₹{{ total_paid|floatformat:0 }}</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="icon" style="background:{% if outstanding > 0 %}#fee2e2;color:#991b1b{% else %}#d1fae5;color:#065f46{% endif %}"><i class="bi bi-{% if outstanding > 0 %}exclamation-circle{% else %}check-circle{% endif %}"></i></div>
+      <div>
+        <div class="label">Outstanding</div>
+        <div class="value {% if outstanding > 0 %}text-danger{% else %}text-success{% endif %}">₹{{ outstanding|floatformat:0 }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Patient details -->
+  <div class="section-card">
+    <div class="section-head"><i class="bi bi-person-lines-fill text-primary"></i> Patient Details</div>
+    <div class="info-grid">
+      <div class="info-item"><div class="lbl">Full Name</div><div class="val">{{ patient.title }} {{ patient.name }}</div></div>
+      <div class="info-item"><div class="lbl">Gender</div><div class="val">{{ patient.gender }}</div></div>
+      <div class="info-item"><div class="lbl">Date of Birth</div><div class="val">{{ patient.dob|default:"—" }}</div></div>
+      <div class="info-item"><div class="lbl">Age</div><div class="val">{{ patient.age_display }}</div></div>
+      <div class="info-item"><div class="lbl">Mobile</div><div class="val">{{ patient.mobile|default:"—" }}</div></div>
+      <div class="info-item"><div class="lbl">Blood Group</div><div class="val">{{ patient.blood_group }}</div></div>
+      <div class="info-item"><div class="lbl">Marital Status</div><div class="val">{{ patient.marital_status }}</div></div>
+      <div class="info-item"><div class="lbl">Guardian</div><div class="val">{{ patient.guardian_relation }} {{ patient.guardian|default:"—" }}</div></div>
+      <div class="info-item" style="grid-column: span 2"><div class="lbl">Address</div><div class="val">{{ patient.address|default:"—" }}{% if patient.city %}, {{ patient.city }}{% endif %}{% if patient.state %}, {{ patient.state }}{% endif %}</div></div>
+      <div class="info-item"><div class="lbl">Registered On</div><div class="val">{{ patient.created_at|date:"d M Y" }}</div></div>
+    </div>
+  </div>
+
+  <!-- IPD Admissions -->
+  <div class="section-card">
+    <div class="section-head"><i class="bi bi-hospital text-primary"></i> IPD Admissions ({{ ipd_admissions|length }})</div>
+    <div class="section-body">
+      <table class="hms-table">
+        <thead><tr>
+          <th>IPD No</th><th>Date</th><th>Consultant</th><th>Diagnosis</th>
+          <th>Room</th><th>Status</th><th>Action</th>
+        </tr></thead>
+        <tbody>
+          {% for a in ipd_admissions %}
+          <tr>
+            <td><strong>{{ a.ipd_no }}</strong></td>
+            <td>{{ a.date }}</td>
+            <td>{{ a.consultant|default:"—" }}</td>
+            <td>{{ a.diagnosis|truncatewords:6|default:"—" }}</td>
+            <td>{{ a.room_no|default:"—" }}</td>
+            <td><span class="badge-status {% if a.status == 'Admitted' %}badge-admitted{% else %}badge-discharged{% endif %}">{{ a.status }}</span></td>
+            <td>
+              <a href="{% url 'ipd:bill' %}?ipd_no={{ a.ipd_no }}" class="btn btn-sm btn-outline-primary" title="Bill"><i class="bi bi-receipt"></i></a>
+              {% if a.status == 'Admitted' %}
+              <a href="{% url 'ipd:admission' %}?edit={{ a.id }}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="empty"><td colspan="7">No IPD admissions found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- OPD Visits -->
+  <div class="section-card">
+    <div class="section-head"><i class="bi bi-clock-history text-primary"></i> OPD Visits ({{ opd_visits|length }})</div>
+    <div class="section-body">
+      <table class="hms-table">
+        <thead><tr>
+          <th>OPD No</th><th>Date</th><th>Doctor</th><th>Head</th>
+          <th>Fees</th><th>Payment</th><th>Action</th>
+        </tr></thead>
+        <tbody>
+          {% for v in opd_visits %}
+          <tr>
+            <td><strong>{{ v.opd_no }}</strong></td>
+            <td>{{ v.date }}</td>
+            <td>{{ v.doctor_name|default:"—" }}</td>
+            <td>{{ v.head }}</td>
+            <td>₹{{ v.total_amount }}</td>
+            <td><span class="badge-status badge-{{ v.payment_mode|lower }}">{{ v.payment_mode }}</span></td>
+            <td>
+              <a href="{% url 'opd:registration' %}?opd_no={{ v.opd_no }}" class="btn btn-sm btn-outline-secondary" title="View"><i class="bi bi-eye"></i></a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="empty"><td colspan="7">No OPD visits found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Lab Bills -->
+  <div class="section-card">
+    <div class="section-head"><i class="bi bi-droplet text-primary"></i> Lab Investigations ({{ lab_bills|length }})</div>
+    <div class="section-body">
+      <table class="hms-table">
+        <thead><tr>
+          <th>Bill No</th><th>Date</th><th>Tests</th><th>Total</th><th>Payment</th><th>Action</th>
+        </tr></thead>
+        <tbody>
+          {% for b in lab_bills %}
+          <tr>
+            <td><strong>{{ b.bill_no }}</strong></td>
+            <td>{{ b.test_date }}</td>
+            <td>{{ b.items.all|length }} test(s)</td>
+            <td>₹{{ b.total }}</td>
+            <td><span class="badge-status badge-{{ b.payment_mode|lower }}">{{ b.payment_mode }}</span></td>
+            <td>
+              <a href="{% url 'lab:view_report' b.id %}" class="btn btn-sm btn-outline-primary" title="Report" target="_blank"><i class="bi bi-file-medical"></i></a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="empty"><td colspan="6">No lab investigations found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Ultrasound Bills -->
+  {% if usg_bills %}
+  <div class="section-card">
+    <div class="section-head"><i class="bi bi-activity text-primary"></i> Ultrasound Bills ({{ usg_bills|length }})</div>
+    <div class="section-body">
+      <table class="hms-table">
+        <thead><tr>
+          <th>Bill No</th><th>Date</th><th>Tests</th><th>Total</th><th>Payment</th><th>Action</th>
+        </tr></thead>
+        <tbody>
+          {% for b in usg_bills %}
+          <tr>
+            <td><strong>{{ b.bill_no }}</strong></td>
+            <td>{{ b.test_date }}</td>
+            <td>{{ b.items.all|length }} test(s)</td>
+            <td>₹{{ b.total }}</td>
+            <td><span class="badge-status badge-{{ b.payment_mode|lower }}">{{ b.payment_mode }}</span></td>
+            <td>
+              <a href="{% url 'ultrasound:ultrasound_view_report' b.id %}" class="btn btn-sm btn-outline-primary" title="Report" target="_blank"><i class="bi bi-file-medical"></i></a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="empty"><td colspan="6">No ultrasound bills found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

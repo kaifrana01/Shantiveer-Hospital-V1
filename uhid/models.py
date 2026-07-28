@@ -72,8 +72,25 @@ class Patient(models.Model):
 
     @property
     def age_display(self):
+        """Always compute age from DOB if available; fall back to stored fields."""
+        if self.dob:
+            try:
+                from datetime import date
+                from dateutil.relativedelta import relativedelta
+                delta = relativedelta(date.today(), self.dob)
+                years, months, days = delta.years, delta.months, delta.days
+                if years > 0:
+                    return f'{years}Y'
+                if months > 0:
+                    return f'{months}M {days}D'
+                return f'{days}D'
+            except Exception:
+                pass
+        # Fallback to stored fields
         if self.age_years > 0:
-            return str(self.age_years)
+            return f'{self.age_years}Y'
+        if self.age_months > 0:
+            return f'{self.age_months}M'
         return f'{self.age_years}Y {self.age_months}M {self.age_days}D'
 
     def __str__(self):

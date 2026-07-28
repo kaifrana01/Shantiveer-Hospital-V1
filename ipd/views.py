@@ -87,13 +87,14 @@ def _get_bed_charge_details(adm, discharge_date=None):
 def _compute_ipd_bill_total(adm, discharge_date=None):
     """Compute total IPD bill: (bed_charge_per_day × days) + doctor fees + medicines.
 
-    Uses admission.bed_charge as the *per-day* rate.  Falls back to ward-based
+    Uses admission.bed_charge as the *per-day* rate. Falls back to ward-based
     per-day defaults when bed_charge is not set.
+    Uses admission.doctor_fees for the consultant fee (editable per patient).
     """
     _rate, _days, room_amount = _get_bed_charge_details(adm, discharge_date)
 
-    # Doctor fees: fixed at 2000 for now (could be made configurable later)
-    doctor_fees = Decimal('2000')
+    # Use the per-admission doctor_fees field (default 2000, editable in admission form)
+    doctor_fees = adm.doctor_fees if adm.doctor_fees else Decimal('2000')
 
     med_total = sum(m.amount for m in adm.medicine_lines.all()) or Decimal('0.00')
     return room_amount + doctor_fees + med_total
@@ -196,6 +197,7 @@ def admission(request):
                 insurance_co=_cap_text(request.POST.get('insurance', '')),
                 referral=_cap_text(request.POST.get('referral', '')),
                 status=request.POST.get('status', 'Admitted'),
+                doctor_fees=Decimal(request.POST.get('doctor_fees') or '2000'),
             )
 
             is_new_admission = admission_obj is None
@@ -290,12 +292,13 @@ def admission(request):
     )
 
     ctx = {
-        'active_sidebar': 'ipd',
+        'active_sidebar': 'ipd_admission',
         'today': timezone.localdate().isoformat(),
         'present_patients': present_list,
         'ipd_no': admission_obj.ipd_no if admission_obj else f'IPD{IPDAdmission.objects.count() + 101}',
         'form_ipd_no': admission_obj.ipd_no if admission_obj else '',
         'form_bed_charge': getattr(admission_obj, 'bed_charge', None) if admission_obj else '',
+        'form_doctor_fees': getattr(admission_obj, 'doctor_fees', 2000) if admission_obj else 2000,
         'edit_id': admission_obj.id if admission_obj else '',
         'form_uhid': admission_obj.patient.uhid if admission_obj else '',
         'form_patient_name': admission_obj.patient.name if admission_obj else '',
@@ -415,7 +418,7 @@ def payment(request):
         }
         for p in payments
     ]
-    return render(request, 'ipd/payment.html', {'active_sidebar': 'ipd', 'payments': data})
+    return render(request, 'ipd/payment.html', {'active_sidebar': 'ipd_payment', 'payments': data})
 
 
 @require_module('patient_bill', level='view')
@@ -438,7 +441,7 @@ def bill(request):
         if adm:
             # Canonical billing: bed charge = per-day rate × days stayed
             rate_per_day, days_stayed, room_amount = _get_bed_charge_details(adm)
-            doctor_fees = Decimal('2000')
+            doctor_fees = adm.doctor_fees if adm.doctor_fees else Decimal('2000')
             med_total = sum(m.amount for m in adm.medicine_lines.all()) or Decimal('0.00')
 
             bed_desc = f'Bed / Room Charges (₹{rate_per_day} × {days_stayed} day{"s" if days_stayed != 1 else ""})'
@@ -471,7 +474,7 @@ def bill(request):
                 'due_amount': due_amount,
             }
 
-    return render(request, 'ipd/bill.html', {'active_sidebar': 'ipd', 'bill': bill_data})
+    return render(request, 'ipd/bill.html', {'active_sidebar': 'ipd_bill', 'bill': bill_data})
 
 
 @require_module('ipd_admission', level='view')
@@ -515,7 +518,7 @@ def discharge_list(request):
         'discharge_date': str(d.discharge_date),
     } for d in items]
     return render(request, 'ipd/discharge_list.html', {
-        'active_sidebar': 'ipd',
+        'active_sidebar': 'ipd_discharge',
         'discharges': discharges,
         'q': q,
     })
@@ -561,7 +564,7 @@ def discharge_add(request):
     # GET — show a discharge form with all admitted patients listed
     admitted = IPDAdmission.objects.filter(status='Admitted').select_related('patient').order_by('-date')
     return render(request, 'ipd/discharge_add.html', {
-        'active_sidebar': 'ipd',
+        'active_sidebar': 'ipd_discharge',
         'today': timezone.localdate().isoformat(),
         'admitted_patients': admitted,
     })
@@ -577,7 +580,7 @@ def discharge_print(request, pk):
 
     # Use the canonical billing function to keep all views consistent
     rate_per_day, days_stayed, room_amount = _get_bed_charge_details(adm, d.discharge_date)
-    doctor_fees = Decimal('2000')
+    doctor_fees = adm.doctor_fees if adm.doctor_fees else Decimal('2000')
     med_total = sum(m.amount for m in adm.medicine_lines.all()) or Decimal('0.00')
 
     bed_desc = f'Bed / Room Charges (₹{rate_per_day} × {days_stayed} day{"s" if days_stayed != 1 else ""})'

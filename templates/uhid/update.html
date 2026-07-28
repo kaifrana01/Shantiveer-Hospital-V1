@@ -1,168 +1,217 @@
 {% extends 'base_cyan.html' %}
-{% block title %}UHID Update{% endblock %}
-{% block page_title %}UHID Update{% endblock %}
+{% block title %}UHID Patient List{% endblock %}
+{% block page_title %}UHID Registration{% endblock %}
+
+{% block extra_css %}
+<style>
+.uhid-green-header {
+  background: #2e7d32;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: .65rem 1.25rem;
+  border-radius: 8px 8px 0 0;
+  letter-spacing: .02em;
+}
+.uhid-search-bar {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0 0 8px 8px;
+  padding: .75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.uhid-search-bar label { font-weight: 500; font-size: .85rem; white-space: nowrap; }
+.uhid-table-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+}
+.uhid-table-header {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: .65rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: .85rem;
+  color: #1e293b;
+}
+.hms-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.hms-table th {
+  background: #1a56a0;
+  color: #fff;
+  padding: 9px 12px;
+  text-align: left;
+  font-weight: 500;
+}
+.hms-table td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.hms-table tr:hover td { background: #f8fafc; }
+.hms-table .empty-row td { text-align: center; color: #94a3b8; padding: 2.5rem; }
+.selected-row td { background: #eff6ff !important; }
+.selected-row td:first-child { border-left: 3px solid #1a56a0; }
+@media (max-width: 768px) {
+  .uhid-search-bar { flex-direction: column; align-items: stretch; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="uhid-green-header">UHID Registration</div>
-<div class="search-bar-row">
-    <label>Search Patient:</label>
-    <form method="get" class="d-flex gap-2 flex-grow-1 align-items-center">
-        <input name="uhid" class="form-control form-control-sm" style="max-width:160px"
-               placeholder="UHID" value="{{ search_uhid }}">
-        <input name="q" class="form-control form-control-sm" style="max-width:220px"
-               placeholder="Name / Mobile" value="{{ search_q }}">
-        <button class="btn btn-primary btn-sm">Search</button>
-        {% if search_uhid or search_q %}
-        <a href="{% url 'uhid:update' %}" class="btn btn-outline-secondary btn-sm">Clear</a>
-        {% endif %}
-    </form>
-    {% if not request.is_view_only %}
-    <a href="{% url 'uhid:update' %}" class="btn btn-success btn-sm ms-2">
-        <i class="bi bi-person-plus"></i> New Patient
-    </a>
-    {% endif %}
-</div>
 <div class="page-container">
-    <div class="form-card mb-3" style="border:1px solid #ccc">
-        <form method="post">{% csrf_token %}
-            <input type="hidden" name="uhid" value="{{ patient.uhid|default:'' }}">
-            <div class="row g-2 mb-2">
-                <div class="col-md-4">
-                    <label class="small">Patient Name</label>
-                    <div class="input-group input-group-sm">
-                        <select name="title" class="form-select" style="max-width:70px">
-                            <option {% if patient.title == 'Mr' %}selected{% endif %}>Mr</option>
-                            <option {% if patient.title == 'Mrs' %}selected{% endif %}>Mrs</option>
-                            <option {% if patient.title == 'Ms' %}selected{% endif %}>Ms</option>
-                        </select>
-                        <input name="patient_name" class="form-control" value="{{ patient.name|default:'' }}">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <label class="small">Guardian / Relation</label>
-                    <div class="input-group input-group-sm">
-                        <select name="guardian_relation" class="form-select" style="max-width:70px">
-                            <option {% if patient.guardian_relation == 'S/o' %}selected{% endif %}>S/o</option>
-                            <option {% if patient.guardian_relation == 'D/o' %}selected{% endif %}>D/o</option>
-                            <option {% if patient.guardian_relation == 'W/o' %}selected{% endif %}>W/o</option>
-                        </select>
-                        <input name="guardian" class="form-control" value="{{ patient.guardian|default:'' }}">
-                    </div>
-                </div>
-            </div>
-            <div class="row g-2 mb-2">
-                <div class="col-md-2">
-                    <label class="small">Gender</label>
-                    <select name="gender" class="form-select form-select-sm">
-                        <option value="Male" {% if patient.gender == 'Male' %}selected{% endif %}>Male</option>
-                        <option value="Female" {% if patient.gender == 'Female' %}selected{% endif %}>Female</option>
-                        <option value="Other" {% if patient.gender == 'Other' %}selected{% endif %}>Other</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="small">Marital</label>
-                    <select name="marital" class="form-select form-select-sm">
-                        <option value="Single" {% if patient.marital_status == 'Single' %}selected{% endif %}>Single</option>
-                        <option value="Married" {% if patient.marital_status == 'Married' %}selected{% endif %}>Married</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="small">DOB</label>
-                    <input type="date" name="dob" class="form-control form-control-sm"
-                           value="{{ patient.dob|date:'Y-m-d'|default:'' }}">
-                </div>
-                <div class="col-md-2">
-                    <label class="small">Mobile</label>
-                    <input name="mobile" class="form-control form-control-sm" value="{{ patient.mobile|default:'' }}">
-                </div>
-                <div class="col-md-1">
-                    <label class="small">B.G.</label>
-                    <select name="blood_group" class="form-select form-select-sm">
-                        <option {% if patient.blood_group == 'NA' or not patient.blood_group %}selected{% endif %} value="NA">NA</option>
-                        <option {% if patient.blood_group == 'A+' %}selected{% endif %} value="A+">A+</option>
-                        <option {% if patient.blood_group == 'A-' %}selected{% endif %} value="A-">A-</option>
-                        <option {% if patient.blood_group == 'B+' %}selected{% endif %} value="B+">B+</option>
-                        <option {% if patient.blood_group == 'B-' %}selected{% endif %} value="B-">B-</option>
-                        <option {% if patient.blood_group == 'AB+' %}selected{% endif %} value="AB+">AB+</option>
-                        <option {% if patient.blood_group == 'AB-' %}selected{% endif %} value="AB-">AB-</option>
-                        <option {% if patient.blood_group == 'O+' %}selected{% endif %} value="O+">O+</option>
-                        <option {% if patient.blood_group == 'O-' %}selected{% endif %} value="O-">O-</option>
-                    </select>
-                </div>
-                <div class="col-md-1">
-                    <label class="small">Resident</label>
-                    <select class="form-select form-select-sm">
-                        <option>India</option>
-                    </select>
-                </div>
-            </div>
-            <div class="row g-2 mb-2">
-                <div class="col-md-2">
-                    <label class="small">State</label>
-                    <select name="state" class="form-select form-select-sm">
-                        <option value="">-- Select State --</option>
-                        {% for s in indian_states %}
-                        <option {% if patient.state == s %}selected{% endif %}>{{ s }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="small">City</label>
-                    <input name="city" class="form-control form-control-sm" value="{{ patient.city|default:'' }}" placeholder="City">
-                </div>
-                <div class="col-md-6">
-                    <label class="small">Address</label>
-                    <textarea name="address" class="form-control form-control-sm" rows="2">{{ patient.address|default:'' }}</textarea>
-                </div>
-                {% if not request.is_view_only %}
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100">Save</button>
-                </div>
-                {% endif %}
-            </div>
-        </form>
+
+  <!-- Search + header -->
+  <div>
+    <div class="uhid-green-header">UHID Registration</div>
+    <div class="uhid-search-bar">
+      <label>Search Patient:</label>
+      <form method="get" id="searchForm" class="d-flex gap-2 flex-grow-1 align-items-center flex-wrap">
+        <input name="uhid" id="searchUhid" class="form-control form-control-sm"
+               style="max-width:160px" placeholder="UHID"
+               value="{{ search_uhid }}" autocomplete="off">
+        <input name="q" id="searchQ" class="form-control form-control-sm"
+               style="max-width:240px" placeholder="Name / Mobile"
+               value="{{ search_q }}" autocomplete="off">
+        <button type="submit" class="btn btn-primary btn-sm px-3">
+          <i class="bi bi-search"></i> Search
+        </button>
+        {% if search_uhid or search_q %}
+        <a href="{% url 'uhid:update' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-x"></i> Clear
+        </a>
+        {% endif %}
+      </form>
+      {% if not request.is_view_only %}
+      <a href="{% url 'uhid:register' %}" class="btn btn-success btn-sm ms-auto">
+        <i class="bi bi-person-plus"></i> New Patient
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Patient table -->
+  <div class="uhid-table-card">
+    <div class="uhid-table-header">
+      <span><i class="bi bi-people text-primary me-1"></i> Patient Registry</span>
+      <span class="text-muted fw-normal" style="font-size:.78rem">
+        {% if search_uhid or search_q %}
+          {{ patients.paginator.count }} result{{ patients.paginator.count|pluralize }}
+        {% else %}
+          {{ patients.paginator.count }} total patient{{ patients.paginator.count|pluralize }}
+        {% endif %}
+      </span>
     </div>
     <div class="table-responsive">
-    <table class="hms-table">
-      <thead>
-        <tr>
-          <th>UHID</th><th>Patient Name</th><th>Gender</th><th>Age</th>
-          <th>Mobile</th><th>City / State</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in patients %}
-        <tr>
-          <td><a href="?uhid={{ p.uhid }}"><strong>{{ p.uhid }}</strong></a></td>
-          <td>{{ p.name }}</td>
-          <td>{{ p.gender }}</td>
-          <td>{{ p.age_display }}</td>
-          <td>{{ p.mobile }}</td>
-          <td>{{ p.city|default:"" }}{% if p.city and p.state %}, {% endif %}{{ p.state|default:"" }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="text-center text-muted py-3">No patients found.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+      <table class="hms-table">
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>
+            <th>UHID</th>
+            <th>Patient Name</th>
+            <th>Gender</th>
+            <th>Age</th>
+            <th>Mobile</th>
+            <th>City / State</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in patients %}
+          <tr {% if p.uhid == search_uhid %}class="selected-row"{% endif %}>
+            <td class="text-muted">{{ forloop.counter }}</td>
+            <td>
+              <span class="fw-bold text-primary">{{ p.uhid }}</span>
+            </td>
+            <td>
+              <strong>{{ p.name }}</strong>
+              {% if p.guardian %}
+              <br><small class="text-muted">{{ p.guardian_relation }} {{ p.guardian }}</small>
+              {% endif %}
+            </td>
+            <td>{{ p.gender }}</td>
+            <td>{{ p.age_display }}</td>
+            <td>{{ p.mobile }}</td>
+            <td>{{ p.city|default:"" }}{% if p.city and p.state %}, {% endif %}{{ p.state|default:"" }}</td>
+            <td class="text-nowrap">
+              <a href="{% url 'uhid:patient_profile' p.uhid %}"
+                 class="btn btn-sm btn-outline-info" title="View Profile">
+                <i class="bi bi-person-lines-fill"></i>
+              </a>
+              {% if not request.is_view_only %}
+              <a href="{% url 'uhid:edit' p.uhid %}"
+                 class="btn btn-sm btn-outline-primary ms-1" title="Edit">
+                <i class="bi bi-pencil"></i>
+              </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="empty-row">
+            <td colspan="8">
+              {% if search_uhid or search_q %}
+                <i class="bi bi-search" style="font-size:1.8rem;display:block;margin-bottom:.5rem;opacity:.3"></i>
+                No patients found matching your search.
+                {% if not request.is_view_only %}
+                <br>
+                <a href="{% url 'uhid:register' %}" class="btn btn-success btn-sm mt-2">
+                  <i class="bi bi-person-plus"></i> Register New Patient
+                </a>
+                {% endif %}
+              {% else %}
+                No patients registered yet.
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+
     {% if patients.has_other_pages %}
-    <nav class="mt-3"><ul class="pagination justify-content-center">
-      {% if patients.has_previous %}
-      <li class="page-item">
-        <a class="page-link" href="?page={{ patients.previous_page_number }}{% if search_uhid %}&uhid={{ search_uhid }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}">← Previous</a>
-      </li>
-      {% endif %}
-      {% for num in patients.paginator.page_range %}
-      <li class="page-item {% if patients.number == num %}active{% endif %}">
-        <a class="page-link" href="?page={{ num }}{% if search_uhid %}&uhid={{ search_uhid }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}">{{ num }}</a>
-      </li>
-      {% endfor %}
-      {% if patients.has_next %}
-      <li class="page-item">
-        <a class="page-link" href="?page={{ patients.next_page_number }}{% if search_uhid %}&uhid={{ search_uhid }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}">Next →</a>
-      </li>
-      {% endif %}
-    </ul></nav>
+    <div class="px-3 py-2">
+      <nav><ul class="pagination pagination-sm justify-content-center mb-0">
+        {% if patients.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ patients.previous_page_number }}{% if search_uhid %}&uhid={{ search_uhid }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}">← Prev</a>
+        </li>
+        {% endif %}
+        {% for num in patients.paginator.page_range %}
+          {% if patients.number == num %}
+          <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% elif num > patients.number|add:'-3' and num < patients.number|add:'3' %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ num }}{% if search_uhid %}&uhid={{ search_uhid }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}">{{ num }}</a>
+          </li>
+          {% endif %}
+        {% endfor %}
+        {% if patients.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ patients.next_page_number }}{% if search_uhid %}&uhid={{ search_uhid }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}">Next →</a>
+        </li>
+        {% endif %}
+      </ul></nav>
+    </div>
     {% endif %}
+  </div>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+['searchUhid', 'searchQ'].forEach(function(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('searchForm').submit(); }
+  });
+});
+const selected = document.querySelector('.selected-row');
+if (selected) selected.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+</script>
 {% endblock %}

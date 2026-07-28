@@ -45,7 +45,10 @@ class Notification(models.Model):
     notification_type = models.CharField(max_length=30, choices=TYPE_CHOICES, default=TYPE_GENERAL)
     link = models.CharField(max_length=300, blank=True)
     is_read = models.BooleanField(default=False)
-    reference_id = models.CharField(max_length=50, blank=True, help_text='Unique key to avoid duplicate alerts')
+    reference_id = models.CharField(
+        max_length=50, blank=True, null=True, unique=True, default=None,
+        help_text='Unique key to prevent duplicate alerts. NULL = no dedup needed.',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

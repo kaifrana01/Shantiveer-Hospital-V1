@@ -1,72 +1,160 @@
 {% extends 'base_ipd.html' %}
 {% block title %}IPD Patient List{% endblock %}
 {% block page_title %}IPD Patient List{% endblock %}
+
+{% block extra_css %}
+<style>
+.ipd-list-table th, .ipd-list-table td { white-space: nowrap; vertical-align: middle; }
+.ipd-list-table td.wrap { white-space: normal; max-width: 140px; }
+.finance-cell { line-height: 1.3; }
+.finance-cell .adv  { color: #16a34a; font-size:.78rem; }
+.finance-cell .due  { color: #dc2626; font-weight:600; }
+.finance-cell .tot  { color: #374151; font-size:.78rem; }
+.btn-icon { padding: 3px 7px; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-container">
-    <div class="form-card">
-        <h2>IPD Patient List</h2>
-        <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
-            <form id="searchForm" method="get" class="d-flex gap-2 flex-wrap align-items-center">
-                <div class="input-group" style="max-width:300px;min-width:180px">
-                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" class="form-control" placeholder="Search by name, IPD, or UHID..." name="q" value="{{ request.GET.q }}">
-                </div>
-                <select name="referral" class="form-select" style="max-width:200px;min-width:140px">
-                    <option value="">— All Referral Doctors —</option>
-                    {% for doc in referral_doctors %}
-                    <option value="{{ doc }}" {% if doc == selected_referral %}selected{% endif %}>{{ doc }}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-                {% if request.GET.q or selected_referral %}
-                <a href="{% url 'ipd:patient_list' %}" class="btn btn-outline-secondary btn-sm">Clear</a>
-                {% endif %}
-            </form>
-            <a href="{% url 'ipd:admission' %}" class="btn btn-info text-white">+ Add New Patient</a>
-        </div>
-        <div class="table-responsive">
-        <table class="hms-table">
-            <thead style="background:#000"><tr>
-                <th style="background:#000;color:#fff">#</th><th>Patient Name</th><th>Age/Gender</th><th>UHID</th><th>IPD</th>
-                <th>Consultant</th><th>Room</th><th>Diagnosis</th><th>Date</th><th>Status</th>
-                <th>Advance Payment</th><th>Due</th><th>Total Amount</th>
-                <th>Action</th>
-            </tr></thead>
-            <tbody>
-            {% for p in patients %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td><strong>{{ p.name }}</strong></td><td>{{ p.age }} / {{ p.gender }}</td>
-                <td>{{ p.uhid }}</td><td>{{ p.ipd_no }}</td><td>{{ p.consultant }}</td>
-                <td>{{ p.room }}</td><td>{{ p.diagnosis|truncatewords:5 }}</td><td>{{ p.date }}</td>
-                <td><span class="badge bg-info">{{ p.status }}</span></td>
+  <div class="form-card">
+    <h2 class="mb-3">IPD Patient List</h2>
 
-                <td>{{ p.advance_paid|stringformat:"0.2f" }}</td>
-                <td>{{ p.due_amount|stringformat:"0.2f" }}</td>
-                <td>{{ p.total_amount|stringformat:"0.2f" }}</td>
+    <!-- Search bar -->
+    <form id="searchForm" method="get" class="d-flex gap-2 flex-wrap align-items-center mb-3">
+      <div class="input-group" style="max-width:280px;min-width:180px">
+        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" class="form-control" name="q"
+               placeholder="Name, IPD No, or UHID…"
+               value="{{ request.GET.q }}">
+      </div>
+      <select name="referral" class="form-select form-select-sm" style="max-width:190px">
+        <option value="">— All Referral Doctors —</option>
+        {% for doc in referral_doctors %}
+        <option value="{{ doc }}" {% if doc == selected_referral %}selected{% endif %}>{{ doc }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm px-3">
+        <i class="bi bi-search me-1"></i> Search
+      </button>
+      {% if request.GET.q or selected_referral %}
+      <a href="{% url 'ipd:patient_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-x"></i> Clear
+      </a>
+      {% endif %}
+      <a href="{% url 'ipd:admission' %}" class="btn btn-success btn-sm ms-auto">
+        <i class="bi bi-plus-circle me-1"></i> New Admission
+      </a>
+    </form>
 
-                <td class="text-nowrap">
-                    <a href="{% url 'uhid:update' %}?uhid={{ p.uhid }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-person-lines-fill"></i> Profile</a>
-                    <a href="{% url 'ipd:admission' %}?edit={{ p.id }}" class="btn btn-warning btn-sm">Edit</a>
-                    {% comment %} <a href="{% url 'prescription:list' %}?ipd_patient={{ p.ipd_no }}" class="btn btn-secondary btn-sm">Prescription</a> {% endcomment %}
-                    {% if p.status != 'Discharged' %}
-                    <form method="post" action="{% url 'ipd:discharge_add' %}" style="display:inline;" onsubmit="return confirm('Discharge {{ p.name }}?');">
-                        {% csrf_token %}
-                        <input type="hidden" name="ipd_no" value="{{ p.ipd_no }}">
-                        <input type="hidden" name="next" value="{% url 'ipd:payment' %}?ipd_no={{ p.ipd_no }}">
-                        <button type="submit" class="btn btn-primary btn-sm">Discharge</button>
-                    </form>
-                    {% endif %}
-                    <form method="post" action="{% url 'ipd:delete_patient' p.id %}" style="display:inline;" onsubmit="return confirm('Delete?');">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        </div>
+    <!-- Table -->
+    <div class="table-responsive">
+      <table class="hms-table ipd-list-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Patient</th>
+            <th>UHID&nbsp;/&nbsp;IPD</th>
+            <th>Consultant</th>
+            <th>Room</th>
+            <th>Diagnosis</th>
+            <th>Admitted</th>
+            <th>Status</th>
+            <th>Financials</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in patients %}
+          <tr>
+            <td class="text-muted">{{ forloop.counter }}</td>
+
+            <td>
+              <strong>{{ p.name }}</strong><br>
+              <small class="text-muted">{{ p.age }}Y / {{ p.gender }}</small>
+            </td>
+
+            <td>
+              <span class="text-muted" style="font-size:.78rem">UHID:</span>
+              <strong class="text-primary">{{ p.uhid }}</strong><br>
+              <span class="text-muted" style="font-size:.78rem">IPD:</span>
+              <strong>{{ p.ipd_no }}</strong>
+            </td>
+
+            <td>{{ p.consultant|default:"—" }}</td>
+            <td>{{ p.room|default:"—" }}</td>
+
+            <td class="wrap" style="max-width:120px">
+              {{ p.diagnosis|truncatewords:4|default:"—" }}
+            </td>
+
+            <td>{{ p.date }}</td>
+
+            <td>
+              {% if p.status == 'Admitted' %}
+                <span class="badge bg-success">Admitted</span>
+              {% else %}
+                <span class="badge bg-secondary">{{ p.status }}</span>
+              {% endif %}
+            </td>
+
+            <!-- Financials: Advance / Due / Total stacked -->
+            <td class="finance-cell">
+              <div class="adv">Adv: ₹{{ p.advance_paid|floatformat:0 }}</div>
+              <div class="due">Due: ₹{{ p.due_amount|floatformat:0 }}</div>
+              <div class="tot">Tot: ₹{{ p.total_amount|floatformat:0 }}</div>
+            </td>
+
+            <!-- Actions -->
+            <td class="text-nowrap">
+              <a href="{% url 'uhid:patient_profile' p.uhid %}"
+                 class="btn btn-outline-info btn-sm btn-icon" title="Patient Profile">
+                <i class="bi bi-person-lines-fill"></i>
+              </a>
+              <a href="{% url 'ipd:admission' %}?edit={{ p.id }}"
+                 class="btn btn-warning btn-sm btn-icon ms-1" title="Edit Admission">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <a href="{% url 'ipd:bill' %}?ipd_no={{ p.ipd_no }}"
+                 class="btn btn-outline-primary btn-sm btn-icon ms-1" title="View Bill">
+                <i class="bi bi-receipt"></i>
+              </a>
+              {% if p.status != 'Discharged' %}
+              <form method="post" action="{% url 'ipd:discharge_add' %}"
+                    style="display:inline"
+                    onsubmit="return confirm('Discharge {{ p.name }}?')">
+                {% csrf_token %}
+                <input type="hidden" name="ipd_no" value="{{ p.ipd_no }}">
+                <input type="hidden" name="next" value="{% url 'ipd:payment' %}?ipd_no={{ p.ipd_no }}">
+                <button type="submit" class="btn btn-primary btn-sm btn-icon ms-1" title="Discharge">
+                  <i class="bi bi-box-arrow-right"></i>
+                </button>
+              </form>
+              {% endif %}
+              <form method="post" action="{% url 'ipd:delete_patient' p.id %}"
+                    style="display:inline"
+                    onsubmit="return confirm('Delete {{ p.name }}? This cannot be undone.')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm btn-icon ms-1" title="Delete">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="10" class="text-center text-muted py-4">
+              <i class="bi bi-people" style="font-size:2rem;display:block;margin-bottom:.5rem;opacity:.3"></i>
+              No admitted patients found.
+              {% if request.GET.q or selected_referral %}
+              <br><a href="{% url 'ipd:patient_list' %}" class="btn btn-sm btn-outline-secondary mt-2">Clear filters</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+
+  </div>
 </div>
 {% endblock %}

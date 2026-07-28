@@ -54,6 +54,12 @@ class IncomeEntry(models.Model):
     description = models.TextField()
     payment_mode = models.CharField(max_length=20, choices=PAYMENT_MODES, default='Cash')
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    # Traceability: which module + which record ID created this row.
+    # Allows safe idempotent deletion and prevents ghost duplicates on retry.
+    source_app = models.CharField(max_length=20, blank=True, default='',
+                                   help_text='Module that created this entry (opd, ipd, lab, etc.)')
+    source_id = models.CharField(max_length=50, blank=True, default='',
+                                  help_text='Bill/visit number of the originating record.')
     created_at = models.DateTimeField(auto_now_add=True)
 
     history = HistoricalRecords()

@@ -3,7 +3,7 @@ from simple_history.models import HistoricalRecords
 
 
 class Doctor(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, unique=True)
     department = models.CharField(max_length=150, blank=True)
     specialization = models.CharField(max_length=150, blank=True)
     phone = models.CharField(max_length=15, blank=True)

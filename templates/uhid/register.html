@@ -1,0 +1,292 @@
+{% extends 'base_cyan.html' %}
+{% block title %}{% if patient.uhid %}Edit Patient — {{ patient.uhid }}{% else %}New Patient Registration{% endif %}{% endblock %}
+{% block page_title %}{% if patient.uhid %}Edit Patient{% else %}New Patient Registration{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+.reg-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.08);
+  overflow: hidden;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.reg-header {
+  padding: 1.1rem 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e2e8f0;
+}
+.reg-header.new  { background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%); }
+.reg-header.edit { background: linear-gradient(135deg, #1a56a0 0%, #0e3a74 100%); }
+.reg-header h2 { color: #fff; font-size: 1.05rem; font-weight: 700; margin: 0; }
+.reg-header .uhid-badge {
+  background: rgba(255,255,255,.2);
+  border: 1px solid rgba(255,255,255,.4);
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 600;
+  padding: 3px 14px;
+  border-radius: 20px;
+}
+.reg-body { padding: 1.5rem 1.75rem; }
+.section-divider {
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #94a3b8;
+  margin: 1.25rem 0 .75rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+.reg-footer {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  padding: 1rem 1.75rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+
+  <!-- Back link -->
+  <div class="mb-3">
+    <a href="{% url 'uhid:update' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i> Back to Patient List
+    </a>
+  </div>
+
+  <div class="reg-card">
+
+    <!-- Header -->
+    <div class="reg-header {% if patient.uhid %}edit{% else %}new{% endif %}">
+      <h2>
+        {% if patient.uhid %}
+          <i class="bi bi-pencil-square me-2"></i>Edit Patient Record
+        {% else %}
+          <i class="bi bi-person-plus me-2"></i>New Patient Registration
+        {% endif %}
+      </h2>
+      {% if patient.uhid %}
+      <span class="uhid-badge">
+        <i class="bi bi-person-badge me-1"></i> UHID: {{ patient.uhid }}
+      </span>
+      {% else %}
+      <span class="uhid-badge">
+        <i class="bi bi-hash me-1"></i> UHID assigned on save
+      </span>
+      {% endif %}
+    </div>
+
+    <!-- Form -->
+    <form method="post" id="regForm" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="uhid" value="{{ patient.uhid|default:'' }}">
+
+      <div class="reg-body">
+
+        <!-- ── Personal Info ── -->
+        <div class="section-divider"><i class="bi bi-person"></i> Personal Information</div>
+
+        <div class="row g-3">
+          <div class="col-md-5">
+            <label class="form-label small fw-semibold">Patient Name <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <select name="title" class="form-select" style="max-width:80px">
+                <option {% if patient.title == 'Mr'   or not patient.title %}selected{% endif %}>Mr</option>
+                <option {% if patient.title == 'Mrs'  %}selected{% endif %}>Mrs</option>
+                <option {% if patient.title == 'Ms'   %}selected{% endif %}>Ms</option>
+                <option {% if patient.title == 'Dr'   %}selected{% endif %}>Dr</option>
+                <option {% if patient.title == 'Baby' %}selected{% endif %}>Baby</option>
+              </select>
+              <input name="patient_name" class="form-control" id="nameInput"
+                     placeholder="Full name" required
+                     value="{{ patient.name|default:'' }}">
+            </div>
+            <div id="nameError" class="text-danger small mt-1" style="display:none">
+              <i class="bi bi-exclamation-circle"></i> Patient name is required.
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Guardian / Relation</label>
+            <div class="input-group">
+              <select name="guardian_relation" class="form-select" style="max-width:80px">
+                <option {% if patient.guardian_relation == 'S/o' or not patient.guardian_relation %}selected{% endif %}>S/o</option>
+                <option {% if patient.guardian_relation == 'D/o' %}selected{% endif %}>D/o</option>
+                <option {% if patient.guardian_relation == 'W/o' %}selected{% endif %}>W/o</option>
+                <option {% if patient.guardian_relation == 'C/o' %}selected{% endif %}>C/o</option>
+              </select>
+              <input name="guardian" class="form-control" placeholder="Guardian name"
+                     value="{{ patient.guardian|default:'' }}">
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Mobile <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-phone"></i></span>
+              <input name="mobile" class="form-control" id="mobileInput"
+                     placeholder="10-digit number" maxlength="15"
+                     value="{{ patient.mobile|default:'' }}">
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Demographics ── -->
+        <div class="section-divider"><i class="bi bi-clipboard2-pulse"></i> Demographics</div>
+
+        <div class="row g-3">
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">Gender</label>
+            <select name="gender" class="form-select">
+              <option value="Male"   {% if patient.gender == 'Male'   or not patient.gender %}selected{% endif %}>Male</option>
+              <option value="Female" {% if patient.gender == 'Female' %}selected{% endif %}>Female</option>
+              <option value="Other"  {% if patient.gender == 'Other'  %}selected{% endif %}>Other</option>
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">Marital Status</label>
+            <select name="marital" class="form-select">
+              <option value="Single"  {% if patient.marital_status == 'Single'  or not patient.marital_status %}selected{% endif %}>Single</option>
+              <option value="Married" {% if patient.marital_status == 'Married' %}selected{% endif %}>Married</option>
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">Date of Birth</label>
+            <input type="date" name="dob" id="dobInput" class="form-control"
+                   value="{{ patient.dob|date:'Y-m-d'|default:'' }}">
+          </div>
+
+          <div class="col-md-1">
+            <label class="form-label small fw-semibold">Age (Y)</label>
+            <input type="number" name="age_years" id="ageYears" class="form-control"
+                   min="0" max="150" placeholder="Yrs"
+                   value="{{ patient.age_years|default:'' }}">
+          </div>
+
+          <div class="col-md-1">
+            <label class="form-label small fw-semibold">Mo</label>
+            <input type="number" name="age_months" class="form-control"
+                   min="0" max="11" placeholder="Mo"
+                   value="{{ patient.age_months|default:'' }}">
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">Blood Group</label>
+            <select name="blood_group" class="form-select">
+              <option {% if patient.blood_group == 'NA' or not patient.blood_group %}selected{% endif %} value="NA">NA</option>
+              <option {% if patient.blood_group == 'A+'  %}selected{% endif %} value="A+">A+</option>
+              <option {% if patient.blood_group == 'A-'  %}selected{% endif %} value="A-">A-</option>
+              <option {% if patient.blood_group == 'B+'  %}selected{% endif %} value="B+">B+</option>
+              <option {% if patient.blood_group == 'B-'  %}selected{% endif %} value="B-">B-</option>
+              <option {% if patient.blood_group == 'AB+' %}selected{% endif %} value="AB+">AB+</option>
+              <option {% if patient.blood_group == 'AB-' %}selected{% endif %} value="AB-">AB-</option>
+              <option {% if patient.blood_group == 'O+'  %}selected{% endif %} value="O+">O+</option>
+              <option {% if patient.blood_group == 'O-'  %}selected{% endif %} value="O-">O-</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ── Address ── -->
+        <div class="section-divider"><i class="bi bi-geo-alt"></i> Address</div>
+
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">State</label>
+            <select name="state" class="form-select">
+              <option value="">— Select State —</option>
+              {% for s in indian_states %}
+              <option {% if patient.state == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">City</label>
+            <input name="city" class="form-control" placeholder="City"
+                   value="{{ patient.city|default:'' }}">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Full Address</label>
+            <textarea name="address" class="form-control" rows="2"
+                      placeholder="House no., street, area…">{{ patient.address|default:'' }}</textarea>
+          </div>
+        </div>
+
+      </div><!-- /reg-body -->
+
+      <!-- Footer actions -->
+      <div class="reg-footer">
+        {% if not request.is_view_only %}
+        <button type="submit" class="btn btn-primary px-4" id="saveBtn">
+          <i class="bi bi-save me-1"></i>
+          {% if patient.uhid %}Update Patient{% else %}Register &amp; Save{% endif %}
+        </button>
+        {% endif %}
+        <a href="{% url 'uhid:update' %}" class="btn btn-outline-secondary">
+          Cancel
+        </a>
+        {% if patient.uhid %}
+        <a href="{% url 'uhid:patient_profile' patient.uhid %}" class="btn btn-outline-info ms-auto">
+          <i class="bi bi-person-lines-fill me-1"></i> View Profile
+        </a>
+        {% endif %}
+      </div>
+
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-calculate age from DOB
+document.getElementById('dobInput')?.addEventListener('change', function () {
+  const dob = new Date(this.value);
+  if (isNaN(dob.getTime())) return;
+  const today = new Date();
+  let years = today.getFullYear() - dob.getFullYear();
+  let months = today.getMonth() - dob.getMonth();
+  if (months < 0 || (months === 0 && today.getDate() < dob.getDate())) { years--; months += 12; }
+  const ageEl = document.getElementById('ageYears');
+  if (ageEl) ageEl.value = Math.max(0, years);
+});
+
+// Form validation + double-submit prevention
+document.getElementById('regForm')?.addEventListener('submit', function (e) {
+  const nameVal = document.getElementById('nameInput').value.trim();
+  const err = document.getElementById('nameError');
+  if (!nameVal) {
+    e.preventDefault();
+    err.style.display = 'block';
+    document.getElementById('nameInput').focus();
+    return;
+  }
+  err.style.display = 'none';
+  const btn = document.getElementById('saveBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving…';
+  }
+});
+</script>
+{% endblock %}

@@ -243,21 +243,31 @@ def ultrasound_investigation(request):
             )
 
             total = Decimal(0)
+            # Deduplicate posted test IDs — same as lab/views.py pattern.
+            # A duplicate test_id in POST (e.g. double-click, browser quirk)
+            # must not create two UltrasoundInvestigationItem rows for the same test.
+            qty_by_test = {}
             for test_id in selected_tests:
+                raw_rate = request.POST.get(f'rate_{test_id}')
                 test = UltrasoundTestMaster.objects.filter(pk=test_id).first()
-                if test:
-                    raw_rate = request.POST.get(f'rate_{test_id}')
-                    try:
-                        custom_rate = Decimal(raw_rate) if raw_rate not in (None, '') else test.rate
-                        if custom_rate < 0:
-                            custom_rate = test.rate
-                    except (InvalidOperation, ValueError):
+                if not test:
+                    continue
+                try:
+                    custom_rate = Decimal(raw_rate) if raw_rate not in (None, '') else test.rate
+                    if custom_rate < 0:
                         custom_rate = test.rate
+                except (InvalidOperation, ValueError):
+                    custom_rate = test.rate
+                # If same test appears twice, keep the last rate (or could average — last is simpler)
+                qty_by_test[str(test_id)] = (test, custom_rate)
 
-                    item = UltrasoundInvestigationItem.objects.create(
-                        investigation=inv, test=test, rate=custom_rate, quantity=1,
-                    )
-                    total += item.amount
+            for test_id, (test, rate) in qty_by_test.items():
+                item, _ = UltrasoundInvestigationItem.objects.update_or_create(
+                    investigation=inv,
+                    test=test,
+                    defaults={'rate': rate, 'quantity': 1},
+                )
+                total += item.amount
 
             inv.total = total - inv.discount
             inv.save()

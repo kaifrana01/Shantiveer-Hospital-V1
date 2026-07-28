@@ -45,17 +45,20 @@ class LabInvestigation(models.Model):
     def save(self, *args, **kwargs):
         if not self.bill_no:
             from django.db import transaction as _tx
-            import re
             with _tx.atomic():
-                max_row = LabInvestigation.objects.select_for_update().aggregate(
-                    m=models.Max('bill_no')
-                )['m']
-                if max_row:
-                    nums = re.findall(r'\d+', max_row)
-                    n = int(nums[-1]) + 1 if nums else LabInvestigation.objects.count() + 1
-                else:
-                    n = 1
-                self.bill_no = f'LAB{n:03d}'
+                # CharField Max('bill_no') is lexicographic ('LAB999' > 'LAB1000'),
+                # so we pull all bill_no values and find the true integer max in Python.
+                LabInvestigation.objects.select_for_update().values('id').first()
+                numeric_nos = (
+                    LabInvestigation.objects
+                    .filter(bill_no__regex=r'^LAB\d+$')
+                    .values_list('bill_no', flat=True)
+                )
+                max_n = max(
+                    (int(no[3:]) for no in numeric_nos if no[3:].isdigit()),
+                    default=0,
+                )
+                self.bill_no = f'LAB{max_n + 1:03d}'
         super().save(*args, **kwargs)
 
 
@@ -67,6 +70,12 @@ class LabInvestigationItem(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
 
     history = HistoricalRecords()
+
+    class Meta:
+        # DB-level guard: one line per test per bill.
+        # Note: uses unique_together (index-based) not UniqueConstraint,
+        # which is compatible with simple_history's HistoricalRecords.
+        unique_together = ('investigation', 'test')
 
     def save(self, *args, **kwargs):
         self.amount = self.rate * self.quantity

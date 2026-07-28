@@ -83,17 +83,20 @@ class UltrasoundInvestigation(models.Model):
     def save(self, *args, **kwargs):
         if not self.bill_no:
             from django.db import transaction as _tx
-            import re
             with _tx.atomic():
-                max_row = UltrasoundInvestigation.objects.select_for_update().aggregate(
-                    m=models.Max('bill_no')
-                )['m']
-                if max_row:
-                    nums = re.findall(r'\d+', max_row)
-                    n = int(nums[-1]) + 1 if nums else UltrasoundInvestigation.objects.count() + 1
-                else:
-                    n = 1
-                self.bill_no = f'USG{n:04d}'
+                # CharField Max('bill_no') is lexicographic ('USG9999' > 'USG10000'),
+                # so we pull all bill_no values and find the true integer max in Python.
+                UltrasoundInvestigation.objects.select_for_update().values('id').first()
+                numeric_nos = (
+                    UltrasoundInvestigation.objects
+                    .filter(bill_no__regex=r'^USG\d+$')
+                    .values_list('bill_no', flat=True)
+                )
+                max_n = max(
+                    (int(no[3:]) for no in numeric_nos if no[3:].isdigit()),
+                    default=0,
+                )
+                self.bill_no = f'USG{max_n + 1:04d}'
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -111,6 +114,11 @@ class UltrasoundInvestigationItem(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
 
     history = HistoricalRecords()
+
+    class Meta:
+        # DB-level guard: one line per test per bill — prevents duplicate items
+        # even if the view logic fails to deduplicate.
+        unique_together = ('investigation', 'test')
 
     def save(self, *args, **kwargs):
         self.amount = self.rate * self.quantity

@@ -31,15 +31,21 @@ class OPDVisit(models.Model):
         if not self.opd_no:
             from django.db import transaction as _tx
             with _tx.atomic():
-                from django.db.models import Max
-                import re
-                max_row = OPDVisit.objects.select_for_update().aggregate(m=Max('opd_no'))['m']
-                if max_row:
-                    nums = re.findall(r'\d+', max_row)
-                    n = int(nums[-1]) + 1 if nums else OPDVisit.objects.count() + 1
-                else:
-                    n = 1
-                self.opd_no = f'OPD{n:03d}'
+                # select_for_update locks existing rows to block concurrent inserts.
+                # Use numeric MAX by extracting digits, same approach as UHID.
+                # CharField Max('opd_no') is lexicographic ('OPD99' > 'OPD100'),
+                # so we pull all opd_no values and find the true integer max in Python.
+                OPDVisit.objects.select_for_update().values('id').first()
+                numeric_nos = (
+                    OPDVisit.objects
+                    .filter(opd_no__regex=r'^OPD\d+$')
+                    .values_list('opd_no', flat=True)
+                )
+                max_n = max(
+                    (int(no[3:]) for no in numeric_nos if no[3:].isdigit()),
+                    default=0,
+                )
+                self.opd_no = f'OPD{max_n + 1:03d}'
         super().save(*args, **kwargs)
 
     def __str__(self):
