@@ -294,13 +294,13 @@ def admission(request):
                         amount=adv,
                     )
 
-                # Save uploaded documents (multiple allowed)
-                for f in request.FILES.getlist('documents'):
-                    IPDDocument.objects.create(
-                        admission=admission_obj,
-                        file=f,
-                        name=f.name,
-                    )
+            # Save uploaded documents — allowed on both new and edited admissions.
+            for f in request.FILES.getlist('documents'):
+                IPDDocument.objects.create(
+                    admission=admission_obj,
+                    file=f,
+                    name=f.name,
+                )
 
             return redirect('ipd:patient_list')
         except Exception as e:

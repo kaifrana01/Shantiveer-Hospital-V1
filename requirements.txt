@@ -29,8 +29,7 @@ gunicorn>=21.2.0
 # Environment variable loading
 python-dotenv>=1.0.0
 
-# Redis cache (set REDIS_URL env var to activate — Upstash free tier)
-django-redis>=5.4.0
+
 
 # Audit trail / history tracking for high-priority financial & clinical models
 django-simple-history>=3.5.0
@@ -38,3 +37,10 @@ django-simple-history>=3.5.0
 # PDF generation (used for income/USG/lab daybook exports)
 xhtml2pdf>=0.2.11
 reportlab>=4.0.0
+
+# Cloud media storage — Cloudinary (free 25 GB, no credit card needed).
+# Required when CLOUDINARY_CLOUD_NAME env var is set (Vercel deployments).
+# django-cloudinary-storage provides the Django storage backend.
+# cloudinary is the core SDK it depends on.
+django-cloudinary-storage>=0.3.0
+cloudinary>=1.40.0

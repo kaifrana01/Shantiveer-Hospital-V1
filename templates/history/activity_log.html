@@ -42,6 +42,14 @@
   </h5>
 </div>
 
+{% if using_default_range %}
+<div class="alert alert-info py-2 px-3 mb-3" style="font-size:.82rem;">
+  <i class="bi bi-info-circle"></i>
+  Showing last <strong>{{ default_days }} days</strong> by default for speed.
+  Use the date filters below to search further back.
+</div>
+{% endif %}
+
 <form method="get" class="hist-filter-card d-flex flex-wrap gap-2 align-items-end">
   <div style="flex:1 1 160px;">
     <label class="small mb-1 d-block text-muted">Module</label>

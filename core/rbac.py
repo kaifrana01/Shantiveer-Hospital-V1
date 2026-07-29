@@ -74,12 +74,19 @@ ROLE_ICONS = {
 
 
 def get_user_role(user):
-    """Return the single primary role key for a user, or None."""
+    """Return the single primary role key for a user, or None.
+
+    Fetches group names in a single DB query and uses an early-exit
+    pattern so superusers never hit the groups table at all.
+    """
     if not user.is_authenticated:
         return None
-    if user.is_superuser or (user.is_staff and not user.groups.exists()):
+    if user.is_superuser:
         return ADMIN
+    # Single query to fetch all group names; avoids the separate .exists() call.
     group_names = set(user.groups.values_list('name', flat=True))
+    if not group_names and user.is_staff:
+        return ADMIN
     if ADMIN in group_names:
         return ADMIN
     for role in ALL_ROLES:

@@ -5,11 +5,25 @@
       "src": "ShantiVeer_hms/wsgi.py",
       "use": "@vercel/python",
       "config": {
-        "maxLambdaSize": "15mb"
+        "maxLambdaSize": "50mb"
       }
     }
   ],
   "routes": [
+    {
+      "src": "/static/(.*)",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      },
+      "dest": "ShantiVeer_hms/wsgi.py"
+    },
+    {
+      "src": "/(favicon\\.ico|robots\\.txt)",
+      "headers": {
+        "Cache-Control": "public, max-age=86400"
+      },
+      "dest": "ShantiVeer_hms/wsgi.py"
+    },
     {
       "src": "/(.*)",
       "dest": "ShantiVeer_hms/wsgi.py"

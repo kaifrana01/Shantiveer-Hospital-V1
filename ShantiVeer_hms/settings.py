@@ -61,19 +61,28 @@ CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_AGE = 28800  # 8 hours
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
-SESSION_SAVE_EVERY_REQUEST = True
+# Only write the session to the DB when the session data actually changes.
+# SESSION_SAVE_EVERY_REQUEST=True was creating a DB write on every single
+# page load — significant overhead, especially on serverless.
+SESSION_SAVE_EVERY_REQUEST = False
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # ─── WhiteNoise ───────────────────────────────────────────────────────────────
 _WHITENOISE = True
 
 # ─── Apps ────────────────────────────────────────────────────────────────────
+# cloudinary_storage must appear BEFORE django.contrib.staticfiles.
+# We build the list dynamically so it's only included when Cloudinary is configured.
+_cloudinary_cloud = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
+_cloudinary_apps = ['cloudinary_storage', 'cloudinary'] if _cloudinary_cloud else []
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    *_cloudinary_apps,                # must come before staticfiles
     'django.contrib.staticfiles',
     'rest_framework',
     'accounts',
@@ -166,12 +175,19 @@ else:
 
     _mysql_options = {
         'charset': 'utf8mb4',
+        # Fail fast on cold-start DB timeouts rather than hanging for 30s.
+        'connect_timeout': 10,
     }
 
     # Only enforce SSL in production (not local dev).
     if not DEBUG:
         _mysql_ca = os.environ.get('MYSQL_CA_CERT', '')
         _mysql_options['ssl'] = {'ca': _mysql_ca} if _mysql_ca else {}
+
+    # On Vercel (serverless), each invocation is a new process — persistent
+    # connections (CONN_MAX_AGE > 0) are wasted overhead. Use 0 to close
+    # connections cleanly after each request instead.
+    _conn_max_age = 0 if os.environ.get('VERCEL') else 600
 
     DATABASES = {
         'default': {
@@ -181,38 +197,25 @@ else:
             'PASSWORD': os.environ.get('MYSQL_PASSWORD', ''),
             'HOST': os.environ.get('MYSQL_HOST', '127.0.0.1'),
             'PORT': os.environ.get('MYSQL_PORT', '3306'),
-            'CONN_MAX_AGE': 600,
+            'CONN_MAX_AGE': _conn_max_age,
             'OPTIONS': _mysql_options,
         }
     }
 
 # ─── Cache ───────────────────────────────────────────────────────────────────
-_redis_url = os.environ.get('REDIS_URL', '')
-
-if _redis_url:
-    try:
-        import django_redis  # noqa: F401
-        CACHES = {
-            'default': {
-                'BACKEND': 'django_redis.cache.RedisCache',
-                'LOCATION': _redis_url,
-                'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'},
-            }
+# Vercel → database cache (shared across all Lambda instances via MySQL).
+# Local dev → LocMemCache (in-process, zero config).
+if os.environ.get('VERCEL'):
+    # Shared across all Lambda instances via the existing MySQL connection.
+    # Table created by: python manage.py createcachetable (runs in build.sh)
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+            'LOCATION': 'django_cache',
+            'TIMEOUT': 300,
+            'OPTIONS': {'MAX_ENTRIES': 1000},
         }
-    except ImportError:
-        import warnings
-        warnings.warn(
-            'REDIS_URL is set but django-redis is not installed. '
-            'Falling back to LocMemCache. Run: pip install django-redis',
-            RuntimeWarning,
-            stacklevel=1,
-        )
-        CACHES = {
-            'default': {
-                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-                'LOCATION': 'shantiveer-hms-cache',
-            }
-        }
+    }
 else:
     CACHES = {
         'default': {
@@ -220,6 +223,7 @@ else:
             'LOCATION': 'shantiveer-hms-cache',
         }
     }
+
 
 # ─── Password Validation ─────────────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
@@ -240,21 +244,60 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'statics']
 STATIC_ROOT = BASE_DIR / 'staticfiles_collected'
 
-# WhiteNoise: serve static files directly from STATICFILES_DIRS without
-# requiring collectstatic to have been run first (safe for Vercel serverless).
-WHITENOISE_USE_FINDERS = True
-WHITENOISE_AUTOREFRESH = True
-
-if not DEBUG:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-else:
+# WhiteNoise static file configuration.
+# USE_FINDERS and AUTOREFRESH are development helpers that stat files on
+# every request — always disable them in production.
+if DEBUG:
+    WHITENOISE_USE_FINDERS = True
+    WHITENOISE_AUTOREFRESH = True
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+else:
+    WHITENOISE_USE_FINDERS = False
+    WHITENOISE_AUTOREFRESH = False
+    # CompressedManifestStaticFilesStorage appends content hashes to filenames
+    # so browsers can cache them forever (immutable), then busts the cache
+    # automatically when files change.
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
-# On Vercel (serverless), /var/task/ is read-only — use /tmp for uploads.
-# Note: /tmp is ephemeral and cleared between function invocations.
-# For production, use S3/Cloudinary/external storage instead.
-if os.environ.get('VERCEL'):
+
+# ─── Media / File Storage ─────────────────────────────────────────────────────
+# Cloudinary stores uploaded files (ultrasound docs, IPD docs, profile photos)
+# permanently on its CDN. Free 25 GB tier, no credit card needed.
+# Set CLOUDINARY_CLOUD_NAME + CLOUDINARY_API_KEY + CLOUDINARY_API_SECRET in
+# Vercel env vars. Without them, Vercel's /tmp is used (files lost on cold start).
+_cloudinary_cloud = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
+
+if _cloudinary_cloud:
+    # Django 4.2+ uses STORAGES dict instead of DEFAULT_FILE_STORAGE.
+    STORAGES = {
+        'default': {
+            'BACKEND': 'cloudinary_storage.storage.RawMediaCloudinaryStorage',
+        },
+        'staticfiles': {
+            'BACKEND': STATICFILES_STORAGE,
+        },
+    }
+
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': _cloudinary_cloud,
+        'API_KEY':    os.environ.get('CLOUDINARY_API_KEY', ''),
+        'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
+    }
+
+    # Files served directly from Cloudinary's global CDN.
+    # MEDIA_URL is left as /media/ — RawMediaCloudinaryStorage returns full
+    # absolute URLs from .url(), so MEDIA_URL is not prepended to them.
+    MEDIA_ROOT = ''
+
+elif os.environ.get('VERCEL'):
+    import warnings
+    warnings.warn(
+        'Running on Vercel without CLOUDINARY_CLOUD_NAME set. '
+        'Uploaded files will be stored in /tmp and WILL BE LOST on cold start.',
+        RuntimeWarning,
+        stacklevel=1,
+    )
     MEDIA_ROOT = '/tmp/media'
 else:
     MEDIA_ROOT = BASE_DIR / 'media'

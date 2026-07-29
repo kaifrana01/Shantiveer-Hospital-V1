@@ -19,20 +19,47 @@ def hospital_info(request):
     return ctx
 
 
+# Session key used to cache RBAC data — bump this string any time the
+# access matrix changes so stale cached values are automatically evicted.
+_RBAC_CACHE_VERSION = 'rbac_v1'
+_RBAC_SESSION_KEY = f'_rbac_ctx_{_RBAC_CACHE_VERSION}'
+
+
 def role_context(request):
-    """Expose the user's RBAC role + a per-module access map to every
-    template, so sidebars/buttons can adapt without each view having
-    to pass this manually."""
+    """Expose the user's RBAC role + per-module access map to every template.
+
+    The role and access matrix are derived purely from the user's group
+    membership, which changes very rarely. We cache the result in the
+    session so the group DB query is only executed once per login session
+    instead of on every single request.
+
+    Cache is invalidated automatically when:
+      - The user logs out (session is cleared).
+      - The _RBAC_CACHE_VERSION constant is bumped (e.g. after an access
+        matrix change or a deploy that alters group membership).
+    """
     user = request.user
     if not user.is_authenticated:
         return {}
+
+    # Try session cache first (avoids a DB round-trip on every page load).
+    cached = request.session.get(_RBAC_SESSION_KEY)
+    if cached is not None:
+        return cached
+
+    # Cache miss — compute from DB and store in the session.
     role = rbac.get_user_role(user)
     access = {
         key: rbac.get_access_level(user, key) for key in rbac.MODULE_ACCESS
     }
-    return {
+    ctx = {
         'user_role': role,
         'user_role_label': rbac.ROLE_LABELS.get(role, 'User'),
         'user_role_icon': rbac.ROLE_ICONS.get(role, 'bi-person'),
         'module_access': access,
     }
+
+    # Persist to session so subsequent requests in this session skip the DB.
+    request.session[_RBAC_SESSION_KEY] = ctx
+    request.session.modified = True
+    return ctx
