@@ -27,17 +27,29 @@ def _ip(request):
     xff = request.META.get('HTTP_X_FORWARDED_FOR')
     return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR', '')
 
-def _locked(ip):   return bool(cache.get(f'hms:login_lock:{ip}'))
+def _locked(ip):
+    try:
+        return bool(cache.get(f'hms:login_lock:{ip}'))
+    except Exception:
+        return False  # cache unavailable — allow login rather than locking everyone out
+
 def _fail(ip):
-    k  = f'hms:login_fail:{ip}'
-    n  = cache.get(k, 0) + 1
-    cache.set(k, n, timeout=_LOCKOUT_SECS)
-    if n >= _MAX_ATTEMPTS:
-        cache.set(f'hms:login_lock:{ip}', True, timeout=_LOCKOUT_SECS)
-        logger.warning('Login locked IP %s after %d attempts', ip, n)
+    try:
+        k = f'hms:login_fail:{ip}'
+        n = cache.get(k, 0) + 1
+        cache.set(k, n, timeout=_LOCKOUT_SECS)
+        if n >= _MAX_ATTEMPTS:
+            cache.set(f'hms:login_lock:{ip}', True, timeout=_LOCKOUT_SECS)
+            logger.warning('Login locked IP %s after %d attempts', ip, n)
+    except Exception:
+        logger.warning('Cache unavailable — login brute-force protection disabled temporarily')
+
 def _clear(ip):
-    cache.delete(f'hms:login_fail:{ip}')
-    cache.delete(f'hms:login_lock:{ip}')
+    try:
+        cache.delete(f'hms:login_fail:{ip}')
+        cache.delete(f'hms:login_lock:{ip}')
+    except Exception:
+        pass
 
 
 def _role_redirect(user):

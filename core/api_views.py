@@ -191,7 +191,11 @@ def dashboard_income_breakdown(request):
         range_filter = 'today'
 
     cache_key = f'dashboard:income_breakdown:{range_filter}'
-    data = cache.get(cache_key)
+    try:
+        data = cache.get(cache_key)
+    except Exception:
+        data = None  # cache unavailable — compute fresh
+
     if data is None:
         try:
             data = services.get_income_breakdown(range_filter)
@@ -201,7 +205,10 @@ def dashboard_income_breakdown(request):
                 {'error': 'Unable to compute income breakdown right now.'},
                 status=500,
             )
-        cache.set(cache_key, data, timeout=30)
+        try:
+            cache.set(cache_key, data, timeout=30)
+        except Exception:
+            pass  # cache unavailable — serve uncached result
 
     return Response(data)
 
