@@ -8,6 +8,7 @@ from django.conf import settings
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.utils import timezone
+from django.contrib.auth.decorators import login_required
 
 from .models import IncomeEntry
 
@@ -16,6 +17,7 @@ def _get_entries(selected_date: str):
     return IncomeEntry.objects.filter(date=selected_date).order_by('pk')
 
 
+@login_required
 def export_csv(request, selected_date: str):
     qs = _get_entries(selected_date)
 
@@ -38,6 +40,7 @@ def _fmt(value) -> str:
     return f'{value:,.2f}'
 
 
+@login_required
 def export_pdf(request, selected_date: str):
     """Generate a real PDF for the Income Daybook using xhtml2pdf."""
     from xhtml2pdf import pisa
@@ -132,6 +135,7 @@ def export_pdf(request, selected_date: str):
     return resp
 
 
+@login_required
 def resolve_export(request, selected_date: str):
     export_type = request.GET.get('export', '').lower().strip()
     if export_type == 'csv':

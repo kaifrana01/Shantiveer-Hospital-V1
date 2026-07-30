@@ -75,7 +75,7 @@
                     <label class="form-label small">Doctor Name</label>
 
                     <select name="doctor" class="form-select" id="opdDoctorSelect">
-
+                    <option value="">— Select Doctor —</option>
                     {% for d in doctors %}
                         <option value="{{ d.name }}" {% if initial.visit.doctor_name == d.name %}selected{% endif %}>{{ d.name }}</option>
                     {% endfor %}

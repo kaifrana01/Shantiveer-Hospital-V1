@@ -459,6 +459,9 @@ def test_edit(request, pk):
 
 @require_module('ultrasound', level='full')
 def test_toggle(request, pk):
+    if request.method != 'POST':
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(['POST'])
     test = get_object_or_404(UltrasoundTestMaster, pk=pk)
     test.is_active = not test.is_active
     test.save()

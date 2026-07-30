@@ -18,7 +18,7 @@ class Doctor(models.Model):
     date_of_joining = models.DateField(null=True, blank=True)
     dob = models.DateField(null=True, blank=True)
     photo = models.ImageField(upload_to='doctors/', null=True, blank=True)
-    address = models.CharField(max_length=300, blank=True, default='')
+    address = models.TextField(blank=True, default='')
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='doctor_profile')
     is_active = models.BooleanField(default=True)
 

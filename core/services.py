@@ -143,7 +143,7 @@ def get_income_breakdown(range_filter='month'):
         'range': range_filter,
         'labels': [
             'Doctor Fees', 'Medicine Charges',
-            'Room Charges (Emergency ward)', 'Room Charges (Private Ward)',
+            'Room Charges (ICU/Emergency)', 'Room Charges (Private Ward)',
             'Room Charges (General Ward)', 'Room Charges (Other)',
             'Investigations', 'Other Income',
         ],

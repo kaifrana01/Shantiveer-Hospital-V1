@@ -641,7 +641,7 @@ def discharge_print(request, pk):
     })
 
 
-@require_module('pharmacy', level='full')
+@require_module('ipd_admission', level='full')
 def medicine(request):
     if request.method == 'POST':
         adm = IPDAdmission.objects.filter(
@@ -696,7 +696,29 @@ def medicine(request):
 @require_POST
 def delete_patient(request, pk):
     admission = get_object_or_404(IPDAdmission, pk=pk)
-    admission.delete()
+    with transaction.atomic():
+        # Free the bed if occupied by this patient
+        bed = Bed.objects.filter(
+            room_no=admission.room_no, patient=admission.patient, status='Occupied'
+        ).first()
+        if bed:
+            bed.status = 'Vacant'
+            bed.patient = None
+            bed.save(update_fields=['status', 'patient'])
+
+        # Reverse all ledger entries tied to this admission
+        from income.models import LedgerEntry as _LE, IncomeEntry as _IE
+        _LE.objects.filter(ipd_admission=admission).delete()
+
+        # Reverse all IncomeEntry rows posted for this admission
+        _IE.objects.filter(
+            category='IPD',
+            patient_name=admission.patient.name if admission.patient else '',
+            description__icontains=admission.ipd_no,
+        ).delete()
+
+        admission.delete()
+
     messages.success(request, 'Patient deleted successfully.')
     return redirect('ipd:patient_list')
 

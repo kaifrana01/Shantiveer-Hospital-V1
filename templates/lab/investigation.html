@@ -13,7 +13,7 @@
             <input type="text" class="form-control form-control-sm" id="labIpdNo" style="width:120px" placeholder="IPD100">
 
             <label class="ms-3 me-1">UHID:</label>
-            <input type="text" class="form-control form-control-sm" id="labUhid" name="uhid" style="width:120px">
+            <input type="text" class="form-control form-control-sm" id="labUhid" style="width:120px">
 
             <button type="button" class="btn btn-primary btn-sm" id="labPatientLookupBtn">Fetch</button>
         </div>
@@ -23,6 +23,8 @@
 
     <form method="post" id="labForm">
         {% csrf_token %}
+        {# Hidden UHID field — populated by the patient lookup bar above the form #}
+        <input type="hidden" name="uhid" id="labUhidHidden" value="">
 
         <div class="lab-layout">
             <div>
@@ -322,6 +324,9 @@
             if(addressEl) addressEl.value = data.address || '';
             if(ageYearsEl) ageYearsEl.value = data.age_years || '';
             if(uhidEl) uhidEl.value = data.uhid || '';
+            // Also write to the hidden form field so it submits correctly
+            const hiddenUhid = document.getElementById('labUhidHidden');
+            if(hiddenUhid) hiddenUhid.value = data.uhid || '';
         } catch(e){
             console.error(e);
             const errEl = document.getElementById('labLookupError');

@@ -41,7 +41,7 @@ def _save_medicine_lines(prescription, post_data):
 def list_view(request):
     q = request.GET.get('q', '').strip()
     referral = request.GET.get('referral', '').strip()
-    visits = OPDVisit.objects.select_related('patient').prefetch_related('prescription')
+    visits = OPDVisit.objects.select_related('patient').prefetch_related('prescription').order_by('-date', '-time')
     if q:
         visits = visits.filter(
             Q(opd_no__icontains=q) | Q(patient__name__icontains=q) |
@@ -58,7 +58,7 @@ def list_view(request):
         .order_by('referral')
     )
 
-    records = [opd_to_dict(v) for v in visits]
+    records = [opd_to_dict(v) for v in visits[:200]]
     return render(request, 'prescription/list.html', {
         'active_sidebar': 'prescription',
         'records': records,

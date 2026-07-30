@@ -84,6 +84,9 @@ def doctor_edit(request, pk):
 @require_module('masterdata', level='full')
 def doctor_toggle(request, pk):
     """Toggle doctor active status."""
+    if request.method != 'POST':
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(['POST'])
     doctor = get_object_or_404(Doctor, pk=pk)
     doctor.is_active = not doctor.is_active
     doctor.save()

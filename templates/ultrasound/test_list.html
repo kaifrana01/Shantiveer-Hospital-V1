@@ -45,11 +45,14 @@
               <a href="{% url 'ultrasound:test_edit' t.pk %}" class="btn-usg-outline btn-usg-sm">
                 <i class="bi bi-pencil"></i>
               </a>
-              <a href="{% url 'ultrasound:test_toggle' t.pk %}" class="btn-usg-outline btn-usg-sm"
-                 style="{% if t.is_active %}color:#dc2626;border-color:#dc2626;{% else %}color:#059669;border-color:#059669;{% endif %}"
-                 onclick="return confirm('Toggle status for {{ t.name }}?')">
-                {% if t.is_active %}<i class="bi bi-toggle-on"></i>{% else %}<i class="bi bi-toggle-off"></i>{% endif %}
-              </a>
+              <form method="post" action="{% url 'ultrasound:test_toggle' t.pk %}" style="display:inline"
+                    onsubmit="return confirm('Toggle status for {{ t.name }}?')">
+                {% csrf_token %}
+                <button type="submit" class="btn-usg-outline btn-usg-sm"
+                   style="{% if t.is_active %}color:#dc2626;border-color:#dc2626;{% else %}color:#059669;border-color:#059669;{% endif %}">
+                  {% if t.is_active %}<i class="bi bi-toggle-on"></i>{% else %}<i class="bi bi-toggle-off"></i>{% endif %}
+                </button>
+              </form>
             </td>
           </tr>
           {% empty %}

@@ -11,7 +11,7 @@ from django.utils import timezone
 
 # ─── HMS role group names (in addition to Django's built-in groups) ───────────
 HMS_GROUPS = [
-    'Doctor', 'Administration', 'Receptionist',
+    'Doctor', 'Receptionist',
     'Nurse', 'LabTech', 'Pharmacist', 'Accountant', 'Admin',
 ]
 
@@ -164,7 +164,6 @@ class HMSUserAdmin(DjangoUserAdmin):
     def role_badge(self, obj):
         colours = {
             'Doctor':         ('#1d4ed8', '#dbeafe'),
-            'Administration': ('#166534', '#dcfce7'),
             'Receptionist':   ('#0e7490', '#cffafe'),
             'Nurse':          ('#c2410c', '#ffedd5'),
             'LabTech':        ('#5b21b6', '#ede9fe'),

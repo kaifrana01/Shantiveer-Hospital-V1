@@ -942,9 +942,11 @@
               </span>
             </td>
             <td class="text-nowrap">
+              {% if module_access.pharmacy == 'full' %}
               <a href="{% url 'prescription:dispense' r.id %}" class="btn btn-sm btn-success">
                 <i class="bi bi-check2"></i> Dispense
               </a>
+              {% endif %}
               <a href="{% url 'prescription:detail' r.visit_id %}" class="btn btn-sm btn-outline-primary">
                 <i class="bi bi-file-medical"></i>
               </a>
