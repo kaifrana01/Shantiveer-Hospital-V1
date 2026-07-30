@@ -32,13 +32,46 @@
             <label class="form-label fw-semibold">Specialization</label>
             <input type="text" name="specialization" class="form-control" value="{{ doctor.specialization }}">
           </div>
-          <div class="col-md-6">
+          <div class="col-md-3">
             <label class="form-label fw-semibold">Phone</label>
             <input type="text" name="phone" class="form-control" value="{{ doctor.phone }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Gender</label>
+            <select name="gender" class="form-select">
+              <option value="">-</option>
+              <option value="M" {% if doctor.gender == 'M' %}selected{% endif %}>Male</option>
+              <option value="F" {% if doctor.gender == 'F' %}selected{% endif %}>Female</option>
+              <option value="O" {% if doctor.gender == 'O' %}selected{% endif %}>Other</option>
+            </select>
           </div>
           <div class="col-md-6">
             <label class="form-label fw-semibold">Email</label>
             <input type="email" name="email" class="form-control" value="{{ doctor.email }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Qualification</label>
+            <input type="text" name="qualification" class="form-control" value="{{ doctor.qualification }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Registration Number</label>
+            <input type="text" name="registration_number" class="form-control" value="{{ doctor.registration_number }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Experience (Years)</label>
+            <input type="number" name="experience_years" class="form-control" value="{{ doctor.experience_years|default:'' }}" min="0">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Date of Birth</label>
+            <input type="date" name="dob" class="form-control" value="{{ doctor.dob|default:'' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Date of Joining</label>
+            <input type="date" name="date_of_joining" class="form-control" value="{{ doctor.date_of_joining|default:'' }}">
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Address</label>
+            <textarea name="address" class="form-control" rows="2">{{ doctor.address }}</textarea>
           </div>
           <div class="col-12 d-flex gap-2 mt-1">
             <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-1"></i>Save</button>

@@ -35,6 +35,12 @@ def doctors(request):
             specialization=request.POST.get('specialization', ''),
             phone=request.POST.get('phone', ''),
             email=request.POST.get('email', ''),
+            gender=request.POST.get('gender', ''),
+            qualification=request.POST.get('qualification', ''),
+            registration_number=request.POST.get('registration_number', ''),
+            experience_years=request.POST.get('experience_years') or None,
+            date_of_joining=request.POST.get('date_of_joining') or None,
+            dob=request.POST.get('dob') or None,
             address=request.POST.get('address', ''),
         )
         messages.success(request, 'Doctor added.')
@@ -58,6 +64,12 @@ def doctor_edit(request, pk):
         doctor.specialization = request.POST.get('specialization', doctor.specialization)
         doctor.phone = request.POST.get('phone', doctor.phone)
         doctor.email = request.POST.get('email', doctor.email)
+        doctor.gender = request.POST.get('gender', doctor.gender)
+        doctor.qualification = request.POST.get('qualification', doctor.qualification)
+        doctor.registration_number = request.POST.get('registration_number', doctor.registration_number)
+        doctor.experience_years = request.POST.get('experience_years') or None
+        doctor.date_of_joining = request.POST.get('date_of_joining') or None
+        doctor.dob = request.POST.get('dob') or None
         doctor.address = request.POST.get('address', doctor.address)
         doctor.save()
         messages.success(request, f'Doctor "{doctor.name}" updated.')
