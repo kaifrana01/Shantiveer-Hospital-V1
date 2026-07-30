@@ -44,22 +44,19 @@
             <div class="row g-2 mb-2">
                 <div class="col-md-2">
                     <label class="small">Bed Charges (Per Day ₹)</label>
-                    <input type="number" id="bed_charge" name="bed_charge" class="form-control form-control-sm" value="{{ form_bed_charge|default:'' }}" placeholder="Rate per day">
+                    <input type="number" id="bed_charge" name="bed_charge"
+                           class="form-control form-control-sm"
+                           value="{{ form_bed_charge|default:'' }}"
+                           placeholder="Enter amount"
+                           min="0" step="50">
                 </div>
                 <div class="col-md-2">
                     <label class="small">Doctor / Consultant Fees (₹)</label>
-                    <input type="number" name="doctor_fees" class="form-control form-control-sm" value="{{ form_doctor_fees|default:2000 }}" placeholder="e.g. 2000" min="0">
+                    <input type="number" name="doctor_fees" class="form-control form-control-sm" value="{{ form_doctor_fees|default:'' }}" placeholder="Enter amount" min="0">
                 </div>
                 <script>
-                    function setBedChargeFromWard(wardType) {
-                        const map = {
-                          'General Ward': 500,
-                          'Private Ward': 1000,
-                          'Emergency Ward': 800,
-                          'ICU': 1500
-                        };
-                        const val = map[wardType] || '';
-                        document.getElementById('bed_charge').value = val;
+                    function setBedChargeFromWard(wardType, forceOverwrite) {
+                        // No default rates — staff must enter the charge manually.
                     }
 
                     async function refreshBedOptions() {
@@ -98,27 +95,27 @@
                         }
                     }
 
-
                     document.addEventListener('DOMContentLoaded', function(){
-                        const bedChargeEl = document.getElementById('bed_charge');
                         const wardEl = document.getElementById('room_category');
-                        const update = function(){
-                            if(wardEl && wardEl.value) {
-                                setBedChargeFromWard(wardEl.value);
-                                refreshBedOptions();
-                            }
-                        };
+
                         if(wardEl) {
                             wardEl.addEventListener('change', function(){
-                                // Reset bed selection when ward changes
+                                // User manually changed ward — suggest the default rate
+                                // (forceOverwrite=true so the suggestion updates)
+                                // but user can still type over it immediately.
+                                setBedChargeFromWard(this.value, true);
                                 const bedEl = document.getElementById('bed_no');
                                 if (bedEl) bedEl.innerHTML = '<option value="">Select Bed</option>';
-                                update();
+                                refreshBedOptions();
                             });
                         }
-                        update();
-                    });
 
+                        // On page load — only populate bed dropdown, never touch
+                        // the bed charge (it already has the saved/entered value).
+                        if (wardEl && wardEl.value) {
+                            refreshBedOptions();
+                        }
+                    });
                 </script>
             <div class="col-md-3">
 

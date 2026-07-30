@@ -7,6 +7,7 @@ class Doctor(models.Model):
     department = models.CharField(max_length=150, blank=True)
     specialization = models.CharField(max_length=150, blank=True)
     phone = models.CharField(max_length=15, blank=True)
+    address = models.CharField(max_length=300, blank=True, default='')
     is_active = models.BooleanField(default=True)
 
     history = HistoricalRecords()

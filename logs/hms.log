@@ -3121,3 +3121,20 @@ django.core.exceptions.ValidationError: {'source_app': ["Value 'ultrasound' is n
 [2026-07-29 10:26:51,966] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 1645
 [2026-07-29 10:26:53,001] WARNING django.request Not Found: /favicon.ico
 [2026-07-29 10:26:53,003] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 1634
+[2026-07-30 09:03:54,065] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-30 09:03:54,070] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-30 09:03:54,450] WARNING django.request Not Found: /admin/hms-stats/
+[2026-07-30 09:03:54,452] WARNING django.server "GET /admin/hms-stats/ HTTP/1.1" 404 1675
+[2026-07-30 09:03:54,633] WARNING django.request Not Found: /admin/hms-users/
+[2026-07-30 09:03:54,645] WARNING django.server "GET /admin/hms-users/ HTTP/1.1" 404 1609
+[2026-07-30 09:03:54,672] WARNING django.request Not Found: /admin/hms-logs/
+[2026-07-30 09:03:54,675] WARNING django.server "GET /admin/hms-logs/ HTTP/1.1" 404 1611
+[2026-07-30 09:03:55,257] WARNING django.request Not Found: /admin/hms-tests/
+[2026-07-30 09:03:55,257] WARNING django.server "GET /admin/hms-tests/ HTTP/1.1" 404 1623
+[2026-07-30 09:03:56,768] WARNING django.request Not Found: /favicon.ico
+[2026-07-30 09:03:56,770] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 1657
+[2026-07-30 09:03:59,826] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-30 09:03:59,829] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-30 09:05:32,002] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-30 09:05:32,010] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
+[2026-07-30 09:05:42,100] WARNING django.request Method Not Allowed (GET): /admin/logout/

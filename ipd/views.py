@@ -53,22 +53,12 @@ def _ipd_dict(a):
 def _get_bed_charge_details(adm, discharge_date=None):
     """Return (rate_per_day, days_stayed, total_bed_charge) for an admission.
 
-    bed_charge stores the *per-day* rate.  Days are calculated as:
-        discharge_date (or today) − admission date,  minimum 1 day.
+    bed_charge stores the *per-day* rate entered at admission.
+    If no rate was entered, rate is 0 — no silent defaults applied.
     """
     from datetime import date as _date
-    # Per-day rate: use stored bed_charge if set, else ward-based default
-    if adm.bed_charge and adm.bed_charge > 0:
-        rate_per_day = Decimal(str(adm.bed_charge))
-    else:
-        ward = (adm.category or '').strip().lower()
-        ward_map = {
-            'general ward':   Decimal('500'),
-            'private ward':   Decimal('1000'),
-            'emergency ward': Decimal('800'),
-            'icu':            Decimal('1500'),
-        }
-        rate_per_day = ward_map.get(ward, Decimal('500'))
+    # Use whatever rate was entered at admission. Zero if not set.
+    rate_per_day = Decimal(str(adm.bed_charge)) if adm.bed_charge and adm.bed_charge > 0 else Decimal('0')
 
     # Determine end date: prefer the explicit discharge_date argument, then
     # the DischargeSummary record, and fall back to today for admitted patients.
@@ -93,8 +83,8 @@ def _compute_ipd_bill_total(adm, discharge_date=None):
     """
     _rate, _days, room_amount = _get_bed_charge_details(adm, discharge_date)
 
-    # Use the per-admission doctor_fees field (default 2000, editable in admission form)
-    doctor_fees = adm.doctor_fees if adm.doctor_fees else Decimal('2000')
+    # Use the per-admission doctor_fees field. Zero if not set.
+    doctor_fees = adm.doctor_fees if adm.doctor_fees else Decimal('0')
 
     med_total = sum(m.amount for m in adm.medicine_lines.all()) or Decimal('0.00')
     return room_amount + doctor_fees + med_total
@@ -191,7 +181,7 @@ def admission(request):
                     return redirect('ipd:admission')
 
                 try:
-                    doctor_fees = Decimal(request.POST.get('doctor_fees') or '2000')
+                    doctor_fees = Decimal(request.POST.get('doctor_fees') or '0')
                     if doctor_fees < 0:
                         raise ValueError('Doctor fees cannot be negative.')
                 except (ValueError, Exception) as e:
@@ -339,7 +329,7 @@ def admission(request):
         'ipd_no': admission_obj.ipd_no if admission_obj else f'IPD{IPDAdmission.objects.count() + 101}',
         'form_ipd_no': admission_obj.ipd_no if admission_obj else '',
         'form_bed_charge': getattr(admission_obj, 'bed_charge', None) if admission_obj else '',
-        'form_doctor_fees': getattr(admission_obj, 'doctor_fees', 2000) if admission_obj else 2000,
+        'form_doctor_fees': getattr(admission_obj, 'doctor_fees', '') if admission_obj else '',
         'edit_id': admission_obj.id if admission_obj else '',
         'form_uhid': admission_obj.patient.uhid if admission_obj else '',
         'form_patient_name': admission_obj.patient.name if admission_obj else '',
@@ -483,7 +473,7 @@ def bill(request):
         if adm:
             # Canonical billing: bed charge = per-day rate × days stayed
             rate_per_day, days_stayed, room_amount = _get_bed_charge_details(adm)
-            doctor_fees = adm.doctor_fees if adm.doctor_fees else Decimal('2000')
+            doctor_fees = adm.doctor_fees if adm.doctor_fees else Decimal('0')
             med_total = sum(m.amount for m in adm.medicine_lines.all()) or Decimal('0.00')
 
             bed_desc = f'Bed / Room Charges (₹{rate_per_day} × {days_stayed} day{"s" if days_stayed != 1 else ""})'
@@ -622,7 +612,7 @@ def discharge_print(request, pk):
 
     # Use the canonical billing function to keep all views consistent
     rate_per_day, days_stayed, room_amount = _get_bed_charge_details(adm, d.discharge_date)
-    doctor_fees = adm.doctor_fees if adm.doctor_fees else Decimal('2000')
+    doctor_fees = adm.doctor_fees if adm.doctor_fees else Decimal('0')
     med_total = sum(m.amount for m in adm.medicine_lines.all()) or Decimal('0.00')
 
     bed_desc = f'Bed / Room Charges (₹{rate_per_day} × {days_stayed} day{"s" if days_stayed != 1 else ""})'

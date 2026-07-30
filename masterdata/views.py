@@ -34,6 +34,7 @@ def doctors(request):
             department=request.POST.get('department', ''),
             specialization=request.POST.get('specialization', ''),
             phone=request.POST.get('phone', ''),
+            address=request.POST.get('address', ''),
         )
         messages.success(request, 'Doctor added.')
         return redirect('masterdata:doctor_list')
@@ -55,6 +56,7 @@ def doctor_edit(request, pk):
         doctor.department = request.POST.get('department', doctor.department)
         doctor.specialization = request.POST.get('specialization', doctor.specialization)
         doctor.phone = request.POST.get('phone', doctor.phone)
+        doctor.address = request.POST.get('address', doctor.address)
         doctor.save()
         messages.success(request, f'Doctor "{doctor.name}" updated.')
         return redirect('masterdata:doctor_list')

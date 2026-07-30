@@ -31,7 +31,7 @@ class IPDAdmission(models.Model):
     doctor_fees = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=2000,
+        default=0,
         help_text='Consultant / doctor fees for this admission.')
 
     # Full audit trail — particularly important here since this model
