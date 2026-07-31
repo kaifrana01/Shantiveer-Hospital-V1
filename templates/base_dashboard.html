@@ -21,7 +21,7 @@
 </head>
 
 {# ── inject role CSS class on <body> ── #}
-<body class="{% if user.is_superuser %}role-admin{% elif user|has_group:"Doctor" %}role-doctor{% elif user|has_group:"Receptionist" %}role-recept{% elif user|has_group:"Pharmacist" %}role-pharma{% else %}role-admin{% endif %}">
+<body class="{% if user.is_superuser %}role-admin{% elif user|has_group:"Admin" %}role-admin{% elif user|has_group:"Doctor" %}role-doctor{% elif user|has_group:"Receptionist" %}role-recept{% elif user|has_group:"Pharmacist" %}role-pharma{% elif user|has_group:"Nurse" %}role-nurse{% elif user|has_group:"LabTech" %}role-labtech{% elif user|has_group:"BillingClerk" %}role-billing{% elif user|has_group:"Accountant" %}role-accountant{% else %}role-default{% endif %}">
 
 <div class="dashboard-layout">
   {% include 'includes/sidebar_dashboard.html' %}
@@ -55,8 +55,9 @@
         {% elif user|has_group:'BillingClerk' %}
           <span class="topbar-role-chip chip-pharma"><i class="bi bi-cash-coin"></i> Billing</span>
         {% endif %}
-        {# notification bell disabled by request #}
-        
+        {% comment %}
+        Notification bell disabled by request — backend returns empty list.
+        To re-enable: remove this comment block and restore the dropdown below.
         <div class="dropdown">
           <div class="notif-bell" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer">
             <i class="bi bi-bell"></i>
@@ -77,12 +78,17 @@
             {% endfor %}
           </ul>
         </div>
-
+        {% endcomment %}
 
         <!-- user avatar dropdown -->
         <div class="dropdown">
           <div class="user-profile-mini" data-bs-toggle="dropdown" style="cursor:pointer">
-            <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=1e40af&color=fff" alt="avatar">
+            {% with initials=user.get_full_name|default:user.username %}
+            <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="border-radius:50%;flex-shrink:0;" aria-hidden="true">
+              <rect width="32" height="32" rx="16" fill="#1e40af"/>
+              <text x="16" y="21" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#ffffff">{{ initials|first|upper }}</text>
+            </svg>
+            {% endwith %}
             <div>
               <div class="name">{{ user.get_full_name|default:user.username }}</div>
               <div class="role">

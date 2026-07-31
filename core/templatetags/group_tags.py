@@ -1,4 +1,4 @@
-﻿from django import template
+from django import template
 from core import rbac
 
 register = template.Library()

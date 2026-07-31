@@ -145,7 +145,46 @@ def admission(request):
         admission_obj = IPDAdmission.objects.select_related('patient').filter(pk=edit_id).first()
 
     if request.method == 'POST':
+        # Pre-validate numeric fields before entering the atomic block so we
+        # can return clean error messages without rolling anything back.
         try:
+            bed_charge = Decimal(request.POST.get('bed_charge') or '0')
+            if bed_charge < 0:
+                raise ValueError('Bed charge cannot be negative.')
+        except (ValueError, Exception) as e:
+            messages.error(request, f'Invalid bed charge: {e}')
+            return redirect('ipd:admission')
+
+        try:
+            doctor_fees = Decimal(request.POST.get('doctor_fees') or '0')
+            if doctor_fees < 0:
+                raise ValueError('Doctor fees cannot be negative.')
+        except (ValueError, Exception) as e:
+            messages.error(request, f'Invalid doctor fees: {e}')
+            return redirect('ipd:admission')
+
+        adv_raw = (request.POST.get('advance_payment') or '').strip().replace(',', '')
+        try:
+            adv = Decimal(adv_raw) if adv_raw else Decimal('0.00')
+        except Exception:
+            adv = Decimal('0.00')
+
+        adv_mode = request.POST.get('advance_payment_mode', 'Cash') or 'Cash'
+        try:
+            adv_mode = validate_payment_mode(adv_mode, allowed=['Cash', 'UPI', 'Card', 'Cheque'])
+        except ValueError:
+            adv_mode = 'Cash'
+        adv_upi_id = ''
+        if adv_mode == 'UPI':
+            adv_upi_id = (request.POST.get('advance_upi_id') or '').strip()[:200]
+
+        try:
+            # BUG-01 FIX: the entire admission save, bed allocation, advance
+            # payment, and income mirroring are now inside a single
+            # transaction.atomic() block.  A failure in any step rolls back
+            # the whole operation so the DB never ends up in a partial state
+            # (e.g. admission created but no bed freed, or payment recorded
+            # without an admission to match it).
             with transaction.atomic():
                 uhid = (request.POST.get('uhid') or '').strip()
                 patient = Patient.objects.filter(uhid=uhid).first() if uhid else None
@@ -159,34 +198,24 @@ def admission(request):
                     patient.name = _cap_text(request.POST.get('patient_name', patient.name))
                     patient.mobile = request.POST.get('contact', patient.mobile)
                     patient.gender = _cap_text(request.POST.get('gender', patient.gender))
-                    patient.age_years = int(request.POST.get('age') or patient.age_years)
+                    try:
+                        patient.age_years = int(request.POST.get('age') or patient.age_years)
+                    except (ValueError, TypeError):
+                        pass
                     patient.address = _cap_text(request.POST.get('address', patient.address))
                     patient.save()
                 else:
+                    try:
+                        age_val = int(request.POST.get('age') or 0)
+                    except (ValueError, TypeError):
+                        age_val = 0
                     patient = Patient.objects.create(
                         name=_cap_text(request.POST.get('patient_name', '')),
                         mobile=request.POST.get('contact', ''),
                         gender=_cap_text(request.POST.get('gender', 'Male')),
-                        age_years=int(request.POST.get('age') or 0),
+                        age_years=age_val,
                         address=_cap_text(request.POST.get('address', '')),
                     )
-
-                # Parse bed_charge and doctor_fees with validation
-                try:
-                    bed_charge = Decimal(request.POST.get('bed_charge') or '0')
-                    if bed_charge < 0:
-                        raise ValueError('Bed charge cannot be negative.')
-                except (ValueError, Exception) as e:
-                    messages.error(request, f'Invalid bed charge: {e}')
-                    return redirect('ipd:admission')
-
-                try:
-                    doctor_fees = Decimal(request.POST.get('doctor_fees') or '0')
-                    if doctor_fees < 0:
-                        raise ValueError('Doctor fees cannot be negative.')
-                except (ValueError, Exception) as e:
-                    messages.error(request, f'Invalid doctor fees: {e}')
-                    return redirect('ipd:admission')
 
                 common_fields = dict(
                     patient=patient,
@@ -209,53 +238,38 @@ def admission(request):
                     doctor_fees=doctor_fees,
                 )
 
-            is_new_admission = admission_obj is None
+                is_new_admission = admission_obj is None
 
-            if admission_obj:
-                for field, val in common_fields.items():
-                    setattr(admission_obj, field, val)
-                admission_obj.save()
-                messages.success(request, 'IPD admission updated.')
-            else:
-                admission_obj = IPDAdmission.objects.create(**common_fields)
-                messages.success(request, 'IPD admission saved.')
-
-            # Auto-allocate a vacant bed — only on new admissions
-            room_no = (request.POST.get('room_no') or '').strip()
-            if is_new_admission and room_no and admission_obj.status == 'Admitted':
-                vacant_bed = (
-                    Bed.objects
-                    .filter(room_no=room_no, status='Vacant')
-                    .order_by('bed_no')
-                    .first()
-                )
-                if vacant_bed:
-                    vacant_bed.status = 'Occupied'
-                    vacant_bed.patient = patient
-                    vacant_bed.save(update_fields=['status', 'patient'])
+                if admission_obj:
+                    for field, val in common_fields.items():
+                        setattr(admission_obj, field, val)
+                    admission_obj.save()
+                    messages.success(request, 'IPD admission updated.')
                 else:
-                    messages.warning(request, f'No vacant bed available in Room {room_no}.')
+                    admission_obj = IPDAdmission.objects.create(**common_fields)
+                    messages.success(request, 'IPD admission saved.')
 
-            # Advance payment — only record on NEW admissions to prevent
-            # duplicate payments when editing.
-            if is_new_admission:
-                adv_raw = (request.POST.get('advance_payment') or '').strip().replace(',', '')
-                try:
-                    adv = Decimal(adv_raw) if adv_raw else Decimal('0.00')
-                except Exception:
-                    adv = Decimal('0.00')
+                # Auto-allocate a vacant bed — only on new admissions.
+                room_no = (request.POST.get('room_no') or '').strip()
+                if is_new_admission and room_no and admission_obj.status == 'Admitted':
+                    vacant_bed = (
+                        Bed.objects
+                        .select_for_update()
+                        .filter(room_no=room_no, status='Vacant')
+                        .order_by('bed_no')
+                        .first()
+                    )
+                    if vacant_bed:
+                        vacant_bed.status = 'Occupied'
+                        vacant_bed.patient = patient
+                        vacant_bed.save(update_fields=['status', 'patient'])
+                    else:
+                        messages.warning(request, f'No vacant bed available in Room {room_no}.')
 
-                adv_mode = request.POST.get('advance_payment_mode', 'Cash') or 'Cash'
-                try:
-                    adv_mode = validate_payment_mode(adv_mode, allowed=['Cash', 'UPI', 'Card', 'Cheque'])
-                except ValueError:
-                    adv_mode = 'Cash'
-                adv_upi_id = ''
-                if adv_mode == 'UPI':
-                    adv_upi_id = (request.POST.get('advance_upi_id') or '').strip()[:200]
-
-                if adv > 0:
-                    IPDPayment.objects.create(
+                # Advance payment — only record on NEW admissions to prevent
+                # duplicate payments when editing.
+                if is_new_admission and adv > 0:
+                    ipd_pay = IPDPayment.objects.create(
                         admission=admission_obj,
                         amount=adv,
                         payment_mode=adv_mode,
@@ -271,7 +285,7 @@ def admission(request):
                         patient=admission_obj.patient,
                         ipd_admission=admission_obj,
                         source_app='ipd',
-                        source_id=admission_obj.ipd_no,
+                        source_id=str(ipd_pay.id),
                     )
                     # Mirror advance into IncomeEntry for daybook
                     from income.models import IncomeEntry as _IE
@@ -284,13 +298,13 @@ def admission(request):
                         amount=adv,
                     )
 
-            # Save uploaded documents — allowed on both new and edited admissions.
-            for f in request.FILES.getlist('documents'):
-                IPDDocument.objects.create(
-                    admission=admission_obj,
-                    file=f,
-                    name=f.name,
-                )
+                # Save uploaded documents — allowed on both new and edited admissions.
+                for f in request.FILES.getlist('documents'):
+                    IPDDocument.objects.create(
+                        admission=admission_obj,
+                        file=f,
+                        name=f.name,
+                    )
 
             return redirect('ipd:patient_list')
         except Exception as e:
@@ -566,9 +580,19 @@ def discharge_add(request):
 
         if adm:
             with transaction.atomic():
-                DischargeSummary.objects.get_or_create(
+                # BUG-09 FIX: use update_or_create with all POST fields so
+                # that notes/diagnosis entered in the form are actually saved.
+                # Previously only discharge_date was passed in defaults={},
+                # meaning notes were silently dropped on every submission.
+                discharge_date_val = request.POST.get('discharge_date') or timezone.localdate()
+                notes_val = (request.POST.get('notes') or '').strip()
+
+                discharge_obj, created = DischargeSummary.objects.update_or_create(
                     admission=adm,
-                    defaults={'discharge_date': request.POST.get('discharge_date') or timezone.localdate()},
+                    defaults={
+                        'discharge_date': discharge_date_val,
+                        'notes': notes_val,
+                    },
                 )
                 adm.status = 'Discharged'
                 adm.save()

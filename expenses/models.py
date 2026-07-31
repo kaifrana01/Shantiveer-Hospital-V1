@@ -20,10 +20,17 @@ class Expense(models.Model):
         STATIONARY = 'stationary', 'Stationary'
         LAB = 'lab', 'Lab'
         CANTEEN = 'canteen', 'Canteen'
-        MESS_CHARGES = 'mess_charges', 'MISC Charges'
+        # BUG-15 NOTE: the stored DB value is 'mess_charges' (unchanged to
+        # preserve existing data).  The display label has been updated to
+        # 'MISC Charges' as requested.  The Python attribute is renamed to
+        # MISC_CHARGES for clarity; the DB value stays 'mess_charges'.
+        MISC_CHARGES = 'mess_charges', 'MISC Charges'
         SALARY = 'salary', 'Salary'
         ADVANCE_SALARY = 'advance_salary', 'Advance Salary'
-        OTHER = 'ot', 'OT'
+        # BUG-14 FIX: was labeled 'OT' which in a hospital means "Operating
+        # Theatre" — renamed to 'Other' to avoid confusion with OT charges.
+        # The DB value ('ot') is unchanged so existing rows are unaffected.
+        OTHER = 'ot', 'Other'
 
     class AdvanceCategory(models.TextChoices):
         RENT = 'rent', 'Rent'

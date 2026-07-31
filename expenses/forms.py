@@ -76,7 +76,7 @@ class BasicExpensesForm(_BaseExpenseForm):
         ('stationary', Expense.BasicCategory.STATIONARY),
         ('lab', Expense.BasicCategory.LAB),
         ('canteen', Expense.BasicCategory.CANTEEN),
-        ('mess_charges', Expense.BasicCategory.MESS_CHARGES),
+        ('misc_charges', Expense.BasicCategory.MISC_CHARGES),
         ('salary', Expense.BasicCategory.SALARY),
         ('advance_salary', Expense.BasicCategory.ADVANCE_SALARY),
         ('other', Expense.BasicCategory.OTHER),

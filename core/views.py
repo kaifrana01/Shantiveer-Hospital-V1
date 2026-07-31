@@ -69,6 +69,11 @@ def notifications_list(request):
 
 @login_required
 def mark_notification_read(request, pk):
+    # BUG-20 FIX: require POST so browser prefetchers/crawlers can't mark
+    # notifications as read by following GET links.
+    if request.method != 'POST':
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(['POST'])
     # Scope to the requesting user — prevents one user from marking
     # another user's private notification as read (IDOR).
     notif = get_object_or_404(
@@ -185,9 +190,24 @@ def bed_edit(request, pk):
     bed = get_object_or_404(Bed, pk=pk)
 
     if request.method == 'POST':
+        new_status = request.POST.get('status', bed.status)
+
+        # BUG-06 FIX: prevent setting a bed to 'Occupied' without a patient.
+        # The only legitimate way to mark a bed Occupied is through IPD
+        # admission (which assigns the patient FK automatically).  Allowing
+        # it here would create an Occupied bed with patient=None, breaking
+        # the bed dashboard display and occupancy counts.
+        if new_status == 'Occupied' and not bed.patient:
+            messages.error(
+                request,
+                'Cannot mark a bed as Occupied without an assigned patient. '
+                'Beds are set to Occupied automatically when a patient is admitted.'
+            )
+            return redirect('core:bed_manage')
+
         bed.room_no = request.POST.get('room_no', bed.room_no).strip()
         bed.bed_no = request.POST.get('bed_no', bed.bed_no).strip()
-        bed.status = request.POST.get('status', bed.status)
+        bed.status = new_status
         bed.save()
         messages.success(request, f'Bed {bed.bed_no} (Room {bed.room_no}) updated.')
         return redirect('core:bed_manage')

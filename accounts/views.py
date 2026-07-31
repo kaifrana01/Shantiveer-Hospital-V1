@@ -56,39 +56,21 @@ def _role_redirect(user):
     """Send each role to its natural landing page after login."""
     if user.is_superuser or user.groups.filter(name='Admin').exists():
         return redirect('core:dashboard')
+    if user.groups.filter(name='Doctor').exists():
+        return redirect('core:dashboard')
+    if user.groups.filter(name='Receptionist').exists():
+        return redirect('opd:registration')     # receptionist → OPD desk
+    if user.groups.filter(name='Pharmacist').exists():
+        return redirect('pharmacy:items')        # pharmacist → inventory
     if user.groups.filter(name='Accountant').exists():
         return redirect('core:dashboard')
-
-    if user.groups.filter(name='Doctor').exists():
-        return redirect('core:dashboard')           # doctor dashboard
-    if user.groups.filter(name='Receptionist').exists():
-        return redirect('opd:registration')         # receptionist → OPD desk
-    if user.groups.filter(name='Pharmacist').exists():
-        return redirect('pharmacy:items')           # pharmacist → inventory
+    if user.groups.filter(name='Nurse').exists():
+        return redirect('core:dashboard')
+    if user.groups.filter(name='LabTech').exists():
+        return redirect('lab:view_all')          # lab tech → lab list
+    if user.groups.filter(name='BillingClerk').exists():
+        return redirect('ipd:payment')           # billing → payment screen
     return redirect('core:home')
-
-
-def _role_from_hint(hint: str):
-    """Map login.html role_hint to a redirect target.
-
-    role_hint values come from the frontend:
-    - admin / doctor / receptionist / pharmacist
-
-    We translate them into the group-based redirect behavior.
-    """
-    if not hint:
-        return None
-
-    hint = hint.strip().lower()
-    mapping = {
-        'admin': 'Admin',
-        'doctor': 'Doctor',
-        'receptionist': 'Receptionist',
-        'pharmacist': 'Pharmacist',
-        'accountant': 'Accountant',
-    }
-
-    return mapping.get(hint)
 
 
 def login_view(request):
@@ -109,34 +91,39 @@ def login_view(request):
         username_in = (request.POST.get('username') or '').strip()
         password_in = request.POST.get('password') or ''
 
-        # Explicitly check whether the credentials can authenticate.
-        # - If user doesn't exist: authentication should fail.
-        # - If user exists but password doesn't match: authentication should fail.
-        # (Still keep the same generic UI message for security.)
-        try:
-            user_candidates = User.objects.filter(username__iexact=username_in)
-            if not user_candidates.exists() and '@' in username_in:
-                user_candidates = User.objects.filter(email__iexact=username_in)
+        # BUG-27 FIX: use Django's authenticate() as the single source of
+        # truth for credential validation.  The previous approach called
+        # form.is_valid() (which runs authenticate() internally) AND also
+        # manually checked candidate.check_password() — the latter bypasses
+        # any custom auth backends (e.g. 2FA, account-disabled checks).
+        # Now we rely solely on form.is_valid() / authenticate(), and only
+        # do a direct DB lookup to resolve login-by-email before handing
+        # off to the form.  The form's authenticate() call will enforce all
+        # backend checks.
 
-            candidate = user_candidates.first() if user_candidates.exists() else None
-            password_matches = bool(candidate and candidate.check_password(password_in))
-        except Exception:
-            candidate = None
-            password_matches = False
+        # Support login by email: resolve the email to a username first so
+        # Django's ModelBackend can authenticate against the username field.
+        resolved_username = username_in
+        if '@' in username_in:
+            email_user = User.objects.filter(email__iexact=username_in).first()
+            if email_user:
+                resolved_username = email_user.username
 
-        if form.is_valid() and candidate and password_matches:
-            user = candidate
+        # Re-bind the form with the resolved username so authenticate() works.
+        post_data = request.POST.copy()
+        post_data['username'] = resolved_username
+        form = StyledLoginForm(request, data=post_data)
+
+        if form.is_valid():
+            user = form.get_user()
             _clear(ip)
             login(request, user)
             messages.success(request, f'Welcome, {user.get_full_name() or user.username}!')
-
-            selected_group = _role_from_hint(request.POST.get('role_hint', ''))
-            if selected_group and user.groups.filter(name=selected_group).exists():
-                return _role_redirect(user)
-
             return _role_redirect(user)
 
         _fail(ip)
+        # Re-render with original POST (show original username in the field)
+        form = StyledLoginForm(request, data=request.POST)
 
     return render(request, 'accounts/login.html', {'form': form})
 

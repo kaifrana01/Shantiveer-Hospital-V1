@@ -458,6 +458,8 @@ def investigation_edit(request, pk):
     
     if request.method == 'POST':
         with transaction.atomic():
+            old_total = inv.total  # capture before any changes
+
             # Update investigation header
             inv.patient_name = (request.POST.get('patient_name') or '').strip()
             inv.mobile = request.POST.get('mobile', '')
@@ -504,6 +506,55 @@ def investigation_edit(request, pk):
                 inv.total = total - inv.discount
             
             inv.save()
+
+            # BUG-10 FIX: keep IncomeEntry and LedgerEntry in sync with the
+            # edited bill total.  Replace the old IncomeEntry row and, if the
+            # total changed, replace the LedgerEntry charge+payment pair so
+            # the daybook and patient ledger stay accurate.
+            new_total = inv.total
+
+            # Replace IncomeEntry
+            IncomeEntry.objects.filter(
+                description__icontains=f'Lab Bill {inv.bill_no}'
+            ).delete()
+            if new_total > 0:
+                IncomeEntry.objects.create(
+                    date=inv.test_date,
+                    category='Investigation',
+                    patient_name=inv.patient_name,
+                    description=f'Lab Bill {inv.bill_no} [edited]',
+                    payment_mode=inv.payment_mode,
+                    amount=new_total,
+                )
+
+            # Replace LedgerEntry rows only when the bill is patient-linked
+            # and the total has actually changed (avoids spurious writes).
+            if inv.patient and old_total != new_total:
+                LedgerEntry.objects.filter(
+                    source_app='lab',
+                    source_id=inv.bill_no,
+                ).delete()
+                if new_total > 0:
+                    LedgerEntry.record_charge(
+                        uhid=inv.patient.uhid,
+                        tx_type=LedgerEntry.TxType.LAB_BILL,
+                        amount=new_total,
+                        payer_type=LedgerEntry.PayerType.PATIENT,
+                        description=f'Lab bill {inv.bill_no} [edited]',
+                        source_app='lab',
+                        source_id=inv.bill_no,
+                        patient=inv.patient,
+                    )
+                    LedgerEntry.record_payment(
+                        uhid=inv.patient.uhid,
+                        amount=new_total,
+                        payer_type=LedgerEntry.PayerType.PATIENT,
+                        payment_mode=inv.payment_mode,
+                        description=f'Lab bill {inv.bill_no} payment [edited]',
+                        source_app='lab',
+                        source_id=inv.bill_no,
+                        patient=inv.patient,
+                    )
         
         messages.success(request, f'Lab bill {inv.bill_no} updated.')
         return redirect('lab:view_all')

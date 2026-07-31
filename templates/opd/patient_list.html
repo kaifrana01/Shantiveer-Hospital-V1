@@ -73,7 +73,7 @@
               <i class="bi bi-pencil"></i> Edit
             </a>
             {% endif %}
-            {% if user.is_superuser %}
+            {% if module_access.opd_registration == 'full' %}
             <form method="post" action="{% url 'opd:delete_opd_visit' r.id %}" style="display:inline;"
                   onsubmit="return confirm('Delete OPD {{ r.opd_no }}?');">
               {% csrf_token %}

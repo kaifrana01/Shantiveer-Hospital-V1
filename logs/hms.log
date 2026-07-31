@@ -3139,3 +3139,5 @@ django.core.exceptions.ValidationError: {'source_app': ["Value 'ultrasound' is n
 [2026-07-30 09:05:32,010] ERROR django.server You're accessing the development server over HTTPS, but it only supports HTTP.
 [2026-07-30 09:05:42,100] WARNING django.request Method Not Allowed (GET): /admin/logout/
 [2026-07-30 09:05:42,103] WARNING django.server "GET /admin/logout/ HTTP/1.1" 405 0
+[2026-07-31 12:23:06,538] WARNING django.request Not Found: /favicon.ico
+[2026-07-31 12:23:06,554] WARNING django.server "GET /favicon.ico HTTP/1.1" 404 1653

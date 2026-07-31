@@ -271,13 +271,15 @@ def get_dashboard_stats():
     total_visits = OPDVisit.objects.count()
     avg_contact = (total / total_visits) if total_visits > 0 else 0
 
-    # Bed stats — use IPDAdmission as source of truth for occupied count.
-    # The Bed table can get out of sync when patients are admitted without
-    # selecting a specific bed, so we derive occupied from actual admissions.
+    # Bed stats — use IPDAdmission as the primary source for occupancy
+    # when it's higher than the Bed table count (handles patients admitted
+    # without selecting a specific bed).  Never let vacant go below zero.
     total_beds = Bed.objects.count()
     # ipd_admitted is already computed above — use it directly.
-    # Subtract from total to get vacant; floor at 0 to avoid negatives.
-    vacant_beds = max(0, total_beds - ipd_admitted)
+    # Some patients may be admitted without a bed record, so occupied can
+    # exceed total_beds; we clamp vacant at 0 to avoid negative display.
+    occupied_beds = min(ipd_admitted, total_beds)
+    vacant_beds = max(0, total_beds - occupied_beds)
 
     total_expenses = 0
     if Expense is not None:
@@ -298,7 +300,7 @@ def get_dashboard_stats():
         'total_patients': total_patients,
         'ipd_admitted': ipd_admitted,
         'total_beds': total_beds,
-        'occupied_beds': ipd_admitted,
+        'occupied_beds': occupied_beds,
         'vacant_beds': vacant_beds,
     }
 
