@@ -43,7 +43,7 @@ class PrescriptionMedicine(models.Model):
     pharmacy_item = models.ForeignKey(
         'pharmacy.PharmacyItem', on_delete=models.SET_NULL, null=True, blank=True, related_name='prescription_lines',
     )
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     history = HistoricalRecords()

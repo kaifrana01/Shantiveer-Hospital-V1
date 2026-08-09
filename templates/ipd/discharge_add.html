@@ -14,7 +14,7 @@
       {% endfor %}
     {% endif %}
 
-    <form method="post">
+    <form method="post" id="dischargeForm">
       {% csrf_token %}
       <div class="row g-3">
 
@@ -65,7 +65,7 @@
       </div>
 
       <div class="text-center mt-4 gap-2">
-        <button type="submit" class="btn btn-primary px-4"
+        <button type="submit" class="btn btn-primary px-4" id="dischargeSaveBtn"
                 onclick="return confirm('Confirm discharge for selected patient?');">
           <i class="bi bi-box-arrow-right"></i> Discharge Patient
         </button>
@@ -85,6 +85,8 @@ document.getElementById('ipdPatientSelect').addEventListener('change', function 
   document.getElementById('roomField').value         = opt.dataset.room       || '';
   document.getElementById('consultantField').value   = opt.dataset.consultant || '';
 });
+
+/* Anti-double-submit handled globally by no_double_submit.js */
 </script>
 {% endblock %}
 {% endblock %}

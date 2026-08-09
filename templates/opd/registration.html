@@ -12,9 +12,13 @@
 
             {% csrf_token %}
             <div class="row g-2 mb-3 align-items-end">
-                <div class="col-auto"><button type="button" class="btn-cyan" data-bs-toggle="modal" data-bs-target="#uhidModal"><i class="bi bi-search"></i> Search UHID</button></div>
+                <div class="col-auto"><button type="button" class="btn-cyan" onclick="document.getElementById('uhidField').focus();"><i class="bi bi-search"></i> Search UHID</button></div>
                 <div class="col-md-2"><label class="form-label small">OPD No</label><input type="text" name="opd_no" class="form-control" value="{{ opd_no }}" readonly></div>
-                <div class="col-md-2"><label class="form-label small">UHID</label><input type="text" name="uhid" class="form-control" id="uhidField" value="{{ initial.patient.uhid|default:'' }}"></div>
+                <div class="col-md-2" style="position:relative;">
+                    <label class="form-label small">UHID</label>
+                    <input type="text" name="uhid" class="form-control" id="uhidField" value="{{ initial.patient.uhid|default:'' }}" autocomplete="off" placeholder="Type UHID or name…">
+                    <div id="uhidResults" style="position:absolute;top:100%;left:0;right:0;z-index:1050;background:#fff;border:1px solid #dee2e6;border-radius:0.375rem;max-height:300px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.15);margin-top:2px;"></div>
+                </div>
                 <div class="col-md-2"><label class="form-label small">Date</label><input type="date" name="date" class="form-control" value="{{ initial.visit.date|default:today }}"></div>
                 <div class="col-md-2"><label class="form-label small">Time</label><input type="time" name="time" class="form-control" value="{{ initial.visit.time|default:now_time }}"></div>
             </div>
@@ -113,17 +117,13 @@
 
             <div class="text-center mt-4 gap-2">
                 {% if not request.is_view_only %}
-                <button type="submit" class="btn-save"><i class="bi bi-save"></i> Save / Update</button>
+                <button type="submit" class="btn-save" id="opdSaveBtn"><i class="bi bi-save" id="opdSaveIcon"></i> Save / Update</button>
                 {% endif %}
                 <a href="{% url 'opd:registration' %}" class="btn-view ms-2"><i class="bi bi-list"></i> OPD Patient History</a>
             </div>
         </form>
     </div>
 </div>
-<div class="modal fade" id="uhidModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-    <div class="modal-header"><h5 class="modal-title">Search UHID</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-    <div class="modal-body"><input type="text" class="form-control" id="uhidSearchInput" placeholder="Enter UHID"><div id="uhidResults" class="mt-2"></div></div>
-</div></div></div>
 {% endblock %}
 {% block extra_js %}
 <script>
@@ -241,6 +241,124 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial build (in case user edits existing visit)
     document.addEventListener('DOMContentLoaded', () => buildOPDUPIQR());
+</script>
+
+<script>
+/* Prevent duplicate OPD submissions — handled globally by no_double_submit.js */
+</script>
+
+<script>
+/* Inline UHID Search on OPD Registration */
+(function(){
+    const uhidField   = document.getElementById('uhidField');
+    const resultsDiv  = document.getElementById('uhidResults');
+    const nameField   = document.querySelector('input[name="patient_name"]');
+    const ageField    = document.querySelector('input[name="age"]');
+    const genderField = document.querySelector('select[name="gender"]');
+    const phoneField  = document.querySelector('input[name="phone"]');
+    const addrField   = document.querySelector('input[name="address"]');
+    const titleField  = document.querySelector('select[name="title"]');
+
+    if (!uhidField || !resultsDiv) return;
+
+    let searchTimeout;
+
+    function showResults(html) {
+        resultsDiv.innerHTML = html;
+        resultsDiv.style.display = 'block';
+    }
+    function hideResults() {
+        resultsDiv.style.display = 'none';
+    }
+
+    uhidField.addEventListener('input', function(){
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        if (query.length < 2) { hideResults(); return; }
+
+        showResults('<div style="padding:10px 14px;color:#64748b;font-size:0.82rem;"><span class="spinner-border spinner-border-sm me-2"></span>Searching...</div>');
+
+        searchTimeout = setTimeout(async () => {
+            try {
+                const resp = await fetch('/uhid/api/search/?q=' + encodeURIComponent(query));
+                const data = await resp.json();
+
+                if (!data.results || data.results.length === 0) {
+                    showResults('<div style="padding:12px 14px;color:#94a3b8;font-size:0.82rem;text-align:center;"><i class="bi bi-inbox"></i> No patients found</div>');
+                    return;
+                }
+
+                let html = '';
+                data.results.forEach(p => {
+                    html += `<div class="uhid-item"
+                         data-uhid="${p.uhid}" data-name="${p.name}"
+                         data-age="${p.age_years}" data-gender="${p.gender}"
+                         data-mobile="${p.mobile || ''}" data-address="${p.address || ''}"
+                         style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f1f5f9;transition:background 0.1s;">
+                        <div style="font-weight:600;font-size:0.88rem;color:#1e293b;">${p.name}</div>
+                        <div style="font-size:0.75rem;color:#64748b;">
+                            UHID: <strong>${p.uhid}</strong> &nbsp;·&nbsp;
+                            ${p.age_years} yrs &nbsp;·&nbsp;
+                            ${p.gender} &nbsp;·&nbsp;
+                            <i class="bi bi-phone"></i> ${p.mobile || '—'}
+                        </div>
+                    </div>`;
+                });
+                showResults(html);
+
+                resultsDiv.querySelectorAll('.uhid-item').forEach(item => {
+                    item.addEventListener('mouseenter', function(){ this.style.background='#f0f9ff'; });
+                    item.addEventListener('mouseleave', function(){ this.style.background=''; });
+                    item.addEventListener('click', function(){
+                        uhidField.value = this.dataset.uhid;
+                        if (nameField)   nameField.value   = this.dataset.name;
+                        if (ageField)    ageField.value    = this.dataset.age;
+                        if (phoneField)  phoneField.value  = this.dataset.mobile;
+                        if (addrField)   addrField.value   = this.dataset.address;
+                        if (genderField) {
+                            const g = this.dataset.gender;
+                            // match case-insensitively
+                            Array.from(genderField.options).forEach(o => {
+                                if (o.value.toLowerCase() === g.toLowerCase()) genderField.value = o.value;
+                            });
+                        }
+                        hideResults();
+                    });
+                });
+
+            } catch(e) {
+                showResults('<div style="padding:10px 14px;color:#dc3545;font-size:0.82rem;"><i class="bi bi-exclamation-triangle"></i> Search failed</div>');
+            }
+        }, 350);
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e){
+        if (!uhidField.contains(e.target) && !resultsDiv.contains(e.target)) hideResults();
+    });
+
+    // Keyboard navigation
+    uhidField.addEventListener('keydown', function(e){
+        const items = resultsDiv.querySelectorAll('.uhid-item');
+        const active = resultsDiv.querySelector('.uhid-item-active');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            const next = active ? (active.nextElementSibling || items[0]) : items[0];
+            if (active) { active.classList.remove('uhid-item-active'); active.style.background=''; }
+            if (next)   { next.classList.add('uhid-item-active'); next.style.background='#f0f9ff'; next.scrollIntoView({block:'nearest'}); }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            const prev = active ? (active.previousElementSibling || items[items.length-1]) : items[items.length-1];
+            if (active) { active.classList.remove('uhid-item-active'); active.style.background=''; }
+            if (prev)   { prev.classList.add('uhid-item-active'); prev.style.background='#f0f9ff'; prev.scrollIntoView({block:'nearest'}); }
+        } else if (e.key === 'Enter' && active) {
+            e.preventDefault();
+            active.click();
+        } else if (e.key === 'Escape') {
+            hideResults();
+        }
+    });
+})();
 </script>
 {% endblock %}
 

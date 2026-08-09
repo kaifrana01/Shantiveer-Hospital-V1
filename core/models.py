@@ -9,7 +9,7 @@ class Bed(models.Model):
 
     room_no = models.CharField(max_length=20)
     bed_no = models.CharField(max_length=20)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Vacant')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Vacant', db_index=True)
     patient = models.ForeignKey(Patient, on_delete=models.SET_NULL, null=True, blank=True)
 
     history = HistoricalRecords()

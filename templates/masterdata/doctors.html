@@ -9,7 +9,7 @@
     </div>
     <div class="flex-grow-1 form-card">
         <h2>Add Doctor</h2>
-        <form method="post">{% csrf_token %}
+        <form method="post" id="addDoctorForm">{% csrf_token %}
             <div class="row g-2">
                 <div class="col-md-6"><label class="small">Doctor Name <span class="text-danger">*</span></label><input name="name" class="form-control" required></div>
                 <div class="col-md-3"><label class="small">Department</label><input name="department" class="form-control"></div>
@@ -34,8 +34,14 @@
                 
                 <div class="col-12"><label class="small">Address</label><textarea name="address" class="form-control" rows="2"></textarea></div>
             </div>
-            <button type="submit" class="btn btn-primary mt-3">Add Doctor</button>
+            <button type="submit" class="btn btn-primary mt-3" id="addDoctorBtn">Add Doctor</button>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* Anti-double-submit handled globally by no_double_submit.js */
+</script>
 {% endblock %}

@@ -1,5 +1,6 @@
 {% extends 'base_dashboard.html' %}
 {% load group_tags %}
+{% load static %}
 
 {% block page_title %}Expenses{% endblock %}
 
@@ -26,7 +27,7 @@
         <span class="widget-title"><i class="bi bi-cash-stack"></i> Basic Expenses — New Entry</span>
       </div>
 
-      <form method="post" class="mt-2">
+      <form method="post" class="mt-2" id="basicExpenseForm">
         {% csrf_token %}
         <input type="hidden" name="form" value="basic" />
 
@@ -56,7 +57,7 @@
         {% endfor %}
 
         <div class="mt-3 d-flex gap-2">
-          <button class="btn btn-primary" type="submit"><i class="bi bi-save"></i> Save Basic Expenses</button>
+          <button class="btn btn-primary" type="submit" id="basicExpenseBtn"><i class="bi bi-save"></i> Save Basic Expenses</button>
         </div>
       </form>
     </div>
@@ -68,7 +69,7 @@
         <span class="widget-title"><i class="bi bi-truck"></i> Advance Expenses — New Entry</span>
       </div>
 
-      <form method="post" class="mt-2">
+      <form method="post" class="mt-2" id="advanceExpenseForm">
         {% csrf_token %}
         <input type="hidden" name="form" value="advance" />
 
@@ -98,7 +99,7 @@
         {% endfor %}
 
         <div class="mt-3 d-flex gap-2">
-          <button class="btn btn-primary" type="submit"><i class="bi bi-save"></i> Save Advance Expenses</button>
+          <button class="btn btn-primary" type="submit" id="advanceExpenseBtn"><i class="bi bi-save"></i> Save Advance Expenses</button>
         </div>
       </form>
     </div>
@@ -334,19 +335,22 @@
 </div>
 {% endblock %}
 
+{% if breakdown %}
+  {{ breakdown|json_script:"expensesChartData" }}
+{% else %}
+  <script id="expensesChartData" type="application/json">[]</script>
+{% endif %}
+
 {% block extra_js %}
+<script>
+/* Anti-double-submit handled globally by no_double_submit.js */
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function(){
-  const data = [
-    {% if breakdown %}
-    {% for r in breakdown %}
-      { label: '{{ r.category }}', value: {{ r.total|default:0 }} },
-    {% endfor %}
-    {% else %}
-      { label: 'None', value: 0 },
-    {% endif %}
-  ];
+  const rawData = JSON.parse(document.getElementById('expensesChartData').textContent || '[]');
+  const data = rawData.length ? rawData.map(r => ({ label: r.category || r.label || '', value: Number(r.total ?? r.value ?? 0) }))
+                               : [{ label: 'None', value: 0 }];
 
   const labels = data.map(d=>d.label);
   const values = data.map(d=>d.value);

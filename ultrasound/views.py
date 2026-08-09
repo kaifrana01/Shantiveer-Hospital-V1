@@ -487,6 +487,20 @@ def expenses(request):
                 amt = Decimal(amount)
                 if amt <= 0:
                     raise ValueError
+                # Idempotency guard: same date + category + description + amount
+                # within 5 seconds is treated as a duplicate submit.
+                import datetime as _dt
+                from django.utils import timezone as _tz
+                cutoff = _tz.now() - _dt.timedelta(seconds=5)
+                if UltrasoundExpense.objects.filter(
+                    date=date_val,
+                    category=cat,
+                    description=desc,
+                    amount=amt,
+                    created_at__gte=cutoff,
+                ).exists():
+                    messages.warning(request, 'Duplicate submission detected — expense already saved.')
+                    return redirect('ultrasound:expenses')
                 UltrasoundExpense.objects.create(
                     date=date_val, category=cat, description=desc,
                     amount=amt, remarks=remarks

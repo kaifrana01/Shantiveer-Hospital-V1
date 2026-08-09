@@ -81,7 +81,7 @@
                         <option>Card</option>
                     </select>
                     <button type="button" class="btn btn-outline-warning ms-auto me-2" id="printLabBtn">Print Test Bill</button>
-                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="submit" class="btn btn-primary" id="labSubmitBtn">Submit</button>
                 </div>
 
                 <!-- UPI QR panel -->
@@ -354,6 +354,8 @@
     }
     labPayMode?.addEventListener('change', toggleLabUpi);
     toggleLabUpi();
+
+    /* Anti-double-submit handled globally by no_double_submit.js */
 })();
 </script>
 

@@ -17,7 +17,7 @@
       {% endfor %}
     {% endif %}
 
-    <form method="post">
+    <form method="post" id="incomeAddForm">
       {% csrf_token %}
       <div class="row g-3">
 
@@ -76,7 +76,7 @@
         </div>
 
         <div class="col-12 d-flex gap-2 mt-2">
-          <button type="submit" class="btn btn-primary px-4">
+          <button type="submit" class="btn btn-primary px-4" id="incomeAddBtn">
             <i class="bi bi-save me-1"></i>Save Entry
           </button>
           <a href="{% url 'income:daybook' %}" class="btn btn-outline-secondary px-4">
@@ -111,6 +111,8 @@
   sel?.addEventListener('change', toggle);
   amtEl?.addEventListener('input', updateAmt);
   toggle();
+
+  /* Anti-double-submit handled globally by no_double_submit.js */
 })();
 </script>
 {% endblock %}

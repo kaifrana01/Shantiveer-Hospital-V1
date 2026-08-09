@@ -117,7 +117,7 @@
 
       {% if not request.is_view_only %}
       <div class="d-flex gap-2">
-        <button type="submit" class="btn-save">
+        <button type="submit" class="btn-save" id="rxSaveBtn">
           <i class="bi bi-save"></i> Save Prescription
         </button>
         <a href="{% url 'prescription:print' record.id %}" class="btn btn-warning" target="_blank">
@@ -146,5 +146,7 @@ document.getElementById('addMedRow')?.addEventListener('click', function() {
 document.getElementById('medTable')?.addEventListener('click', e => {
   if (e.target.classList.contains('remove-row')) e.target.closest('tr').remove();
 });
+
+/* Anti-double-submit handled globally by no_double_submit.js */
 </script>
 {% endblock %}

@@ -25,13 +25,13 @@ class LabInvestigation(models.Model):
     mobile = models.CharField(max_length=15, blank=True)
     address = models.TextField(blank=True)
     consultant = models.CharField(max_length=200, default='-- Self --')
-    referred_by = models.CharField(max_length=200, default='SELF')
+    referred_by = models.CharField(max_length=200, default='SELF', db_index=True)
     remarks = models.TextField(blank=True)
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     payment_mode = models.CharField(max_length=20, default='Cash')
-    test_date = models.DateField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    test_date = models.DateField(db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     # LabInvestigation is a billing record (it posts to income.LedgerEntry)
     # just like OPDVisit/IPDPayment/PharmacySale — it needs the same

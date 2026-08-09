@@ -95,7 +95,12 @@ def patient_list(request):
     q = request.GET.get('q', '').strip()
     referral = request.GET.get('referral', '').strip()
 
-    qs = IPDAdmission.objects.select_related('patient').filter(status='Admitted')
+    qs = (
+        IPDAdmission.objects
+        .select_related('patient')
+        .prefetch_related('medicine_lines')   # eliminates N+1 in _compute_ipd_bill_total
+        .filter(status='Admitted')
+    )
     if q:
         qs = qs.filter(
             Q(patient__name__icontains=q)
@@ -246,6 +251,21 @@ def admission(request):
                     admission_obj.save()
                     messages.success(request, 'IPD admission updated.')
                 else:
+                    # ── Duplicate-click guard ──────────────────────────────
+                    # If an identical admission for this patient was created
+                    # within the last 10 seconds, skip and redirect instead
+                    # of creating a duplicate.
+                    from django.utils import timezone as _tz
+                    _cutoff = _tz.now() - _tz.timedelta(seconds=10)
+                    _dup = IPDAdmission.objects.filter(
+                        patient=patient,
+                        date=common_fields.get('date'),
+                        created_at__gte=_cutoff,
+                    ).first()
+                    if _dup:
+                        messages.warning(request, f'IPD {_dup.ipd_no} was just saved — duplicate submission skipped.')
+                        return redirect('ipd:patient_list')
+
                     admission_obj = IPDAdmission.objects.create(**common_fields)
                     messages.success(request, 'IPD admission saved.')
 
@@ -419,6 +439,22 @@ def payment(request):
             upi_id = (request.POST.get('upi_id') or '').strip()[:200]
 
         with transaction.atomic():
+            # Idempotency guard: block a rapid double-submit (same admission +
+            # amount + mode within 5 seconds) to prevent duplicate payment rows
+            # and double-posted ledger/income entries.
+            import datetime as _dt
+            from django.utils import timezone as _tz
+            cutoff = _tz.now() - _dt.timedelta(seconds=5)
+            if IPDPayment.objects.filter(
+                admission=adm,
+                amount=amount,
+                payment_mode=mode,
+                paid_at__gte=cutoff,
+            ).exists():
+                messages.warning(request, 'Duplicate payment detected — this payment was already recorded.')
+                from django.urls import reverse
+                return redirect(f"{reverse('ipd:bill')}?ipd_no={adm.ipd_no}")
+
             ipd_pay = IPDPayment.objects.create(
                 admission=adm,
                 amount=amount,
@@ -685,6 +721,33 @@ def medicine(request):
                 return redirect('ipd:medicine')
 
             with transaction.atomic():
+                # Idempotency guard: same medicine + qty + rate on the same
+                # admission within 5 seconds is treated as a duplicate submit.
+                import datetime as _dt
+                from django.utils import timezone as _tz
+                from django.db.models import Max
+                cutoff = _tz.now() - _dt.timedelta(seconds=5)
+                recent = IPDMedicineLine.objects.filter(
+                    admission=adm,
+                    medicine_name__iexact=_cap_text(request.POST.get('medicine', '')),
+                    quantity=qty,
+                    rate=rate,
+                ).order_by('-id').first()
+                # Check if the most recent matching line was created within 5 seconds
+                if recent:
+                    # Use the line's pk as a proxy — if it was just created,
+                    # its history record will have a recent timestamp
+                    from django.utils.timezone import now as _now
+                    # We can't check created_at (no such field), so check via
+                    # historical record if available, otherwise skip the guard
+                    try:
+                        last_hist = recent.history.order_by('-history_date').first()
+                        if last_hist and last_hist.history_date >= cutoff:
+                            messages.warning(request, 'Duplicate entry detected — this medicine was just added.')
+                            return redirect('ipd:medicine')
+                    except Exception:
+                        pass
+
                 line = IPDMedicineLine.objects.create(
                     admission=adm,
                     medicine_name=_cap_text(request.POST.get('medicine', '')),
@@ -772,21 +835,25 @@ def payment_delete(request, pk):
 
             # Fallback for pre-migration rows without source_id
             if not deleted:
-                LedgerEntry.objects.filter(
+                _le = LedgerEntry.objects.filter(
                     patient=admission.patient,
                     ipd_admission=admission,
                     credit_amount=payment.amount,
                     tx_type=LedgerEntry.TxType.PATIENT_PAYMENT,
-                ).order_by('created_at')[:1].delete()
+                ).order_by('created_at').first()
+                if _le:
+                    _le.delete()
 
         # Reverse IncomeEntry mirror posted at payment time
         from income.models import IncomeEntry as _IE
-        _IE.objects.filter(
+        _ie_ipd = _IE.objects.filter(
             category='IPD',
             patient_name=admission.patient.name if admission.patient else '',
             payment_mode=payment.payment_mode,
             amount=payment.amount,
-        ).order_by('-created_at')[:1].delete()
+        ).order_by('-created_at').first()
+        if _ie_ipd:
+            _ie_ipd.delete()
 
         payment.delete()
 

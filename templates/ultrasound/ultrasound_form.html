@@ -183,7 +183,7 @@
       <div id="usgCount" style="font-size:1.3rem;font-weight:800;color:#a5b4fc;">0</div>
     </div>
   </div>
-  <button type="submit" class="btn-usg-primary" style="font-size:1rem;padding:12px 28px;box-shadow:0 6px 20px rgba(13,148,136,0.45);">
+  <button type="submit" class="btn-usg-primary" id="usgSubmitBtn" style="font-size:1rem;padding:12px 28px;box-shadow:0 6px 20px rgba(13,148,136,0.45);">
     <i class="bi bi-check2-circle"></i> Submit Bill
   </button>
 </div>
@@ -363,5 +363,7 @@
     }
   });
 })();
+
+/* Anti-double-submit handled globally by no_double_submit.js */
 </script>
 {% endblock %}

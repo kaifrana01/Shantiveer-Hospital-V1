@@ -8,10 +8,10 @@ class IPDAdmission(models.Model):
 
     ipd_no = models.CharField(max_length=20, unique=True, editable=False)
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='ipd_admissions')
-    date = models.DateField()
+    date = models.DateField(db_index=True)
     time = models.TimeField(null=True, blank=True)
     guardian = models.CharField(max_length=200, blank=True)
-    category = models.CharField(max_length=50, default='General')
+    category = models.CharField(max_length=50, default='General', db_index=True)
     consultant = models.CharField(max_length=200, blank=True)
     kyc_type = models.CharField(max_length=50, blank=True)
     kyc_no = models.CharField(max_length=50, blank=True)
@@ -21,9 +21,9 @@ class IPDAdmission(models.Model):
     tpa = models.CharField(max_length=200, blank=True)
     policy_no = models.CharField(max_length=100, blank=True)
     insurance_co = models.CharField(max_length=200, blank=True)
-    referral = models.CharField(max_length=200, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Admitted')
-    created_at = models.DateTimeField(auto_now_add=True)
+    referral = models.CharField(max_length=200, blank=True, db_index=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Admitted', db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     bed_charge = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -71,7 +71,7 @@ class IPDPayment(models.Model):
     payment_mode = models.CharField(max_length=20, default='Cash')
     upi_id = models.CharField(max_length=200, blank=True, help_text='UPI ID used for payment (for UPI mode).')
     remarks = models.CharField(max_length=300, blank=True)
-    paid_at = models.DateTimeField(auto_now_add=True)
+    paid_at = models.DateTimeField(auto_now_add=True, db_index=True)
     # Field exists in the DB (added manually via SQL). Keep it here so Django
     # includes it in every INSERT and doesn't hit OperationalError 1364.
     is_opd_carry_forward = models.BooleanField(default=False)

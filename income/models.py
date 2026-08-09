@@ -48,8 +48,8 @@ class IncomeEntry(models.Model):
     ]
     PAYMENT_MODES = [('Cash', 'Cash'), ('UPI', 'UPI'), ('Card', 'Card'), ('Cheque', 'Cheque')]
 
-    date = models.DateField()
-    category = models.CharField(max_length=50, choices=CATEGORIES)
+    date = models.DateField(db_index=True)
+    category = models.CharField(max_length=50, choices=CATEGORIES, db_index=True)
     patient_name = models.CharField(max_length=200)
     description = models.TextField()
     payment_mode = models.CharField(max_length=20, choices=PAYMENT_MODES, default='Cash')
@@ -60,7 +60,7 @@ class IncomeEntry(models.Model):
                                    help_text='Module that created this entry (opd, ipd, lab, etc.)')
     source_id = models.CharField(max_length=50, blank=True, default='',
                                   help_text='Bill/visit number of the originating record.')
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     history = HistoricalRecords()
 
@@ -210,6 +210,9 @@ class LedgerEntry(models.Model):
             models.Index(fields=['uhid', 'payer_type']),
             models.Index(fields=['claim_no']),
             models.Index(fields=['claim_status']),
+            # Composite index used by _lab_due, OPD deletion, and payment
+            # reversal queries that filter on both source_app + source_id.
+            models.Index(fields=['source_app', 'source_id'], name='ledger_source_idx'),
         ]
         verbose_name = 'Ledger Entry'
         verbose_name_plural = 'Ledger Entries'

@@ -271,7 +271,7 @@ document.getElementById('dobInput')?.addEventListener('change', function () {
   if (ageEl) ageEl.value = Math.max(0, years);
 });
 
-// Form validation + double-submit prevention
+// Form validation — double-submit blocking handled globally by no_double_submit.js
 document.getElementById('regForm')?.addEventListener('submit', function (e) {
   const nameVal = document.getElementById('nameInput').value.trim();
   const err = document.getElementById('nameError');
@@ -282,11 +282,7 @@ document.getElementById('regForm')?.addEventListener('submit', function (e) {
     return;
   }
   err.style.display = 'none';
-  const btn = document.getElementById('saveBtn');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving…';
-  }
+  // no_double_submit.js will disable the button and block further clicks
 });
 </script>
 {% endblock %}

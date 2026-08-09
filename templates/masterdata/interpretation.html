@@ -10,12 +10,12 @@
     <div class="flex-grow-1 overflow-hidden">
         <div class="form-card mb-3">
             <div class="section-title" style="background:#999;color:#fff;margin:-1.5rem -1.5rem 1rem;padding:0.5rem 1rem">Add Interpretation</div>
-            <form method="post">{% csrf_token %}
+            <form method="post" id="addInterpretationForm">{% csrf_token %}
                 <textarea name="interpretation" class="form-control mb-2" rows="8" placeholder="Enter clinical interpretation..."></textarea>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <label>Test :</label>
                     <select name="test" class="form-select" style="max-width:300px"><option>-- TEST --</option>{% for t in tests %}<option>{{ t }}</option>{% endfor %}</select>
-                    <button class="btn btn-primary">Add</button>
+                    <button class="btn btn-primary" id="addInterpretationBtn">Add</button>
                 </div>
             </form>
         </div>
@@ -47,4 +47,10 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* Anti-double-submit handled globally by no_double_submit.js */
+</script>
 {% endblock %}

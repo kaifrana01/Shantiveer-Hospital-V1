@@ -242,66 +242,73 @@ def get_dashboard_stats():
     from uhid.models import Patient
     from ipd.models import IPDAdmission
     from core.models import Bed
-    
-    # Import Expense lazily so dashboard won't crash if DB migrations
-    # for the new module are not yet applied.
+
     try:
         from expenses.models import Expense
     except Exception:
         Expense = None
 
-
     today = timezone.localdate()
-    week_ago = today - timedelta(days=7)
+    week_ago  = today - timedelta(days=7)
     month_ago = today - timedelta(days=30)
 
-    opd_today = OPDVisit.objects.filter(date=today).count()
+    # ── OPD counts: 3 filters resolved in ONE query via conditional aggregation
+    from django.db.models import Case, When, IntegerField
+    opd_agg = OPDVisit.objects.aggregate(
+        today=Sum(Case(When(date=today, then=1), default=0, output_field=IntegerField())),
+        week=Sum(Case(When(date__gte=week_ago, then=1), default=0, output_field=IntegerField())),
+        month=Sum(Case(When(date__gte=month_ago, then=1), default=0, output_field=IntegerField())),
+        past=Sum(Case(When(date__lt=today, then=1), default=0, output_field=IntegerField())),
+        total=Count('id'),
+    )
+    opd_today  = opd_agg['today']  or 0
+    opd_week   = opd_agg['week']   or 0
+    opd_month  = opd_agg['month']  or 0
+    opd_past   = opd_agg['past']   or 0
+    total_visits = opd_agg['total'] or 0
 
-    opd_week = OPDVisit.objects.filter(date__gte=week_ago).count()
-    opd_month = OPDVisit.objects.filter(date__gte=month_ago).count()
+    # ── Income: 3 SUM filters in ONE query via conditional aggregation ──
+    income_agg = IncomeEntry.objects.aggregate(
+        total=Sum('amount'),
+        cash=Sum(Case(When(payment_mode='Cash', then='amount'), default=0, output_field=DecimalField())),
+        today=Sum(Case(When(date=today, then='amount'), default=0, output_field=DecimalField())),
+    )
+    total        = income_agg['total'] or 0
+    paid         = income_agg['cash']  or 0
+    today_income = income_agg['today'] or 0
+
+    # ── Remaining counts: Patient, IPD, Bed, Expense (4 quick queries) ─
     total_patients = Patient.objects.count()
-    ipd_admitted = IPDAdmission.objects.filter(status='Admitted').count()
-
-    # Billing stats
-    total = IncomeEntry.objects.aggregate(s=Sum('amount'))['s'] or 0
-    paid = IncomeEntry.objects.filter(payment_mode='Cash').aggregate(s=Sum('amount'))['s'] or 0
-    today_income = IncomeEntry.objects.filter(date=today).aggregate(s=Sum('amount'))['s'] or 0
-
-    # Average contact = total income / total visits (avoid division by zero)
-    total_visits = OPDVisit.objects.count()
-    avg_contact = (total / total_visits) if total_visits > 0 else 0
-
-    # Bed stats — use IPDAdmission as the primary source for occupancy
-    # when it's higher than the Bed table count (handles patients admitted
-    # without selecting a specific bed).  Never let vacant go below zero.
-    total_beds = Bed.objects.count()
-    # ipd_admitted is already computed above — use it directly.
-    # Some patients may be admitted without a bed record, so occupied can
-    # exceed total_beds; we clamp vacant at 0 to avoid negative display.
-    occupied_beds = min(ipd_admitted, total_beds)
-    vacant_beds = max(0, total_beds - occupied_beds)
+    ipd_admitted   = IPDAdmission.objects.filter(status='Admitted').count()
+    total_beds     = Bed.objects.count()
 
     total_expenses = 0
     if Expense is not None:
-        total_expenses = Expense.objects.aggregate(s=Sum('amount'))['s'] or 0
+        try:
+            total_expenses = Expense.objects.aggregate(s=Sum('amount'))['s'] or 0
+        except Exception:
+            pass
 
+    avg_contact  = (total / total_visits) if total_visits > 0 else 0
+    occupied_beds = min(ipd_admitted, total_beds)
+    vacant_beds   = max(0, total_beds - occupied_beds)
 
     return {
-        'appointment_key': opd_today,
-        'total_expenses': f'{total_expenses:,.2f}',
-        'appointment_past': OPDVisit.objects.filter(date__lt=today).count(),
-        'total_billing': f'{total:,.2f}',
-        'collections': f'{paid:,.2f}',
-        'today_income': f'{today_income:,.2f}',
-        'rev_billing': f'{(total - paid):,.2f}',
-        'avg_contact': f'{avg_contact:,.2f}',
+        'appointment_key':    opd_today,
+        'total_expenses':     f'{total_expenses:,.2f}',
+        'appointment_past':   opd_past,
+        'total_billing':      f'{total:,.2f}',
+        'collections':        f'{paid:,.2f}',
+        'today_income':       f'{today_income:,.2f}',
+        'rev_billing':        f'{(total - paid):,.2f}',
+        'avg_contact':        f'{avg_contact:,.2f}',
         'appointments_month': opd_month,
-        'appointments_week': opd_week,
-        'total_patients': total_patients,
-        'ipd_admitted': ipd_admitted,
-        'total_beds': total_beds,
-        'occupied_beds': occupied_beds,
-        'vacant_beds': vacant_beds,
+        'appointments_week':  opd_week,
+        'total_patients':     total_patients,
+        'ipd_admitted':       ipd_admitted,
+        'total_beds':         total_beds,
+        'occupied_beds':      occupied_beds,
+        'vacant_beds':        vacant_beds,
     }
 
 
@@ -344,8 +351,15 @@ def get_emergency_patients():
 
 def get_low_stock_medicines():
     from pharmacy.models import PharmacyItem
-    from pharmacy.services import is_low_stock
+    from django.db.models import F
 
+    # Filter in SQL: stock <= buffer (low-stock) using F expressions.
+    # This avoids loading ALL active medicines into Python memory.
+    items = (
+        PharmacyItem.objects
+        .filter(is_active=True, stock__lte=F('buffer'))
+        .order_by('stock')[:20]
+    )
     return [
         {
             'id': i.id,
@@ -355,8 +369,7 @@ def get_low_stock_medicines():
             'unit': i.unit_type,
             'urgency': 'critical' if i.stock == 0 else 'low',
         }
-        for i in PharmacyItem.objects.filter(is_active=True)
-        if is_low_stock(i)
+        for i in items
     ]
 
 
@@ -427,14 +440,13 @@ def patient_to_dict(p):
 
 
 def _opd_due(visit):
-    """Compute outstanding OPD due for a specific visit. Returns formatted string."""
+    """Single-visit due — kept for backwards compatibility with any direct callers.
+    For list pages use opd_to_dict_bulk() which batches all UHID lookups."""
     try:
         from income.models import LedgerEntry
-        # OPD posts charge + payment simultaneously, so due is normally zero.
-        # If there's any manual adjustment/reversal, the balance could be non-zero.
         balance = LedgerEntry.balance_for(
             uhid=visit.patient.uhid,
-            payer_type=LedgerEntry.PayerType.PATIENT
+            payer_type=LedgerEntry.PayerType.PATIENT,
         )
         return f'{balance:.2f}' if balance != 0 else '0.00'
     except Exception:
@@ -442,67 +454,88 @@ def _opd_due(visit):
 
 
 def opd_to_dict(v):
-    from prescription.models import Prescription
-    pres = Prescription.objects.filter(opd_visit=v).first()
-    # Prescription amount (sum of dispensed medicine costs) + OPD visit total
-    # If any line has amount/price fields in pharmacy, this can be extended.
-    medicines_total = 0
-    if pres:
-        # Add medicine amount into OPD total for prescription list page.
-        # We try to use a per-unit price field on PharmacyItem if present.
-        qs = pres.medicine_lines.select_related('pharmacy_item')
-        if qs.exists() and qs.first() and qs.first().pharmacy_item:
-            pharmacy_item_model = qs.first().pharmacy_item.__class__
-            rate_field_candidates = ['rate', 'price', 'sale_price', 'mrp', 'cost']
-            rate_field = None
-            for f in rate_field_candidates:
-                if hasattr(pharmacy_item_model, f):
-                    rate_field = f
-                    break
-
-            if rate_field:
-                # PharmacyItem has commonly used price field(s): sale_price, rate, cost.
-                # We only support `sale_price` here to avoid SQL/field-name issues.
-                # If later you add more fields, extend this safely.
-                if rate_field != 'sale_price':
-                    # Fallback: use sale_price if available
-                    rate_field = 'sale_price' if hasattr(pharmacy_item_model, 'sale_price') else None
-
-            if rate_field:
-                medicines_total = qs.aggregate(
-                    s=Sum(f'pharmacy_item__{rate_field}')
-                )['s'] or 0
-                # Use a plain double-underscore path in Sum() to avoid malformed
-                # expression strings getting generated into the ORM.
-                # Compute extended amount: pharmacy_item.<rate_field> * quantity
-                # Using ExpressionWrapper+F avoids Django treating the expression as a field name.
-                if rate_field:
-                    medicines_total = qs.aggregate(
-                        s=Sum(
-                            ExpressionWrapper(
-                                F(f'pharmacy_item__{rate_field}') * F('quantity'),
-                                output_field=DecimalField(),
-                            )
-                        )
-                    )['s'] or 0
+    """Single-visit dict — kept for edit/detail pages that pass one visit.
+    List pages must use opd_to_dict_bulk() to avoid N+1 queries."""
+    return opd_to_dict_bulk([v])[0]
 
 
-    total_value = (v.total_amount or 0) + medicines_total
-    return {
-        'id': v.id,
-        'opd_no': v.opd_no,
-        'uhid': v.patient.uhid,
-        'name': v.patient.name,
-        'gender': v.patient.gender,
-        'phone': v.patient.mobile,
-        'date': str(v.date),
-        'total': f'{total_value:.2f}',
-        'doctor': getattr(v, 'doctor_name', '') or '—',
-        'diagnosis': pres.diagnosis if pres else '',
-        'medicines': pres.medicines if pres else '',
-        'advice': pres.advice if pres else '',
-        # For OPD visits, we post charge + payment simultaneously at registration,
-        # so due is normally zero. Use ledger balance to catch any real outstanding.
-        'due': _opd_due(v),
-    }
+def opd_to_dict_bulk(visits):
+    """Convert a list of OPDVisit objects to dicts WITHOUT N+1 queries.
+
+    Assumptions:
+    - `visits` was fetched with:
+        .select_related('patient')
+        .prefetch_related('prescription',
+                          'prescription__medicine_lines__pharmacy_item')
+    - All prescription + medicine line data is already in the prefetch cache.
+
+    Ledger balances are fetched in ONE batch query across all unique UHIDs
+    instead of one query per visit.
+    """
+    if not visits:
+        return []
+
+    # ── 1. Batch-load ledger balances (1 query for all UHIDs) ──────────
+    uhids = list({v.patient.uhid for v in visits if v.patient_id})
+    due_map = {}   # uhid → formatted balance string
+    try:
+        from income.models import LedgerEntry
+        from django.db.models import Sum as _Sum
+        rows = (
+            LedgerEntry.objects
+            .filter(
+                uhid__in=uhids,
+                payer_type=LedgerEntry.PayerType.PATIENT,
+            )
+            .values('uhid')
+            .annotate(
+                total_debit=_Sum('debit_amount'),
+                total_credit=_Sum('credit_amount'),
+            )
+        )
+        for row in rows:
+            bal = (row['total_debit'] or 0) - (row['total_credit'] or 0)
+            due_map[row['uhid']] = f'{bal:.2f}' if bal != 0 else '0.00'
+    except Exception:
+        pass   # degrade gracefully — due will show '--'
+
+    # ── 2. Build dicts using prefetch cache (zero extra queries) ───────
+    results = []
+    for v in visits:
+        # Access prescription via the reverse OneToOne prefetch.
+        # Django stores it as v.prescription when prefetched;
+        # raises RelatedObjectDoesNotExist if none — catch it cleanly.
+        pres = None
+        try:
+            pres = v.prescription  # hits prefetch cache — no DB call
+        except Exception:
+            pass
+
+        # Medicine lines are also prefetched.
+        medicines_total = 0
+        if pres:
+            for line in pres.medicine_lines.all():  # uses prefetch cache
+                item = line.pharmacy_item
+                if item is not None:
+                    rate = getattr(item, 'sale_price', None) or getattr(item, 'rate', None) or 0
+                    medicines_total += (rate or 0) * (line.quantity or 1)
+
+        total_value = (v.total_amount or 0) + medicines_total
+        uhid = v.patient.uhid
+        results.append({
+            'id': v.id,
+            'opd_no': v.opd_no,
+            'uhid': uhid,
+            'name': v.patient.name,
+            'gender': v.patient.gender,
+            'phone': v.patient.mobile,
+            'date': str(v.date),
+            'total': f'{total_value:.2f}',
+            'doctor': getattr(v, 'doctor_name', '') or '—',
+            'diagnosis': pres.diagnosis if pres else '',
+            'medicines': pres.medicines if pres else '',
+            'advice': pres.advice if pres else '',
+            'due': due_map.get(uhid, '0.00'),
+        })
+    return results
 

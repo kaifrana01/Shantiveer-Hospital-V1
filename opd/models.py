@@ -9,9 +9,9 @@ class OPDVisit(models.Model):
 
     opd_no = models.CharField(max_length=20, unique=True, editable=False)
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='opd_visits')
-    date = models.DateField()
+    date = models.DateField(db_index=True)
     time = models.TimeField()
-    referral = models.CharField(max_length=200, blank=True)
+    referral = models.CharField(max_length=200, blank=True, db_index=True)
     doctor_name = models.CharField(max_length=200, blank=True)
     fees = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     head = models.CharField(max_length=200, default='Opd Consultation')
@@ -20,7 +20,8 @@ class OPDVisit(models.Model):
     payment_mode = models.CharField(max_length=20, choices=PAYMENT_MODES, default='Cash')
     upi_id = models.CharField(max_length=200, blank=True, help_text='UPI ID used for payment (for UPI mode).')
     reference_info = models.CharField(max_length=200, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    chronic_conditions = models.TextField(blank=True, null=True, default=None, help_text='Chronic conditions noted at OPD registration.')
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     history = HistoricalRecords()
 

@@ -265,8 +265,31 @@ def patient_list(request):
     )
 
     # Build rows for template
+    inv_list = list(qs[:100])
+
+    # ── Batch-load ledger dues in ONE query instead of one per row ──────
+    bill_nos = [inv.bill_no for inv in inv_list]
+    due_map = {}  # bill_no → formatted balance string
+    try:
+        from income.models import LedgerEntry
+        from django.db.models import Sum as _Sum
+        ledger_rows = (
+            LedgerEntry.objects
+            .filter(source_app='lab', source_id__in=bill_nos)
+            .values('source_id')
+            .annotate(
+                total_debit=_Sum('debit_amount'),
+                total_credit=_Sum('credit_amount'),
+            )
+        )
+        for row in ledger_rows:
+            bal = (row['total_debit'] or 0) - (row['total_credit'] or 0)
+            due_map[row['source_id']] = f'{bal:.2f}' if bal != 0 else '0.00'
+    except Exception:
+        pass
+
     rows = []
-    for inv in qs[:100]:
+    for inv in inv_list:
         patient = getattr(inv, 'patient', None)
         rows.append({
             'id': inv.id,
@@ -278,23 +301,9 @@ def patient_list(request):
             'age': getattr(patient, 'age_display', '') if patient else '',
             'consultant': inv.consultant,
             'referred_by': inv.referred_by,
-
-            # LabInvestigation.total is stored as (sum(item.amount) - discount)
-
             'amount': inv.total if inv.total is not None else '--',
-
-            # Due balance for LAB (PATIENT liability).
-            # OPD/Lab bills are collected in full at billing time, so due is
-            # normally 0. We show ledger balance per bill as a sanity check.
-            'due': _lab_due(inv),
-
-
-
-
+            'due': due_map.get(inv.bill_no, '0.00'),
             'ayushman_card_no': getattr(inv, 'ayushman_card_no', None) or '--',
-
-
-
             'id_proof': getattr(inv, 'id_proof', None) or '--',
         })
 

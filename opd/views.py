@@ -260,6 +260,25 @@ def registration(request):
                 messages.success(request, f'OPD {visit_obj.opd_no} updated successfully.')
             else:
                 # Create new visit
+                # ── Duplicate-click guard ─────────────────────────────────
+                # If an identical visit for this patient was saved within
+                # the last 10 seconds, return the existing record instead
+                # of creating a duplicate.
+                from django.utils import timezone as _tz
+                _cutoff = _tz.now() - _tz.timedelta(seconds=10)
+                _dup = OPDVisit.objects.filter(
+                    patient=patient,
+                    date=date_val,
+                    fees=fees_val,
+                    created_at__gte=_cutoff,
+                ).first() if hasattr(OPDVisit, 'created_at') else None
+
+                if _dup:
+                    messages.warning(request, f'OPD {_dup.opd_no} was just saved — duplicate submission skipped.')
+                    if has_access(request.user, 'opd_list'):
+                        return redirect('opd:patient_list')
+                    return redirect('prescription:list')
+
                 visit_obj = OPDVisit.objects.create(
                     patient=patient,
                     date=date_val,
@@ -354,10 +373,12 @@ def delete_opd_visit(request, pk):
                 pass
             # Reverse the IncomeEntry posted at registration time
             from income.models import IncomeEntry
-            IncomeEntry.objects.filter(
+            _ie = IncomeEntry.objects.filter(
                 category='OPD',
                 description__icontains=visit.opd_no,
-            ).order_by('-created_at')[:1].delete()
+            ).order_by('-created_at').first()
+            if _ie:
+                _ie.delete()
         visit.delete()
     messages.success(request, f'OPD {visit.opd_no} deleted successfully.')
     if has_access(request.user, 'opd_list'):
@@ -373,7 +394,17 @@ def patient_list(request):
     q = (request.GET.get('q') or '').strip()
     referral = (request.GET.get('referral') or '').strip()
 
-    visits = OPDVisit.objects.select_related('patient').order_by('-date', '-time')
+    visits = (
+        OPDVisit.objects
+        .select_related('patient')
+        # Prefetch prescriptions + their medicine lines in 2 extra queries
+        # instead of 1 query per row (eliminates the N+1 in opd_to_dict).
+        .prefetch_related(
+            'prescription',
+            'prescription__medicine_lines__pharmacy_item',
+        )
+        .order_by('-date', '-time')
+    )
     if q:
         visits = visits.filter(
             Q(opd_no__icontains=q) |
@@ -391,8 +422,12 @@ def patient_list(request):
         .order_by('referral')
     )
 
-    from core.services import opd_to_dict
-    records = [opd_to_dict(v) for v in visits[:200]]
+    visits_page = list(visits[:200])
+
+    # Batch-load LedgerEntry balances for all UHIDs in one query instead
+    # of one per row inside _opd_due().
+    from core.services import opd_to_dict_bulk
+    records = opd_to_dict_bulk(visits_page)
 
     return render(request, 'opd/patient_list.html', {
         'active_sidebar': 'opd',
