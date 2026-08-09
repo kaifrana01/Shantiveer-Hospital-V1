@@ -73,9 +73,27 @@ def detail(request, pk):
     visit = get_object_or_404(OPDVisit.objects.select_related('patient'), pk=pk)
     pres, _ = Prescription.objects.get_or_create(opd_visit=visit)
     if request.method == 'POST':
-        pres.diagnosis = request.POST.get('diagnosis', '')
-        pres.medicines = request.POST.get('medicines', '')
-        pres.advice = request.POST.get('advice', '')
+        # Idempotency guard: if the prescription content hasn't changed,
+        # skip the delete-recreate cycle to avoid double pharmacy notifications.
+        new_diagnosis = request.POST.get('diagnosis', '')
+        new_medicines = request.POST.get('medicines', '')
+        new_advice = request.POST.get('advice', '')
+        new_med_names = [n.strip() for n in request.POST.getlist('med_name') if n.strip()]
+
+        existing_names = list(pres.medicine_lines.values_list('medicine_name', flat=True))
+        content_unchanged = (
+            pres.diagnosis == new_diagnosis
+            and pres.medicines == new_medicines
+            and pres.advice == new_advice
+            and sorted(existing_names) == sorted(new_med_names)
+        )
+        if content_unchanged:
+            messages.success(request, 'Prescription is already up to date.')
+            return redirect('prescription:detail', pk=pk)
+
+        pres.diagnosis = new_diagnosis
+        pres.medicines = new_medicines
+        pres.advice = new_advice
         pres.save()
         _save_medicine_lines(pres, request.POST)
         messages.success(request, 'Prescription saved. Pharmacy team has been notified of required medicines.')

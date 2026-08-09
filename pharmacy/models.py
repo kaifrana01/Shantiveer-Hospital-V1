@@ -3,7 +3,7 @@ from simple_history.models import HistoricalRecords
 
 
 class PharmacyItem(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, unique=True)
     drug = models.CharField(max_length=200, blank=True)
     unit_type = models.CharField(max_length=20, default='TAB')
     buffer = models.PositiveIntegerField(default=20)

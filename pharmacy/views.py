@@ -327,10 +327,12 @@ def sale_delete(request, pk):
             ).delete()
 
         # Reverse IncomeEntry mirror
-        IncomeEntry.objects.filter(
+        _ie_ph = IncomeEntry.objects.filter(
             category='Pharmacy',
             description__icontains=f'#{sale.id})',
-        ).order_by('-created_at')[:1].delete()
+        ).order_by('-created_at').first()
+        if _ie_ph:
+            _ie_ph.delete()
 
         sale.delete()
 
