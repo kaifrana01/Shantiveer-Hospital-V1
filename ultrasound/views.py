@@ -227,6 +227,21 @@ def ultrasound_investigation(request):
             except ValueError:
                 payment_mode_val = 'Cash'
 
+            # ── Duplicate-click guard ─────────────────────────────────────
+            # If an identical bill for this patient was saved in the last
+            # 10 seconds, skip and redirect instead of creating a duplicate.
+            from django.utils import timezone as _tz
+            _cutoff = _tz.now() - _tz.timedelta(seconds=10)
+            _dup = UltrasoundInvestigation.objects.filter(
+                patient_name=patient_name,
+                mobile=request.POST.get('mobile', ''),
+                test_date=request.POST.get('date') or timezone.localdate(),
+                created_at__gte=_cutoff,
+            ).first()
+            if _dup:
+                messages.warning(request, f'Bill {_dup.bill_no} was just saved — duplicate submission skipped.')
+                return redirect('ultrasound:patient_list')
+
             inv = UltrasoundInvestigation.objects.create(
                 patient=patient,
                 patient_name=patient_name,
