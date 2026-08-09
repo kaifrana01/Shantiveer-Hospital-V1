@@ -64,7 +64,30 @@ class _BaseExpenseForm(forms.Form):
                     Expense(category=choice.value, amount=amt, paid_to=name, **base_kwargs)
                 )
 
-        created = Expense.objects.bulk_create(rows) if rows else []
+        if not rows:
+            return []
+
+        # Idempotency guard: if an identical submission (same expense_type,
+        # date, remarks, and category totals) was already saved within the
+        # last 5 seconds by the same user, treat it as a duplicate and
+        # return the existing rows instead of inserting again.
+        import datetime as _dt
+        from django.utils import timezone as _tz
+        cutoff = _tz.now() - _dt.timedelta(seconds=5)
+        total_amount = sum(r.amount for r in rows)
+        recent_duplicate = Expense.objects.filter(
+            expense_type=self.expense_type,
+            date=self.cleaned_data['date'],
+            remarks=self.cleaned_data.get('remarks', ''),
+            created_by=user,
+            created_at__gte=cutoff,
+        ).exists()
+
+        if recent_duplicate:
+            # Return empty list — caller shows success but nothing is inserted
+            return []
+
+        created = Expense.objects.bulk_create(rows)
         return created
 
 

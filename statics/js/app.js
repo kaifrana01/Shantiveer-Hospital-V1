@@ -114,3 +114,33 @@ if (document.getElementById('labDiscount')) {
     document.getElementById('labDiscount').addEventListener('input', updateLabTotal);
 }
 
+/**
+ * Prevent duplicate submissions: disable the submit button on the first click
+ * and restore it after 6 seconds as a fallback in case the server returns an
+ * error and the page does not navigate away.
+ *
+ * Excluded: forms with data-no-disable attribute (e.g. search/filter forms).
+ */
+(function () {
+    document.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (!form || form.tagName.toLowerCase() !== 'form') return;
+        if (form.dataset.noDisable !== undefined) return;
+        // Do not disable if the required-field validation already blocked submit
+        if (e.defaultPrevented) return;
+
+        const btn = form.querySelector('[type="submit"]:not([data-no-disable])');
+        if (!btn || btn.disabled) return;
+
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Saving…';
+
+        // Re-enable after 6 s so users are not permanently locked out on errors
+        setTimeout(function () {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }, 6000);
+    }, false);
+})();
+

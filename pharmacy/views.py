@@ -116,6 +116,7 @@ def purchase(request):
 
         sync_pharmacy_stock_notifications()
         messages.success(request, 'Purchase recorded.')
+        return redirect('pharmacy:purchase')
 
     return render(request, 'pharmacy/purchase.html', {
         'active_sidebar': 'pharmacy',
@@ -199,6 +200,7 @@ def sale(request):
 
         sync_pharmacy_stock_notifications()
         messages.success(request, 'Sale completed.')
+        return redirect('pharmacy:sale')
 
     return render(request, 'pharmacy/sale.html', {
         'active_sidebar': 'pharmacy',

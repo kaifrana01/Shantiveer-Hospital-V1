@@ -704,6 +704,7 @@ def medicine(request):
                         ipd_admission=adm,
                     )
             messages.success(request, 'Medicine added.')
+            return redirect('ipd:medicine')
 
     lines = IPDMedicineLine.objects.select_related('admission').order_by('-id')[:20]
     medicines = [

@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import IntegrityError
 from django.db.models import Q
 from .models import Doctor, TestInterpretation
 from lab.models import LabTestMaster
@@ -10,11 +11,16 @@ from core.rbac import require_module
 @require_module('masterdata', level='full')
 def interpretation(request):
     if request.method == 'POST':
-        TestInterpretation.objects.create(
-            test_name=request.POST.get('test', request.POST.get('test_name', '')),
-            interpretation=request.POST.get('interpretation', ''),
-        )
-        messages.success(request, 'Interpretation added.')
+        test_name = (request.POST.get('test', request.POST.get('test_name', '')) or '').strip()
+        interpretation_text = request.POST.get('interpretation', '')
+        if TestInterpretation.objects.filter(test_name__iexact=test_name).exists():
+            messages.error(request, f'An interpretation for "{test_name}" already exists. Edit it instead.')
+        else:
+            TestInterpretation.objects.create(
+                test_name=test_name,
+                interpretation=interpretation_text,
+            )
+            messages.success(request, 'Interpretation added.')
         return redirect('masterdata:interpretation')
     q = request.GET.get('q', '').strip()
     qs = TestInterpretation.objects.all()
@@ -29,21 +35,24 @@ def interpretation(request):
 @require_module('masterdata', level='full')
 def doctors(request):
     if request.method == 'POST':
-        Doctor.objects.create(
-            name=request.POST.get('name', ''),
-            department=request.POST.get('department', ''),
-            specialization=request.POST.get('specialization', ''),
-            phone=request.POST.get('phone', ''),
-            email=request.POST.get('email', ''),
-            gender=request.POST.get('gender', ''),
-            qualification=request.POST.get('qualification', ''),
-            registration_number=request.POST.get('registration_number', ''),
-            experience_years=request.POST.get('experience_years') or None,
-            date_of_joining=request.POST.get('date_of_joining') or None,
-            dob=request.POST.get('dob') or None,
-            address=request.POST.get('address', ''),
-        )
-        messages.success(request, 'Doctor added.')
+        try:
+            Doctor.objects.create(
+                name=request.POST.get('name', ''),
+                department=request.POST.get('department', ''),
+                specialization=request.POST.get('specialization', ''),
+                phone=request.POST.get('phone', ''),
+                email=request.POST.get('email', ''),
+                gender=request.POST.get('gender', ''),
+                qualification=request.POST.get('qualification', ''),
+                registration_number=request.POST.get('registration_number', ''),
+                experience_years=request.POST.get('experience_years') or None,
+                date_of_joining=request.POST.get('date_of_joining') or None,
+                dob=request.POST.get('dob') or None,
+                address=request.POST.get('address', ''),
+            )
+            messages.success(request, 'Doctor added.')
+        except IntegrityError:
+            messages.error(request, 'A doctor with this name already exists.')
         return redirect('masterdata:doctor_list')
     return render(request, 'masterdata/doctors.html', {'active_sidebar': 'master'})
 

@@ -102,6 +102,27 @@ def income_add(request):
             for err in errors:
                 messages.error(request, err)
         else:
+            # Idempotency guard: block a rapid double-submit that arrives
+            # before the page redirects (same date + category + description
+            # + amount within the last 5 seconds is treated as a duplicate).
+            import datetime as _dt
+            from django.utils import timezone as _tz
+            cutoff = _tz.now() - _dt.timedelta(seconds=5)
+            already_exists = IncomeEntry.objects.filter(
+                date=date_raw,
+                category=category,
+                patient_name=patient_name,
+                description=description,
+                payment_mode=payment_mode,
+                amount=amount,
+                source_app='',          # only check manual entries
+                created_at__gte=cutoff,
+            ).exists()
+
+            if already_exists:
+                messages.warning(request, 'This entry was already saved. Please check the daybook.')
+                return redirect('income:daybook')
+
             IncomeEntry.objects.create(
                 date=date_raw,
                 category=category,

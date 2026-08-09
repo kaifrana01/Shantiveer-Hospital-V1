@@ -194,15 +194,21 @@ def expenses_page(request):
             form = BasicExpensesForm(request.POST)
             advance_form = AdvanceExpensesForm(initial={'date': request.POST.get('date') or today})
             if form.is_valid():
-                form.create_rows(user=request.user)
-                messages.success(request, 'Basic expenses saved.')
+                created = form.create_rows(user=request.user)
+                if created:
+                    messages.success(request, 'Basic expenses saved.')
+                else:
+                    messages.warning(request, 'Duplicate submission detected — entry already saved.')
                 return redirect('expenses:page')
         else:
             form = BasicExpensesForm(initial={'date': today})
             advance_form = AdvanceExpensesForm(request.POST)
             if advance_form.is_valid():
-                advance_form.create_rows(user=request.user)
-                messages.success(request, 'Advance expenses saved.')
+                created = advance_form.create_rows(user=request.user)
+                if created:
+                    messages.success(request, 'Advance expenses saved.')
+                else:
+                    messages.warning(request, 'Duplicate submission detected — entry already saved.')
                 return redirect('expenses:page')
 
     else:
