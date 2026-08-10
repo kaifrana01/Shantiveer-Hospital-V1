@@ -301,6 +301,7 @@
               <option value="Cash">💵 Cash</option>
               <option value="UPI">📲 UPI</option>
               <option value="Card">💳 Card</option>
+              <option value="Cheque">🏦 Cheque</option>
             </select>
           </div>
         </div>
@@ -320,6 +321,14 @@
           </div>
         </div>
 
+        <!-- Overpayment warning — shown live when amount > outstanding balance -->
+        <div id="overpayWarn" style="display:none;margin-bottom:.9rem;padding:.55rem 1rem;
+             background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;
+             font-size:.82rem;color:#92400e;display:flex;align-items:center;gap:.5rem;">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span id="overpayWarnText"></span>
+        </div>
+
         <!-- UPI panel (shown only when UPI mode selected) -->
         <div class="upi-panel" id="upiPanel">
           <div class="upi-qr-box" id="upiQrBox">
@@ -335,7 +344,15 @@
               <span>to pay</span>
             </div>
             <div class="upi-hint">Ask patient to scan the QR or use the UPI ID above.<br>Confirm payment before clicking Save.</div>
-            <input type="hidden" name="upi_id" id="upiIdHidden" value="{{ hospital_upi_id }}">
+            <!-- Staff enters the patient's transaction ref / UTR for reconciliation -->
+            <div style="margin-top:.65rem;">
+              <label class="field-label" style="font-size:.75rem;margin-bottom:.25rem;display:block;">
+                Transaction Ref / UTR <span style="font-weight:400;color:#6b7280;">(optional)</span>
+              </label>
+              <input type="text" name="upi_id" id="upiRefInput" class="f-input"
+                     placeholder="e.g. 407812345678" maxlength="200"
+                     style="max-width:260px;">
+            </div>
           </div>
         </div>
 
@@ -402,16 +419,18 @@
 
 <script>
 (function () {
-  const form        = document.getElementById('payForm');
-  const ipdInput    = document.getElementById('ipdNoInput');
-  const nameInput   = document.getElementById('patientNameInput');
-  const amtInput    = document.getElementById('paymentAmount');
-  const modeSelect  = document.getElementById('modeSelect');
-  const upiPanel    = document.getElementById('upiPanel');
-  const upiAmtVal   = document.getElementById('upiAmountVal');
-  const toast       = document.getElementById('pay-toast');
+  const form       = document.getElementById('payForm');
+  const ipdInput   = document.getElementById('ipdNoInput');
+  const nameInput  = document.getElementById('patientNameInput');
+  const amtInput   = document.getElementById('paymentAmount');
+  const modeSelect = document.getElementById('modeSelect');
+  const upiPanel   = document.getElementById('upiPanel');
+  const upiAmtVal  = document.getElementById('upiAmountVal');
+  const toast      = document.getElementById('pay-toast');
 
-  // ── Fetch bill total when IPD No is entered ──
+  let _dueBalance = null;  // updated each time fetchTotal succeeds
+
+  // ── Fetch bill totals when IPD No is entered ──────────────
   let fetchTimer;
   async function fetchTotal() {
     const ipd = (ipdInput.value || '').trim();
@@ -420,27 +439,51 @@
       const res  = await fetch(`{% url 'ipd:payment_total' %}?ipd_no=${encodeURIComponent(ipd)}`);
       if (!res.ok) return;
       const data = await res.json();
+
       // Pre-fill amount with outstanding due
       if (data.total !== undefined) amtInput.value = data.total;
       if (data.patient_name)        nameInput.value = data.patient_name;
 
-      // Show balance summary strip
-      const strip = document.getElementById('billSummaryStrip');
-      if (strip && data.bill_total !== undefined) {
-        strip.style.display = 'flex';
-        document.getElementById('stripBillTotal').textContent = '₹' + parseFloat(data.bill_total).toLocaleString('en-IN', {minimumFractionDigits:2});
-        document.getElementById('stripPaid').textContent      = '₹' + parseFloat(data.paid_total).toLocaleString('en-IN', {minimumFractionDigits:2});
-        document.getElementById('stripDue').textContent       = '₹' + parseFloat(data.due).toLocaleString('en-IN', {minimumFractionDigits:2});
+      // Show summary strip
+      if (data.bill_total !== undefined) {
+        const strip = document.getElementById('billSummaryStrip');
+        if (strip) {
+          strip.style.display = 'flex';
+          document.getElementById('stripBillTotal').textContent =
+            '₹' + parseFloat(data.bill_total).toLocaleString('en-IN', {minimumFractionDigits:2});
+          document.getElementById('stripPaid').textContent =
+            '₹' + parseFloat(data.paid_total).toLocaleString('en-IN', {minimumFractionDigits:2});
+          document.getElementById('stripDue').textContent =
+            '₹' + parseFloat(data.due).toLocaleString('en-IN', {minimumFractionDigits:2});
+        }
+        _dueBalance = parseFloat(data.due);
       }
       updateUpiAmount();
+      checkOverpay();
     } catch (_) {}
   }
 
-  ipdInput.addEventListener('blur', fetchTotal);
+  ipdInput.addEventListener('blur',    fetchTotal);
   ipdInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); fetchTotal(); } });
   ipdInput.addEventListener('input',   () => { clearTimeout(fetchTimer); fetchTimer = setTimeout(fetchTotal, 600); });
 
-  // ── UPI panel toggle ──
+  // ── Overpayment warning ───────────────────────────────────
+  function checkOverpay() {
+    const warn = document.getElementById('overpayWarn');
+    const txt  = document.getElementById('overpayWarnText');
+    if (!warn) return;
+    const entered = parseFloat(amtInput.value) || 0;
+    if (_dueBalance !== null && _dueBalance > 0 && entered > _dueBalance) {
+      txt.textContent =
+        `Amount ₹${entered.toLocaleString('en-IN')} exceeds the outstanding balance of ` +
+        `₹${_dueBalance.toLocaleString('en-IN')}. Please verify before saving.`;
+      warn.style.display = 'flex';
+    } else {
+      warn.style.display = 'none';
+    }
+  }
+
+  // ── UPI panel ─────────────────────────────────────────────
   function updateUpiPanel() {
     const isUpi = modeSelect.value === 'UPI';
     upiPanel.classList.toggle('visible', isUpi);
@@ -452,20 +495,17 @@
     upiAmtVal.textContent = amt ? parseFloat(amt).toLocaleString('en-IN') : '—';
   }
 
-  // Ensure hidden input always matches displayed UPI details
   function syncUpiIdHidden() {
-    const hidden = document.getElementById('upiIdHidden');
-    const display = document.getElementById('upiIdDisplay');
-    if (hidden && display) hidden.value = (display.textContent || '').trim();
+    // no-op — upi_id is now a visible input for the transaction ref
   }
 
   modeSelect.addEventListener('change', updateUpiPanel);
-  syncUpiIdHidden();
   amtInput.addEventListener('input', () => {
     if (modeSelect.value === 'UPI') updateUpiAmount();
+    checkOverpay();
   });
 
-  // ── Toast on submit ──
+  // ── Toast on submit ───────────────────────────────────────
   form.addEventListener('submit', () => {
     setTimeout(() => {
       toast.classList.add('show');
@@ -473,8 +513,8 @@
     }, 200);
   });
 
-  // ── Auto-fill if ipd_no is in the URL (coming from bill page) ──
-  (function() {
+  // ── Auto-fill from URL ?ipd_no= (redirect from bill page) ─
+  (function () {
     const params = new URLSearchParams(window.location.search);
     const ipd = params.get('ipd_no');
     if (ipd) {

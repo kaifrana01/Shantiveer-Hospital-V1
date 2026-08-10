@@ -307,15 +307,19 @@ def admission(request):
                         source_app='ipd',
                         source_id=str(ipd_pay.id),
                     )
-                    # Mirror advance into IncomeEntry for daybook
+                    # Mirror advance into IncomeEntry for daybook.
+                    # Use today's date so the daybook entry lands on the day
+                    # money was received, not the admission date.
                     from income.models import IncomeEntry as _IE
                     _IE.objects.create(
-                        date=admission_obj.date,
+                        date=timezone.localdate(),
                         category='IPD',
                         patient_name=admission_obj.patient.name,
                         description=f'IPD advance payment ({admission_obj.ipd_no})',
                         payment_mode=adv_mode,
                         amount=adv,
+                        source_app='ipd',
+                        source_id=str(ipd_pay.id),
                     )
 
                 # Save uploaded documents — allowed on both new and edited admissions.
@@ -438,6 +442,19 @@ def payment(request):
         if mode == 'UPI':
             upi_id = (request.POST.get('upi_id') or '').strip()[:200]
 
+        # Overpayment check — warn if the collected amount exceeds the
+        # outstanding balance. We allow it (e.g. rounding, advance top-up)
+        # but surface a clear warning so staff know.
+        bill_total = _compute_ipd_bill_total(adm)
+        paid_so_far = adm.payments.aggregate(s=Sum('amount'))['s'] or Decimal('0.00')
+        outstanding = max(bill_total - paid_so_far, Decimal('0.00'))
+        if amount > outstanding > Decimal('0.00'):
+            messages.warning(
+                request,
+                f'Note: ₹{amount} collected exceeds the outstanding balance of '
+                f'₹{outstanding}. Payment recorded — please verify.'
+            )
+
         with transaction.atomic():
             # Idempotency guard: block a rapid double-submit (same admission +
             # amount + mode within 5 seconds) to prevent duplicate payment rows
@@ -473,15 +490,19 @@ def payment(request):
                 source_app='ipd',
                 source_id=str(ipd_pay.id),
             )
-            # Mirror into IncomeEntry so daybook reflects IPD payments
+            # Mirror into IncomeEntry so daybook reflects IPD payments.
+            # Use today's date (not admission date) so the daybook entry
+            # lands on the day money was actually received.
             from income.models import IncomeEntry as _IE
-            _IE.objects.create(
-                date=adm.date,
+            _ie = _IE.objects.create(
+                date=timezone.localdate(),
                 category='IPD',
                 patient_name=adm.patient.name,
                 description=remarks or f'IPD payment ({adm.ipd_no})',
                 payment_mode=mode,
                 amount=amount,
+                source_app='ipd',
+                source_id=str(ipd_pay.id),
             )
         messages.success(request, 'Payment recorded.')
         from django.urls import reverse
@@ -534,7 +555,9 @@ def bill(request):
 
             total = sum((i['amount'] for i in items), Decimal('0.00'))
             paid_total = adm.payments.aggregate(s=Sum('amount'))['s'] or Decimal('0.00')
-            due_amount = total - paid_total
+            # Clamp to zero — overpayments (advance > bill) are valid but we
+            # should never display a negative "balance due" to staff.
+            due_amount = max(total - paid_total, Decimal('0.00'))
 
             bill_data = {
                 'patient_name': adm.patient.name,
@@ -614,46 +637,58 @@ def discharge_add(request):
             messages.error(request, 'IPD Number not found. Please check and try again.')
             return redirect('ipd:discharge_list')
 
-        if adm:
-            with transaction.atomic():
-                # BUG-09 FIX: use update_or_create with all POST fields so
-                # that notes/diagnosis entered in the form are actually saved.
-                # Previously only discharge_date was passed in defaults={},
-                # meaning notes were silently dropped on every submission.
-                discharge_date_val = request.POST.get('discharge_date') or timezone.localdate()
-                notes_val = (request.POST.get('notes') or '').strip()
+        # Guard: block re-discharge of an already-discharged patient.
+        if adm.status == 'Discharged':
+            messages.warning(
+                request,
+                f'{adm.ipd_no} — {adm.patient.name} is already discharged. '
+                'Edit the discharge record from the discharge list if a correction is needed.'
+            )
+            return redirect('ipd:discharge_list')
 
-                discharge_obj, created = DischargeSummary.objects.update_or_create(
-                    admission=adm,
-                    defaults={
-                        'discharge_date': discharge_date_val,
-                        'notes': notes_val,
-                    },
+        with transaction.atomic():
+            discharge_date_val = request.POST.get('discharge_date') or timezone.localdate()
+            notes_val = (request.POST.get('notes') or '').strip()
+
+            DischargeSummary.objects.update_or_create(
+                admission=adm,
+                defaults={
+                    'discharge_date': discharge_date_val,
+                    'notes': notes_val,
+                },
+            )
+            adm.status = 'Discharged'
+            adm.save()
+
+            # Free up the bed occupied by this patient.
+            bed = Bed.objects.filter(
+                room_no=adm.room_no, patient=adm.patient, status='Occupied'
+            ).first()
+            if bed:
+                bed.status = 'Vacant'
+                bed.patient = None
+                bed.save(update_fields=['status', 'patient'])
+            elif adm.room_no:
+                # Bed record not found — warn staff so they can fix it manually
+                # from the Beds dashboard instead of leaving it stuck as Occupied.
+                messages.warning(
+                    request,
+                    f'Discharge saved, but bed in room {adm.room_no} could not be '
+                    'freed automatically. Please update the bed status from the Beds dashboard.'
                 )
-                adm.status = 'Discharged'
-                adm.save()
 
-                # Free up the bed occupied by this patient
-                bed = Bed.objects.filter(
-                    room_no=adm.room_no, patient=adm.patient, status='Occupied'
-                ).first()
-                if bed:
-                    bed.status = 'Vacant'
-                    bed.patient = None
-                    bed.save(update_fields=['status', 'patient'])
+        messages.success(request, f'Patient {adm.patient.name} ({adm.ipd_no}) discharged successfully.')
 
-            messages.success(request, 'Discharge added.')
-
-            # Validate next URL to prevent open redirect
-            next_url = (request.POST.get('next') or '').strip()
-            if next_url:
-                from django.utils.http import url_has_allowed_host_and_scheme
-                if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-                    return redirect(next_url)
+        # Validate next URL to prevent open redirect
+        next_url = (request.POST.get('next') or '').strip()
+        if next_url:
+            from django.utils.http import url_has_allowed_host_and_scheme
+            if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                return redirect(next_url)
 
         return redirect('ipd:discharge_list')
 
-    # GET — show a discharge form with all admitted patients listed
+    # GET — only show admitted (not already discharged) patients in the dropdown.
     admitted = IPDAdmission.objects.filter(status='Admitted').select_related('patient').order_by('-date')
     return render(request, 'ipd/discharge_add.html', {
         'active_sidebar': 'ipd_discharge',
@@ -766,6 +801,19 @@ def medicine(request):
                         patient=adm.patient,
                         ipd_admission=adm,
                     )
+                    # Also mirror into IncomeEntry so medicine charges appear
+                    # in the daybook alongside payment entries.
+                    from income.models import IncomeEntry as _IE
+                    _IE.objects.create(
+                        date=timezone.localdate(),
+                        category='IPD',
+                        patient_name=adm.patient.name,
+                        description=f'IPD medicine: {line.medicine_name} x{line.quantity} ({adm.ipd_no})',
+                        payment_mode='Cash',   # medicines are a charge, not a payment mode; Cash is the closest neutral value
+                        amount=line.amount,
+                        source_app='ipd',
+                        source_id=f'med-{line.id}',
+                    )
             messages.success(request, 'Medicine added.')
             return redirect('ipd:medicine')
 
@@ -844,16 +892,25 @@ def payment_delete(request, pk):
                 if _le:
                     _le.delete()
 
-        # Reverse IncomeEntry mirror posted at payment time
+        # Reverse IncomeEntry mirror posted at payment time.
+        # Match precisely by source_app + source_id (stamped since the fix).
+        # Fall back to fuzzy match for older rows created before source_id was set.
         from income.models import IncomeEntry as _IE
-        _ie_ipd = _IE.objects.filter(
-            category='IPD',
-            patient_name=admission.patient.name if admission.patient else '',
-            payment_mode=payment.payment_mode,
-            amount=payment.amount,
-        ).order_by('-created_at').first()
-        if _ie_ipd:
-            _ie_ipd.delete()
+        deleted_ie, _ = _IE.objects.filter(
+            source_app='ipd',
+            source_id=str(payment.id),
+        ).delete()
+        if not deleted_ie and admission.patient:
+            # Fallback for legacy rows without source_id — match by content,
+            # newest first, to minimise the risk of hitting the wrong row.
+            _ie = _IE.objects.filter(
+                category='IPD',
+                patient_name=admission.patient.name,
+                payment_mode=payment.payment_mode,
+                amount=payment.amount,
+            ).order_by('-created_at').first()
+            if _ie:
+                _ie.delete()
 
         payment.delete()
 

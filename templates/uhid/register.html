@@ -264,11 +264,16 @@ document.getElementById('dobInput')?.addEventListener('change', function () {
   const dob = new Date(this.value);
   if (isNaN(dob.getTime())) return;
   const today = new Date();
-  let years = today.getFullYear() - dob.getFullYear();
-  let months = today.getMonth() - dob.getMonth();
-  if (months < 0 || (months === 0 && today.getDate() < dob.getDate())) { years--; months += 12; }
-  const ageEl = document.getElementById('ageYears');
-  if (ageEl) ageEl.value = Math.max(0, years);
+  let years  = today.getFullYear() - dob.getFullYear();
+  let months = today.getMonth()    - dob.getMonth();
+  if (today.getDate() < dob.getDate()) { months--; }
+  if (months < 0) { years--; months += 12; }
+  years  = Math.max(0, years);
+  months = Math.max(0, months);
+  const ageYearsEl  = document.getElementById('ageYears');
+  const ageMonthsEl = document.querySelector('input[name="age_months"]');
+  if (ageYearsEl)  ageYearsEl.value  = years;
+  if (ageMonthsEl) ageMonthsEl.value = months;
 });
 
 // Form validation — double-submit blocking handled globally by no_double_submit.js
