@@ -7,7 +7,6 @@ with this file, then run:
   python manage.py seed_database
 
 This seeds:
-  • 1 admin user  (admin / admin@123)
   • 8 doctors
   • 35 patients   (Indian names, realistic ages/addresses)
   • 35 OPD visits with prescriptions
@@ -15,6 +14,10 @@ This seeds:
   • 12 lab tests master  +  20 lab investigations
   • 15 pharmacy items  +  purchases  +  sales
   • Beds, income entries, test interpretations
+
+No user accounts are created. Run:
+  python manage.py createsuperuser
+to create your admin account.
 """
 
 from decimal import Decimal
@@ -22,7 +25,6 @@ from datetime import date, time, timedelta
 import random
 
 from django.core.management.base import BaseCommand
-from django.contrib.auth.models import User
 
 from uhid.models import Patient
 from masterdata.models import Doctor, TestInterpretation
@@ -174,14 +176,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write('=== ShantiVeer HMS Seeder ===')
-
-        # ── Admin user ──────────────────────────────
-        u, _ = User.objects.get_or_create(username='admin')
-        u.email = 'admin@shantiveer.in'
-        u.set_password('admin@123')
-        u.is_staff = u.is_superuser = True
-        u.save()
-        self.stdout.write('✓ Admin user ready  (admin / admin@123)')
+        self.stdout.write(self.style.WARNING(
+            '  Note: no user accounts are created by this command.\n'
+            '  Run "python manage.py createsuperuser" to create an admin account.'
+        ))
 
         if Patient.objects.exists():
             self.stdout.write(self.style.WARNING(
@@ -478,7 +476,7 @@ class Command(BaseCommand):
             '  DATABASE SEEDED SUCCESSFULLY!\n'
             '════════════════════════════════════════\n'
             '  Login URL : http://127.0.0.1:8000/\n'
-            '  Username  : admin\n'
-            '  Password  : admin@123\n'
+            '  Run "python manage.py createsuperuser"\n'
+            '  to create your admin account.\n'
             '════════════════════════════════════════'
         ))

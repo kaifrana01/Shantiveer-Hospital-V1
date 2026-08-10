@@ -17,6 +17,7 @@ from django.views.decorators.http import require_POST
 
 from .forms import StyledLoginForm, ForgotPasswordForm, StyledPasswordChangeForm, StyledSetPasswordForm, ChangeEmailForm, UserBasicForm, UserProfileForm
 from .models import UserProfile
+from core.rbac import get_user_role, ADMIN, DOCTOR, RECEPTIONIST, PHARMACIST, ACCOUNTANT, NURSE, LAB_TECH, BILLING
 
 logger = logging.getLogger(__name__)
 _MAX_ATTEMPTS = getattr(settings, 'LOGIN_ATTEMPTS_LIMIT', 5)
@@ -54,23 +55,17 @@ def _clear(ip):
 
 def _role_redirect(user):
     """Send each role to its natural landing page after login."""
-    if user.is_superuser or user.groups.filter(name='Admin').exists():
-        return redirect('core:dashboard')
-    if user.groups.filter(name='Doctor').exists():
-        return redirect('core:dashboard')
-    if user.groups.filter(name='Receptionist').exists():
+    role = get_user_role(user)
+    if role == RECEPTIONIST:
         return redirect('opd:registration')     # receptionist → OPD desk
-    if user.groups.filter(name='Pharmacist').exists():
+    if role == PHARMACIST:
         return redirect('pharmacy:items')        # pharmacist → inventory
-    if user.groups.filter(name='Accountant').exists():
-        return redirect('core:dashboard')
-    if user.groups.filter(name='Nurse').exists():
-        return redirect('core:dashboard')
-    if user.groups.filter(name='LabTech').exists():
+    if role == LAB_TECH:
         return redirect('lab:view_all')          # lab tech → lab list
-    if user.groups.filter(name='BillingClerk').exists():
-        return redirect('ipd:payment')           # billing → payment screen
-    return redirect('core:home')
+    if role == BILLING:
+        return redirect('ipd:payment')           # billing clerk → payment screen
+    # Admin, Doctor, Nurse, Accountant and unrecognised roles → dashboard
+    return redirect('core:dashboard')
 
 
 def login_view(request):
@@ -206,11 +201,13 @@ def change_password_view(request):
 @login_required
 def profile_view(request):
     """View own profile — read-only overview with tab switching."""
+    from core.rbac import ROLE_LABELS
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
-    role = request.user.groups.all().first()
+    role = get_user_role(request.user)
+    role_label = ROLE_LABELS.get(role, 'User')
     return render(request, 'accounts/profile.html', {
         'profile': profile,
-        'role': role,
+        'role': role_label,
         'active_sidebar': 'profile',
     })
 

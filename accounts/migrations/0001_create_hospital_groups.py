@@ -66,6 +66,17 @@ GROUP_PERMISSIONS = {
     #     ('ultrasound', 'ultrasoundinvestigation', ['view_ultrasoundinvestigation']),
     # ],
 
+    'BillingClerk': [
+        # Billing clerks handle patient payments and basic financial operations
+        ('ipd', 'ipdpayment', ['view_ipdpayment', 'add_ipdpayment']),
+        ('opd', 'opdvisit', ['view_opdvisit']),
+        ('ipd', 'ipdadmission', ['view_ipdadmission']),
+        ('income', 'incomeentry', ['view_incomeentry', 'add_incomeentry']),
+        ('income', 'ledgerentry', ['view_ledgerentry', 'add_ledgerentry', 'change_ledgerentry']),
+        ('expenses', 'expense', ['view_expense', 'add_expense']),
+        ('uhid', 'patient', ['view_patient']),
+    ],
+
     'Admin': [
         # Admins get full CRUD across every financially or clinically
 

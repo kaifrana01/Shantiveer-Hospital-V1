@@ -1,6 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Sum, Q
 from django.http import JsonResponse
@@ -116,12 +115,10 @@ def _save_patient(request, patient=None):
     return p
 
 
-@require_module('uhid', level='view')
+@require_module('uhid', level='full')
 def register(request):
     """New patient registration form at /uhid/register/"""
     if request.method == 'POST':
-        if getattr(request, 'is_view_only', False):
-            raise PermissionDenied("Your role has view-only access to UHID records.")
         if not (request.POST.get('patient_name') or '').strip():
             messages.error(request, 'Patient name is required.')
             return render(request, 'uhid/register.html', {
@@ -140,14 +137,12 @@ def register(request):
     })
 
 
-@require_module('uhid', level='view')
+@require_module('uhid', level='full')
 def edit(request, uhid):
     """Edit an existing patient record at /uhid/edit/<uhid>/"""
     patient = get_object_or_404(Patient, uhid=uhid)
 
     if request.method == 'POST':
-        if getattr(request, 'is_view_only', False):
-            raise PermissionDenied("Your role has view-only access to UHID records.")
         if not (request.POST.get('patient_name') or '').strip():
             messages.error(request, 'Patient name is required.')
             return render(request, 'uhid/register.html', {

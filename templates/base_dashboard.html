@@ -37,23 +37,11 @@
       </div>
       <div class="dash-topbar-right">
 
-        <!-- role chip -->
-        {% if user.is_superuser %}
-          <span class="topbar-role-chip chip-admin"><i class="bi bi-shield-check"></i> Admin</span>
-        {% elif user|has_group:'Doctor' %}
-          <span class="topbar-role-chip chip-doctor"><i class="bi bi-person-badge"></i> Doctor</span>
-        {% elif user|has_group:'Receptionist' %}
-          <span class="topbar-role-chip chip-recept"><i class="bi bi-headset"></i> Receptionist</span>
-        {% elif user|has_group:'Pharmacist' %}
-          <span class="topbar-role-chip chip-pharma"><i class="bi bi-capsule"></i> Pharmacist</span>
-        {% elif user|has_group:'Accountant' %}
-          <span class="topbar-role-chip chip-admin"><i class="bi bi-calculator"></i> Accountant</span>
-        {% elif user|has_group:'Nurse' %}
-          <span class="topbar-role-chip chip-recept"><i class="bi bi-heart-pulse"></i> Nurse</span>
-        {% elif user|has_group:'LabTech' %}
-          <span class="topbar-role-chip chip-pharma"><i class="bi bi-droplet"></i> Lab Tech</span>
-        {% elif user|has_group:'BillingClerk' %}
-          <span class="topbar-role-chip chip-pharma"><i class="bi bi-cash-coin"></i> Billing</span>
+        <!-- role chip — driven by RBAC context processor (user_role / user_role_label / user_role_icon) -->
+        {% if user_role %}
+          <span class="topbar-role-chip chip-{{ user_role|lower }}">
+            <i class="bi {{ user_role_icon }}"></i> {{ user_role_label }}
+          </span>
         {% endif %}
         {% comment %}
         Notification bell disabled by request — backend returns empty list.

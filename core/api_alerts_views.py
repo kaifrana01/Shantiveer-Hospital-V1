@@ -4,6 +4,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.response import Response
 from django.db.models import Q
 from django.utils import timezone
+from core.rbac import has_access, VIEW
 
 from core.models import Notification
 from ipd.models import IPDAdmission
@@ -26,6 +27,9 @@ def _parse_datetime(value):
 @throttle_classes([ScopedRateThrottle])
 def alerts_signal(request):
     """Lightweight polling endpoint used by dashboard to trigger alerts."""
+    # RBAC check: user must have at least view access to dashboard module
+    if not has_access(request.user, 'dashboard', level=VIEW):
+        return Response({'error': 'Unauthorized: Your role does not have access to alerts.'}, status=403)
 
     user = request.user if request.user and request.user.is_authenticated else None
 

@@ -6,6 +6,7 @@ from django.db.models import Q, Count, Sum
 from django.core.cache import cache
 from uhid.models import Patient
 from core import services
+from core.rbac import has_access, VIEW, FULL
 
 import logging
 from typing import Optional
@@ -17,6 +18,10 @@ logger = logging.getLogger('hms.dashboard')
 @permission_classes([IsAuthenticated])
 @throttle_classes([ScopedRateThrottle])
 def dashboard_stats(request):
+    # RBAC check: user must have at least view access to dashboard module
+    if not has_access(request.user, 'dashboard', level=VIEW):
+        return Response({'error': 'Unauthorized: Your role does not have access to dashboard data.'}, status=403)
+    
     from opd.models import OPDVisit
     from income.models import IncomeEntry
     from django.db.models.functions import TruncMonth, TruncDay
@@ -186,6 +191,10 @@ def dashboard_income_breakdown(request):
       caching keeps a chatty dashboard (15s auto-refresh) from re-running
       that work on every poll.
     """
+    # RBAC check: user must have at least view access to income module
+    if not has_access(request.user, 'income', level=VIEW):
+        return Response({'error': 'Unauthorized: Your role does not have access to income data.'}, status=403)
+    
     range_filter = request.GET.get('range', 'today')
     if range_filter not in services.VALID_RANGES:
         range_filter = 'today'
@@ -219,6 +228,10 @@ dashboard_income_breakdown.throttle_scope = 'dashboard'
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def patient_search(request):
+    # RBAC check: user must have at least view access to uhid module
+    if not has_access(request.user, 'uhid', level=VIEW):
+        return Response({'error': 'Unauthorized: Your role does not have access to patient data.'}, status=403)
+    
     q = request.GET.get('q', '').strip()
     if not q:
         return Response({'results': []})
@@ -235,6 +248,10 @@ def patient_search(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def uhid_lookup(request, uhid):
+    # RBAC check: user must have at least view access to uhid module
+    if not has_access(request.user, 'uhid', level=VIEW):
+        return Response({'error': 'Unauthorized: Your role does not have access to patient data.'}, status=403)
+    
     try:
         p = Patient.objects.get(uhid=uhid)
         return Response(services.patient_to_dict(p))
@@ -245,6 +262,11 @@ def uhid_lookup(request, uhid):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def ai_triage(request):
+    # RBAC check: user must have at least view access to opd_registration or ipd_admission
+    if not (has_access(request.user, 'opd_registration', level=VIEW) or 
+            has_access(request.user, 'ipd_admission', level=VIEW)):
+        return Response({'error': 'Unauthorized: Your role does not have access to triage functionality.'}, status=403)
+    
     from core.ai_services import triage_score
 
     category = request.GET.get('category', '')
@@ -273,6 +295,10 @@ def ai_triage(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def ai_prescription_summary(request):
+    # RBAC check: user must have at least view access to prescription module
+    if not has_access(request.user, 'prescription', level=VIEW):
+        return Response({'error': 'Unauthorized: Your role does not have access to prescription functionality.'}, status=403)
+    
     from core.ai_services import summarize_prescription
     text = request.GET.get('text', '')
     summary = summarize_prescription(text)
@@ -282,6 +308,10 @@ def ai_prescription_summary(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def ai_inventory_reorder(request):
+    # RBAC check: user must have at least view access to pharmacy module
+    if not has_access(request.user, 'pharmacy', level=VIEW):
+        return Response({'error': 'Unauthorized: Your role does not have access to pharmacy inventory functionality.'}, status=403)
+    
     from core.ai_services import recommend_inventory_reorder
 
     def _to_float(v: str, default: Optional[float] = None):
@@ -312,6 +342,10 @@ def ai_inventory_reorder(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def ai_lab_recommend(request):
+    # RBAC check: user must have at least view access to lab module
+    if not has_access(request.user, 'lab', level=VIEW):
+        return Response({'error': 'Unauthorized: Your role does not have access to lab functionality.'}, status=403)
+    
     from core.ai_services import recommend_lab_tests
     diagnosis = request.GET.get('diagnosis', '')
     try:

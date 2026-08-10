@@ -1,71 +1,60 @@
 """
 python manage.py setup_roles
 
-Creates 4 HMS demo users and assigns them to correct permission groups.
-Safe to run multiple times (idempotent — updates existing users).
+Lists the RBAC groups that should exist in the database and verifies
+they are present.  Use Django's built-in management commands or the
+admin UI to create real users and assign them to groups.
 
-WARNING: This command sets known demo passwords. NEVER run it on a
-production server. It will refuse to run if DJANGO_DEBUG=False unless
-you explicitly pass --force.
+  python manage.py createsuperuser          # create an admin account
+  python manage.py shell                    # assign groups manually
+
+This command no longer creates any demo users.  Demo users with
+well-known passwords are a security risk and should never exist in a
+production database.
 """
-from django.core.management.base import BaseCommand, CommandError
-from django.contrib.auth.models import User, Group
-from django.conf import settings
+from django.core.management.base import BaseCommand
+from django.contrib.auth.models import Group
 
-USERS = [
-    dict(username='admin_hms',        password='Admin@123',   fn='Admin',   ln='User',    email='admin@shantiveer.in',       staff=True,  super_=True,  group=None),
-    dict(username='doctor_hms',       password='Doctor@123',  fn='Dr Anil', ln='Sharma',  email='doctor@shantiveer.in',      staff=False, super_=False, group='Doctor'),
-    dict(username='receptionist_hms', password='Recept@123',  fn='Priya',   ln='Nair',    email='reception@shantiveer.in',   staff=False, super_=False, group='Receptionist'),
-    dict(username='pharmacist_hms',   password='Pharma@123',  fn='Ravi',    ln='Mishra',  email='pharmacy@shantiveer.in',    staff=False, super_=False, group='Pharmacist'),
+# The canonical list of RBAC groups defined in core/rbac.py.
+EXPECTED_GROUPS = [
+    'Admin',
+    'Doctor',
+    'Nurse',
+    'Receptionist',
+    'Pharmacist',
+    'LabTech',
+    'Accountant',
+    'BillingClerk',
 ]
 
-class Command(BaseCommand):
-    help = 'Create 4 HMS demo role users (admin / doctor / receptionist / pharmacist)'
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            '--force',
-            action='store_true',
-            help='Allow running in production (DJANGO_DEBUG=False). Use with caution.',
-        )
+class Command(BaseCommand):
+    help = 'Verify RBAC groups exist in the database (no users are created)'
 
     def handle(self, *args, **options):
-        if not settings.DEBUG and not options.get('force'):
-            raise CommandError(
-                'Refusing to run setup_roles in production (DJANGO_DEBUG=False).\n'
-                'This command sets well-known demo passwords that are a security risk.\n'
-                'If you really want to run it, pass --force. Then immediately change all passwords.'
-            )
+        self.stdout.write(self.style.HTTP_INFO('\n=== ShantiVeer HMS — RBAC Group Check ===\n'))
 
-        self.stdout.write(self.style.HTTP_INFO('\n=== ShantiVeer HMS — Role Setup ===\n'))
-        for cfg in USERS:
-            user, created = User.objects.get_or_create(username=cfg['username'])
-            user.set_password(cfg['password'])
-            user.first_name  = cfg['fn']
-            user.last_name   = cfg['ln']
-            user.email       = cfg['email']
-            user.is_staff    = cfg['staff']
-            user.is_superuser = cfg['super_']
-            user.save()
-            if cfg['group']:
-                try:
-                    grp = Group.objects.get(name=cfg['group'])
-                    user.groups.set([grp])
-                except Group.DoesNotExist:
-                    self.stdout.write(self.style.WARNING(
-                        f"  ⚠  Group '{cfg['group']}' missing — run migrations first."))
-            verb = 'Created' if created else 'Updated'
-            self.stdout.write(self.style.SUCCESS(
-                f"  ✓  {verb}: {cfg['username']:25s} | pass: {cfg['password']:14s} | role: {cfg['group'] or 'superuser'}"))
+        missing = []
+        for name in EXPECTED_GROUPS:
+            exists = Group.objects.filter(name=name).exists()
+            if exists:
+                self.stdout.write(self.style.SUCCESS(f'  ✓  {name}'))
+            else:
+                self.stdout.write(self.style.ERROR(f'  ✗  {name}  ← MISSING'))
+                missing.append(name)
 
-        self.stdout.write('\n' + self.style.SUCCESS('=== Credentials Summary ==='))
-        self.stdout.write('  Role            Username               Password')
-        self.stdout.write('  ─────────────── ────────────────────── ─────────────')
-        self.stdout.write('  Administrator   admin_hms              Admin@123')
-        self.stdout.write('  Doctor          doctor_hms             Doctor@123')
-        self.stdout.write('  Receptionist    receptionist_hms       Recept@123')
-        self.stdout.write('  Pharmacist      pharmacist_hms         Pharma@123')
         self.stdout.write('')
-        self.stdout.write(self.style.WARNING(
-            '  ⚠  CHANGE ALL PASSWORDS IMMEDIATELY after first login!'
-        ))
+        if missing:
+            self.stdout.write(self.style.WARNING(
+                f'  {len(missing)} group(s) missing. Run migrations to create them:\n'
+                '    python manage.py migrate\n'
+            ))
+        else:
+            self.stdout.write(self.style.SUCCESS(
+                '  All RBAC groups are present.\n'
+                '  Assign users to groups via the Django admin or:\n'
+                '    python manage.py shell\n'
+                '    >>> from django.contrib.auth.models import User, Group\n'
+                '    >>> u = User.objects.get(username="your_user")\n'
+                '    >>> u.groups.set([Group.objects.get(name="Doctor")])\n'
+            ))
